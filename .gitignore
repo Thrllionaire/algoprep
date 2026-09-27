@@ -1,0 +1,7 @@
+# Editor / OS
+.DS_Store
+*.swp
+
+# Private progress tracking (separate repo: algoprep-progress)
+/learning-records/
+NOTES.md

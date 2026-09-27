@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Constraint Ladder</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<style>
+  /* Reference cards are denser than lessons and must fit on one printed page. */
+  body { padding-top: 2.5rem; }
+  .wrap { max-width: 42rem; }
+  table { font-size: 0.82rem; }
+  h2 { margin-top: 2rem; }
+  .two-col { columns: 2; column-gap: 2rem; font-size: 0.86rem; }
+  .two-col p { break-inside: avoid; }
+  @media (max-width: 640px) { .two-col { columns: 1; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Reference card · algoprep</p>
+  <h1>The Constraint Ladder</h1>
+  <p class="standfirst">Read the bound, get the budget, eliminate the families that cannot fit.</p>
+</header>
+
+<h2>The ladder</h2>
+
+<div class="table-scroll">
+<table>
+  <caption>
+    Figures from the <a href="https://usaco.guide/bronze/time-comp">USACO Guide's complexity
+    table</a>, which assumes roughly 10<sup>8</sup> simple operations per second
+    (&ldquo;a conservative estimate &hellip; but it could be closer to 5&middot;10<sup>8</sup>
+    given good constant factors&rdquo;). The right-hand column is ours.
+  </caption>
+  <thead>
+    <tr><th>Up to</th><th>Slowest affordable</th><th>What lives at that budget</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="num">n &le; 10</td><td class="num">O(n!)</td>
+        <td>Every ordering. Permutation backtracking.</td></tr>
+    <tr><td class="num">n &le; 20</td><td class="num">O(2<sup>n</sup>&middot;n)</td>
+        <td>Every subset. <strong>Bitmask DP, subsets, backtracking.</strong></td></tr>
+    <tr><td class="num">n &le; 80</td><td class="num">O(n<sup>4</sup>)</td>
+        <td>Four nested loops. Rare.</td></tr>
+    <tr><td class="num">n &le; 400</td><td class="num">O(n<sup>3</sup>)</td>
+        <td>Interval DP, Floyd&ndash;Warshall, matrix chain.</td></tr>
+    <tr><td class="num">n &le; 7&middot;10<sup>3</sup></td><td class="num">O(n<sup>2</sup>)</td>
+        <td>2-D DP over two sequences or a grid. All-pairs comparison.</td></tr>
+    <tr><td class="num">n &le; 7&middot;10<sup>4</sup></td><td class="num">O(n&radic;n)</td>
+        <td>Square-root decomposition, Mo's algorithm. Not an interview shape.</td></tr>
+    <tr><td class="num">n &le; 5&middot;10<sup>5</sup></td><td class="num">O(n log n)</td>
+        <td>Sort first, heap, binary search on the answer, divide and conquer, ordered set.</td></tr>
+    <tr><td class="num">n &le; 5&middot;10<sup>6</sup></td><td class="num">O(n)</td>
+        <td>One pass: sliding window, prefix sum, two pointers, hash map, monotonic stack, greedy, Kadane.</td></tr>
+    <tr><td class="num">n &le; 10<sup>18</sup></td><td class="num">O(log n), O(1)</td>
+        <td>Binary search, closed-form maths, bit tricks, fast exponentiation.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>The tells</h2>
+
+<div class="two-col">
+
+<p><strong>n &le; ~20.</strong> A neon sign for exponential. Nothing else needs a bound that
+small. Think subsets, bitmask, or "try every assignment". If you are reaching for a clever
+polynomial trick at n = 18, you have misread the problem.</p>
+
+<p><strong>n &le; ~400.</strong> Cubic is on the table, which in practice means interval DP
+(<code>dp[i][j]</code> plus a split point <code>k</code>) or all-pairs shortest paths.</p>
+
+<p><strong>Two sequences, each &le; ~10<sup>3</sup>.</strong> Quadratic table over the pair.
+Edit distance, LCS, and their relatives.</p>
+
+<p><strong>n = 10<sup>5</sup> (the single most common bound).</strong> O(n log n) is the ceiling,
+so a nested loop is dead on arrival. Sort, heap, binary search, or a single clever pass.</p>
+
+<p><strong>n &ge; 10<sup>9</sup>.</strong> You cannot even touch every element, so the answer
+cannot involve iterating the input. Binary search on the answer, maths, or bit tricks.</p>
+
+<p><strong>"modulo 10<sup>9</sup>+7".</strong> The answer is a <em>count</em> so large it
+overflows, which means you are counting without enumerating. Counting DP, near-always.
+Enumeration is not just slow here, it is the wrong shape.</p>
+
+<p><strong>Values are bounded but n is not.</strong> <code>0 &le; nums[i] &le; 100</code> with
+huge n invites counting sort, a frequency array, or DP over the value range rather than the
+index range.</p>
+
+<p><strong>Sorted input, or "find the k-th".</strong> Sortedness is never decoration. It is
+there for binary search or two pointers.</p>
+
+<p><strong>Interviewer gives no constraints.</strong> Ask. "What's the rough size of n?" is a
+signal of seniority, not ignorance, and the answer collapses your search space.</p>
+
+</div>
+
+<h2>How to use it in the room</h2>
+
+<ol>
+  <li>Read the constraints <em>before</em> the problem body.</li>
+  <li>Find your budget on the ladder. Say it out loud: <em>"n is 10<sup>5</sup>, so I need
+      n&nbsp;log&nbsp;n or better &mdash; a nested loop is out."</em></li>
+  <li>Cross off every family above that row.</li>
+  <li><em>Now</em> read the problem, choosing only among what survived.</li>
+</ol>
+
+<div class="caveat">
+  <p><strong>Where this fails.</strong> The ladder is necessary, not sufficient: it narrows
+  the field, it does not pick the winner. Several families share a budget &mdash; at O(n) you
+  still have to choose between sliding window, prefix sum, and a monotonic stack. And the
+  figures are judge-calibrated; a human interviewer cares whether your reasoning is sound, not
+  whether you clear a 2-second wall. The constant-factor claim is also genuinely approximate,
+  as the source itself says.</p>
+</div>
+
+<div class="colophon">
+  <h3>See also</h3>
+  <ul class="linkrow">
+    <li><a href="../lessons/0001-read-the-constraints-first.html">Lesson 0001 &mdash; Read the Constraints First</a> (where this card comes from)</li>
+    <li><a href="../resources.html">Resources</a> &mdash; the trusted sources behind these lessons</li>
+  </ul>
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="../lessons/0001-read-the-constraints-first.html">Lesson 0001</a>
+    <a href="../resources.html">Resources</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

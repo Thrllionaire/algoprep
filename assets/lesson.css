@@ -1,0 +1,363 @@
+/* ==========================================================================
+   algoprep — shared lesson stylesheet
+   Tufte-inspired: one column of readable prose, wide right margin for notes,
+   restrained colour, prints cleanly. Linked by every lesson and reference doc.
+   ========================================================================== */
+
+:root {
+  --ink:        #111111;
+  --ink-soft:   #4a4a44;
+  --ink-faint:  #8a8a80;
+  --paper:      #fffff8;
+  --rule:       #d8d8cc;
+  --rule-soft:  #ebebe0;
+  --accent:     #8b2500;   /* burnt sienna — links, emphasis */
+  --accent-bg:  #f6efe6;
+  --good:       #1f6f43;
+  --good-bg:    #eaf4ee;
+  --bad:        #9b1c1c;
+  --bad-bg:     #fbecec;
+  --code-bg:    #f4f4ea;
+
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, "Times New Roman", serif;
+  --sans:  "Gill Sans", "Gill Sans MT", Calibri, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono:  "SF Mono", "JetBrains Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+
+  --measure: 37rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink:       #e8e6dd;
+    --ink-soft:  #b3b0a4;
+    --ink-faint: #7d7a70;
+    --paper:     #14140f;
+    --rule:      #3a3a30;
+    --rule-soft: #26261e;
+    --accent:    #e08a5c;
+    --accent-bg: #2a1e16;
+    --good:      #6fc394;
+    --good-bg:   #16251c;
+    --bad:       #e88b8b;
+    --bad-bg:    #2a1717;
+    --code-bg:   #1d1d16;
+  }
+}
+:root[data-theme="dark"] {
+  --ink:       #e8e6dd;
+  --ink-soft:  #b3b0a4;
+  --ink-faint: #7d7a70;
+  --paper:     #14140f;
+  --rule:      #3a3a30;
+  --rule-soft: #26261e;
+  --accent:    #e08a5c;
+  --accent-bg: #2a1e16;
+  --good:      #6fc394;
+  --good-bg:   #16251c;
+  --bad:       #e88b8b;
+  --bad-bg:    #2a1717;
+  --code-bg:   #1d1d16;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  padding: 4rem 1rem 8rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+
+.wrap { max-width: var(--measure); margin: 0 auto; }
+
+/* ---------- masthead ---------------------------------------------------- */
+
+.masthead {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 0.75rem;
+}
+h1 {
+  font-size: 2.1rem;
+  line-height: 1.15;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  margin: 0 0 0.6rem;
+}
+.standfirst {
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ---------- prose ------------------------------------------------------- */
+
+h2 {
+  font-size: 1.32rem;
+  font-weight: 400;
+  letter-spacing: -0.008em;
+  margin: 3rem 0 0.9rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+h3 {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 600;
+  margin: 2rem 0 0.6rem;
+}
+p { margin: 0 0 1.15rem; }
+a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+a:hover { background: var(--accent-bg); }
+strong { font-weight: 600; }
+em { font-style: italic; }
+ul, ol { margin: 0 0 1.15rem; padding-left: 1.4rem; }
+li { margin-bottom: 0.45rem; }
+li > ul, li > ol { margin-top: 0.45rem; margin-bottom: 0.3rem; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 3rem 0; }
+
+code, kbd, samp {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.1em 0.32em;
+  border-radius: 2px;
+}
+pre {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  background: var(--code-bg);
+  border-left: 2px solid var(--rule);
+  padding: 0.9rem 1.1rem;
+  overflow-x: auto;
+  margin: 0 0 1.35rem;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+/* ---------- the lede: a single boxed claim ------------------------------ */
+
+.lede {
+  font-size: 1.12rem;
+  line-height: 1.5;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-bg);
+  padding: 1.1rem 1.3rem;
+  margin: 0 0 2rem;
+}
+.lede p:last-child { margin-bottom: 0; }
+
+/* ---------- sidenote (collapses inline on narrow screens) --------------- */
+
+.sidenote {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  border-left: 2px solid var(--rule);
+  padding-left: 0.9rem;
+  margin: 0 0 1.35rem;
+}
+@media (min-width: 1180px) {
+  .sidenote {
+    float: right;
+    clear: right;
+    width: 15rem;
+    margin-right: -17.5rem;
+    margin-top: 0.3rem;
+    border-left: none;
+    padding-left: 0;
+  }
+}
+
+/* ---------- tables ------------------------------------------------------ */
+
+.table-scroll { overflow-x: auto; margin: 0 0 1.5rem; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.86rem;
+  font-family: var(--sans);
+}
+caption {
+  caption-side: bottom;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  text-align: left;
+  padding-top: 0.6rem;
+  line-height: 1.45;
+}
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--ink-faint);
+  padding: 0.4rem 0.7rem 0.4rem 0;
+  vertical-align: bottom;
+}
+td {
+  padding: 0.5rem 0.7rem 0.5rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+}
+td:last-child, th:last-child { padding-right: 0; }
+tbody tr:last-child td { border-bottom: 1px solid var(--ink-faint); }
+.num { font-family: var(--mono); font-size: 0.8rem; white-space: nowrap; }
+
+/* ---------- callouts ---------------------------------------------------- */
+
+.tell {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  padding: 0.85rem 1.1rem;
+  margin: 0 0 1.35rem;
+  font-size: 0.95rem;
+}
+.tell-label {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+.tell p:last-child { margin-bottom: 0; }
+
+.caveat {
+  font-size: 0.95rem;
+  background: var(--rule-soft);
+  padding: 0.85rem 1.1rem;
+  margin: 0 0 1.35rem;
+}
+.caveat p:last-child { margin-bottom: 0; }
+
+/* ---------- footer: source, next steps, ask-your-teacher ---------------- */
+
+.colophon {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+.colophon h3 { margin-top: 1.75rem; }
+.colophon h3:first-child { margin-top: 0; }
+.ask {
+  font-family: var(--sans);
+  font-size: 0.86rem;
+  background: var(--accent-bg);
+  border-left: 3px solid var(--accent);
+  padding: 0.9rem 1.1rem;
+  margin: 2rem 0 0;
+  color: var(--ink);
+}
+.ask p:last-child { margin-bottom: 0; }
+
+.linkrow { list-style: none; padding: 0; }
+.linkrow li { margin-bottom: 0.55rem; }
+
+/* ---------- print ------------------------------------------------------- */
+
+@media print {
+  :root {
+    --ink: #000; --ink-soft: #333; --ink-faint: #666;
+    --paper: #fff; --rule: #999; --rule-soft: #ccc;
+    --accent: #000; --accent-bg: #f2f2f2; --code-bg: #f4f4f4;
+  }
+  body { padding: 0; font-size: 10.5pt; line-height: 1.45; }
+  .wrap { max-width: none; }
+  a { border-bottom: none; text-decoration: underline; }
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 7.5pt; color: #555; word-break: break-all;
+  }
+  h1 { font-size: 20pt; }
+  h2 { font-size: 13pt; margin-top: 1.4rem; page-break-after: avoid; }
+  h3 { page-break-after: avoid; }
+  pre, table, .tell, .lede, figure { page-break-inside: avoid; }
+  .no-print { display: none !important; }
+  .sidenote { float: none; width: auto; margin: 0 0 1rem; padding-left: 0.8rem; }
+}
+
+/* ---------- site footer nav (published site) ---------------------------- */
+
+footer {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+.pagenav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pagenav a { border-bottom: none; color: var(--ink-soft); }
+.pagenav a:hover { color: var(--accent); background: none; }
+
+/* ---------- homepage ---------------------------------------------------- */
+
+.home-list { list-style: none; padding: 0; counter-reset: item; }
+.home-list li {
+  counter-increment: item;
+  padding-left: 2.4rem;
+  position: relative;
+  margin-bottom: 0.7rem;
+}
+.home-list li::before {
+  content: counter(item, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.12rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+.home-list .blurb {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.upcoming { color: var(--ink-faint); }
+.upcoming a { pointer-events: none; }
+
+/* Pages generated from markdown by pandoc get plain prose treatment. */
+.md-page h1 { margin-bottom: 1.5rem; }
+.md-page table { margin-bottom: 1.5rem; }
+.md-page blockquote {
+  margin: 0 0 1.15rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--rule);
+  color: var(--ink-soft);
+}

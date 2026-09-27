@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read the Constraints First</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0001 · algoprep</p>
+  <h1>Read the Constraints First</h1>
+  <p class="standfirst">Before you understand the problem, you can already know what the answer
+  cannot be.</p>
+</header>
+
+<div class="lede">
+  <p>You told me the failure is <em>"I can't pick the pattern."</em> Recognition is hard.
+  <strong>Elimination is easy</strong> &mdash; and it does most of the work. The input
+  constraints tell you your time budget, the budget rules out whole families of technique, and
+  what's left is usually two or three candidates. You can do this in fifteen seconds, on a
+  problem you do not yet understand.</p>
+</div>
+
+<h2>The one idea</h2>
+
+<p>Every problem ships a bound on its input. That bound is not flavour text; it is the
+interviewer telling you the complexity they expect. Work backwards: a machine does very roughly
+10<sup>8</sup> simple operations per second, so if <code>n</code> can be 100,000, then an
+O(n<sup>2</sup>) idea needs 10<sup>10</sup> operations and is dead &mdash; <em>before you have
+had a single thought about the problem itself.</em></p>
+
+<div class="sidenote">
+  The 10<sup>8</sup> figure is the USACO Guide's deliberately conservative estimate; it notes
+  the real number "could be closer to 5&middot;10<sup>8</sup> given good constant factors."
+  Treat it as an order of magnitude, not a measurement.
+</div>
+
+<p>So the move is mechanical. Find the largest <code>n</code>. Look up the slowest complexity
+you can still afford. Everything more expensive than that is eliminated. Try it &mdash; type a
+bound, or tap a preset:</p>
+
+<div id="ladder"></div>
+
+<p>Notice what just happened at <code>n = 10<sup>9</sup></code>: the budget is so tight you
+cannot even <em>look</em> at every element. That single observation eliminates every
+array-scanning pattern you will ever learn. You did not need to understand the problem to know
+that.</p>
+
+<h2>Reading the bound in the other direction</h2>
+
+<p>The ladder is more useful read right-to-left. A bound is not just a speed limit; it is a
+fingerprint. Certain numbers appear <em>only</em> when a specific family is intended:</p>
+
+<div class="tell">
+  <span class="tell-label">Tell — n &le; about 20</span>
+  <p>A neon sign for exponential. No other family needs a bound that small, and no problem
+  setter picks 18 by accident. 2<sup>18</sup> is 262,144 &mdash; nothing. 2<sup>30</sup> is a
+  billion &mdash; impossible. When you see a bound in the teens, stop looking for a clever
+  polynomial trick and start asking <em>"what am I enumerating &mdash; subsets, or orderings?"</em></p>
+</div>
+
+<div class="tell">
+  <span class="tell-label">Tell — "return the answer modulo 10<sup>9</sup> + 7"</span>
+  <p>The answer is a count so astronomically large it would overflow a 64-bit integer. You
+  therefore cannot be producing the things you are counting, only counting them. That is a
+  counting DP, nearly always. Here the modulo does not just make brute force slow, it makes
+  brute force <em>the wrong shape</em>.</p>
+</div>
+
+<div class="tell">
+  <span class="tell-label">Tell — a bound in the low hundreds</span>
+  <p>Too big for 2<sup>n</sup>, far too small to need n&nbsp;log&nbsp;n. That gap is
+  deliberate: it is buying you a cubic algorithm. In interview problems that almost always
+  means interval DP &mdash; a <code>dp[i][j]</code> over a range, with an inner loop picking a
+  split point <code>k</code>. The third loop <em>is</em> what the loose bound pays for.</p>
+</div>
+
+<p>Two more worth memorising, both on the <a href="../reference/0001-constraint-ladder.html">reference
+card</a>: <strong>two separate sequences each bounded around 10<sup>3</sup></strong> multiplies
+out to a 10<sup>6</sup>-cell table, which is the signature of 2-D DP over a pair (edit distance,
+LCS). And <strong>values bounded tightly while <code>n</code> is huge</strong>
+(<code>0 &le; nums[i] &le; 100</code>) invites counting over the <em>value</em> range instead of
+the index range.</p>
+
+<h2>Practice</h2>
+
+<p>Six problems. You get the constraints and one line of description &mdash; deliberately not
+enough to solve anything. Your job is only to name the budget and the surviving family. That is
+the whole skill.</p>
+
+<div id="triage-quiz"></div>
+
+<script type="application/json" id="triage-quiz-data">
+{
+  "title": "Constraint triage",
+  "commit": "Say the target complexity out loud, then the family it implies. <em>Then</em> reveal the options. Generating an answer and getting it wrong builds more than recognising one and getting it right.",
+  "perfect": "Six from six. Do not mistake that for mastery yet &mdash; this was recognition with the ladder still fresh. Come back in two days and run it again; the options reshuffle, so the second pass is genuine retrieval.",
+  "questions": [
+    {
+      "tag": "n <= 20",
+      "stem": "Split an array into two groups so that their sums are as close as possible. What shape is the intended solution?",
+      "given": "1 <= n <= 18",
+      "options": [
+        { "text": "Exponential subset enumeration", "correct": true },
+        { "text": "Linear single-pass scan" },
+        { "text": "Quadratic all-pairs comparison" },
+        { "text": "Logarithmic binary searching" }
+      ],
+      "why": "<p>A bound of 18 exists for exactly one reason. 2<sup>18</sup> = 262,144 subsets, which is nothing; at n = 30 the same approach dies. When the bound is in the teens, the setter is <em>inviting</em> you to enumerate.</p><p>The question to ask next is <em>subsets or orderings?</em> Here each element goes to group A or group B, so it is subsets: 2<sup>n</sup>, not n!.</p>"
+    },
+    {
+      "tag": "n = 10^5",
+      "stem": "Find the longest contiguous block whose sum is at most k. All values are positive. What shape is the intended solution?",
+      "given": "1 <= n <= 100000\n1 <= nums[i] <= 10000",
+      "options": [
+        { "text": "Linear single-pass scan", "correct": true },
+        { "text": "Exponential subset enumeration" },
+        { "text": "Cubic triple-nested loops" },
+        { "text": "Quadratic nested loops" }
+      ],
+      "why": "<p>10<sup>5</sup> is the most common bound in the whole genre, and it means the ceiling is O(n log n). Quadratic would be 10<sup>10</sup> operations &mdash; dead.</p><p>Two further words did the rest. <strong>Contiguous</strong> means you want a window, not a subset. <strong>All positive</strong> means extending the window can only increase the sum and shrinking it can only decrease it, so a single pass with two boundaries suffices. That is the sliding window, and we will take its invariant apart in a later lesson.</p>"
+    },
+    {
+      "tag": "two sequences",
+      "stem": "Minimum number of single-character edits to turn one string into the other. What shape is the intended solution?",
+      "given": "1 <= a.length <= 1000\n1 <= b.length <= 1000",
+      "options": [
+        { "text": "Quadratic table filling", "correct": true },
+        { "text": "Linear single-pass scan" },
+        { "text": "Exponential branch search" },
+        { "text": "Constant arithmetic formula" }
+      ],
+      "why": "<p><em>Two independent</em> bounds are the tell. Each is 10<sup>3</sup>, and they multiply: 10<sup>6</sup> cells, comfortably affordable. Whenever you see two sequences bounded like this, suspect a table indexed by a position in each &mdash; <code>dp[i][j]</code>.</p><p>A single bound of 1000 would be weaker evidence; it is the <em>pair</em> that points at the grid.</p>"
+    },
+    {
+      "tag": "n >= 10^9",
+      "stem": "How many integers from 1 to n are divisible by a or by b? What shape is the intended solution?",
+      "given": "1 <= n <= 1000000000\n1 <= a, b <= 1000",
+      "options": [
+        { "text": "Constant arithmetic formula", "correct": true },
+        { "text": "Linear single-pass scan" },
+        { "text": "Quadratic nested loops" },
+        { "text": "Exponential subset enumeration" }
+      ],
+      "why": "<p>At 10<sup>9</sup> you cannot afford to visit every integer, which eliminates <em>every</em> iterate-the-input pattern in one stroke. The answer must be computed, not counted.</p><p>Inclusion&ndash;exclusion: <code>n//a + n//b - n//lcm(a,b)</code>. The subtraction is there because multiples of both were counted twice.</p><p>The general lesson matters more than the formula: when the bound exceeds roughly 10<sup>7</sup>, the input is not something you traverse.</p>"
+    },
+    {
+      "tag": "modulo 10^9+7",
+      "stem": "Count the distinct ways to tile a 1 x n strip, and return the answer modulo 10^9 + 7. What shape is the intended solution?",
+      "given": "1 <= n <= 100000",
+      "options": [
+        { "text": "Counting dynamic programming", "correct": true },
+        { "text": "Exhaustive recursive enumeration", "correct": false },
+        { "text": "Greedy local-choice sweep" },
+        { "text": "Binary searching answers" }
+      ],
+      "why": "<p>The modulo is the loudest signal in the genre. It exists because the true answer overflows 64 bits &mdash; so there are astronomically many tilings, and you cannot possibly generate them. You are counting without enumerating, which is what counting DP <em>is</em>.</p><p>Enumeration is not merely too slow here; it is categorically the wrong shape. And note the modulo told you this on its own, before the bound of 10<sup>5</sup> even came into it.</p>"
+    },
+    {
+      "tag": "low hundreds",
+      "stem": "Merge all the stone piles in a row into one pile at minimum total cost, where merging adjacent piles costs their combined size. What shape is the intended solution?",
+      "given": "1 <= n <= 300",
+      "options": [
+        { "text": "Interval dynamic programming", "correct": true },
+        { "text": "Linear sliding window" },
+        { "text": "Constant closed-form maths" },
+        { "text": "Exponential subset enumeration" }
+      ],
+      "why": "<p>300 is a strange number, and strange numbers are informative. It is far too large for 2<sup>n</sup>, and absurdly loose if an O(n log n) solution existed. The setter has left room for O(n<sup>3</sup>) = 2.7 &times; 10<sup>7</sup>, and wants you to notice.</p><p>Combine that with <em>adjacent</em> and <em>a row</em>: the subproblem is a contiguous range, so <code>dp[i][j]</code> = cost to merge piles i through j, with an inner loop over the split point k. Those three loops are exactly what the loose bound was paying for.</p>"
+    }
+  ]
+}
+</script>
+
+<h2>Saying it out loud</h2>
+
+<p>You are interviewing at Staff+, where the reasoning is the deliverable and the code is
+evidence. So do not do this silently. Thirty seconds of narration, before you write anything:</p>
+
+<pre><code>"Before I dig in &mdash; n goes up to 10^5, so I'm targeting n log n
+or better. That rules out comparing all pairs. I also notice the
+subarray has to be contiguous and the values are all positive,
+which means a window can only grow and shrink monotonically. So
+I'd like to try a two-pointer window for O(n). Let me check that
+against an example before I commit."</code></pre>
+
+<p>That paragraph does four things a strong interviewer is explicitly listening for: it
+establishes a budget, eliminates an approach <em>with a reason</em>, names the property of the
+input that licenses the chosen technique, and proposes verification before committing. Note the
+last sentence especially &mdash; announcing that you will check before you commit is what
+separates confident from reckless.</p>
+
+<div class="caveat">
+  <p><strong>Two honest limits.</strong> First, this narrows the field; it does not pick the
+  winner. At O(n) you must still choose between sliding window, prefix sum, and a monotonic
+  stack &mdash; that is the next lesson's job. Second, a human interviewer may give you no
+  constraints at all. Then <em>ask</em>: "roughly how large can n get?" That question reads as
+  seniority, and the answer collapses your search space exactly as above.</p>
+</div>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/bronze/time-comp">USACO Guide &mdash; Time Complexity</a>.
+  Fifteen minutes, free, and the most honest treatment of the ladder anywhere: it states its
+  operations-per-second assumption instead of hiding it, and shows the arithmetic. Skim the
+  worked examples; you can ignore the C++/Java code blocks.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../reference/0001-constraint-ladder.html">Reference card: The Constraint Ladder</a>
+      &mdash; the ladder plus all eight tells, on one printable page. This is the thing to
+      reread, not this lesson.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="../mission.html">Mission</a> &mdash; why we started here: elimination attacks
+      your primary failure mode directly.</li>
+    <li><a href="../resources.html">Resources</a> &mdash; the trusted sources behind the course.</li>
+    <li><strong>Next lesson:</strong> the <em>shape of the answer</em>. Contiguous versus
+      subsequence, count versus optimum versus existence &mdash; the second axis of triage, which
+      separates the families that share a budget.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Especially: any quiz
+    answer that felt like a guess even when it was right; any bound you have seen in the wild
+    that does not fit the ladder; or hand me a real problem statement and I will triage it with
+    you, one line at a time.</p>
+  </div>
+
+</div>
+
+<script src="../assets/ladder.js"></script>
+<script src="../assets/quiz.js"></script>
+<script>
+  ConstraintLadder.mount('ladder');
+  AlgoQuiz.mount('triage-quiz', 'triage-quiz-data');
+</script>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="../reference/0001-constraint-ladder.html">Reference card</a>
+    <a href="../mission.html">Mission</a>
+    <a href="../resources.html">Resources</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
