@@ -27,6 +27,10 @@ apply is far easier than naming the one that does — and it does most of the wo
    — two CSES problems one word apart, and the technique changes completely. Stop thinking about
    subarrays and think about the boundaries either side of them; the hash map is only how you stop
    paying for the search. Includes a multi-select trace over a prefix tape.
+5. [The Inward Walk](https://thrllionaire.github.io/algoprep/lessons/0005-the-inward-walk.html)
+   — Two Sum, sorted or not, one word apart again. Walking in from both ends is licensed by
+   sortedness rather than a monotonic predicate, and the proof is what tells you which pointer is
+   safe to move.
 
 ## Reference cards
 

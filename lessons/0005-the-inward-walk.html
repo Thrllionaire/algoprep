@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Inward Walk</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0005 · algoprep</p>
+  <h1>The Inward Walk</h1>
+  <p class="standfirst">Every sweep so far has moved in one direction. This one starts at both
+  ends and walks in &mdash; and the thing that licenses it is not a predicate, it's the array
+  being sorted.</p>
+</header>
+
+<div class="lede">
+  <p>Same minimal-pair move as last lesson. Two problems, same ask, one fact differs.</p>
+  <p style="margin-bottom:0"><strong>LeetCode 1, Two Sum.</strong> <em>Given an array of integers
+  and a target, return indices of the two numbers that add up to target.</em><br>
+  <strong>LeetCode 167, Two Sum II.</strong> <em>Given a 1-indexed array of integers already
+  sorted in non-decreasing order and a target, return indices of the two numbers that add up to
+  target &mdash; using only constant extra space.</em></p>
+</div>
+
+<p>The fact is <em>sorted</em>. You already have a tool for the first version &mdash; it's the
+<a href="0004-the-prefix-pair.html#lookup">complement lookup</a> from lesson 0004, restated for
+pairs instead of prefixes: sweep once, and at each value ask a hash map whether you've already seen
+<code>target &minus; nums[i]</code>. O(n) time, O(n) space, and it does not care about order at
+all.</p>
+
+<p>Sortedness is what buys you the O(n) time <em>without</em> the O(n) space &mdash; but only if
+you use it correctly, which means giving up the hash map entirely for a pair of indices that walk
+toward each other.</p>
+
+<h2>The move, and the argument for why it's safe</h2>
+
+<p>Start <code>left</code> at index 0 and <code>right</code> at the last index. Look at
+<code>nums[left] + nums[right]</code>:</p>
+
+<ul>
+  <li>Too small &rarr; you need a bigger sum. <code>nums[right]</code> is already the largest value
+  still in play, so the only lever left is <code>nums[left]</code>. Advance it: <code>left += 1</code>.</li>
+  <li>Too big &rarr; symmetric. <code>nums[left]</code> is already the smallest value still in play.
+  Pull <code>right</code> in: <code>right -= 1</code>.</li>
+  <li>Equal &rarr; done.</li>
+</ul>
+
+<p>The move is not a heuristic; it's provable, and the proof is the whole licence check. Suppose
+<code>nums[left] + nums[right] &lt; target</code> and some valid answer pair <code>(i, j)</code>
+exists with <code>i &lt; j</code>. Could <code>i = left</code>? Then <code>j</code> would have to be
+some index &le; <code>right</code> &mdash; but <code>nums[right]</code> is the <em>largest</em>
+value at or before <code>right</code>, and <code>nums[left] + nums[right]</code> is already too
+small. Pairing <code>left</code> with anything smaller only makes the sum smaller still. So
+<code>left</code> cannot be part of any valid pair that also respects <code>right</code>, and
+discarding it loses nothing. The mirror argument discards <code>right</code> when the sum is too
+big.</p>
+
+<div class="sidenote">
+  This is the same clause you already met in the <a href="../glossary.html">glossary</a>'s
+  <em>two pointers</em> entry, just read from the other end: <em>"movement in one direction should
+  not reverse the effects of movement in the other"</em>
+  (<a href="https://usaco.guide/silver/two-pointers">USACO Guide &mdash; Two Pointers</a>).
+  Advancing <code>left</code> can only raise the sum; pulling in <code>right</code> can only lower
+  it. Neither move can undo what the other was trying to fix, which is exactly what makes throwing
+  an index away for good a safe thing to do.
+</div>
+
+<pre><code>def two_sum_sorted(nums, target):
+    left, right = 0, len(nums) - 1
+    while left &lt; right:
+        s = nums[left] + nums[right]
+        if s == target:
+            return (left, right)
+        if s &lt; target:
+            left += 1
+        else:
+            right -= 1
+    return None</code></pre>
+
+<p>O(n) time &mdash; each step retires one index for good, so there are at most n steps total,
+the same <a href="../glossary.html">amortised</a> argument as lesson 0003's shrink loop. O(1)
+space: no map, just two integers.</p>
+
+<div class="caveat">
+  <p><strong>How badly does it fail if the array isn't sorted?</strong> Running
+  <code>two_sum_sorted</code> against a brute-force existence check, on sorted small arrays it
+  disagreed <strong>0 times in 30,000 trials</strong>. Feed it the same arrays <em>unsorted</em>
+  and it disagreed on <strong>28.6% of them</strong> &mdash; sometimes reporting no pair exists when
+  one does, sometimes returning indices that don't sum to target at all. The proof above used
+  "largest value at or before <code>right</code>" as a fact about the array. Unsorted, that fact is
+  just false, and the licence check fails at the first line.</p>
+</div>
+
+<h2>The invariant, stated once</h2>
+
+<p>Same discipline as <a href="0003-the-window-invariant.html">lesson 0003</a>: write the sentence
+that's true every time control reaches the top of the loop, rather than trusting the shape of the
+code to carry it.</p>
+
+<div class="tell">
+  <span class="tell-label">The invariant</span>
+  <p>If a valid pair exists in <code>nums</code>, it lies within <code>nums[left..right]</code>,
+  inclusive of both ends.</p>
+</div>
+
+<p>Every step either finds the pair or narrows that range by exactly one end, never both, and never
+the wrong one &mdash; that's what the proof two sections up actually established. The loop ends
+either by returning early or by <code>left</code> and <code>right</code> meeting, at which point
+the range holds at most one element and no pair fits inside it.</p>
+
+<h2>Two ends versus one direction</h2>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th></th><th>Sliding window (0003)</th><th>Inward walk (this lesson)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Licence needed</td><td>Monotonic predicate</td><td>Sorted input</td></tr>
+    <tr><td>Pointers move</td><td>Both rightward, same direction</td><td>Toward each other, opposite directions</td></tr>
+    <tr><td>What's being searched</td><td>A contiguous run</td><td>An unordered pair</td></tr>
+    <tr><td>Each step retires</td><td>The window's left edge</td><td>Whichever end can't be part of the answer</td></tr>
+    <tr><td>Space</td><td class="num">O(1)</td><td class="num">O(1)</td></tr>
+  </tbody>
+  <caption>Both are <a href="../glossary.html">two pointers</a> in the glossary's sense &mdash; each
+  index visited at most once &mdash; but they're licensed by different facts about the input, which
+  is why mixing them up produces confidently wrong code rather than a crash.</caption>
+</table>
+</div>
+
+<div class="caveat">
+  <p><strong>The licence generalises further than "sorted".</strong> <em>Container With Most
+  Water</em> (max area between two lines, width &times; shorter height) is solved the same
+  inward-walk shape on an array that is <em>not</em> sorted at all. The argument there is different
+  &mdash; at each step you can prove the <em>shorter</em> line can never be part of a better answer
+  than the one you already have at this width, so you move it, never the taller one. Same shape,
+  same "throw an index away for good" discipline, but the provable-discard argument is bespoke to
+  the problem rather than "the array is sorted". Worth a lesson of its own; filed for later.</p>
+</div>
+
+<h2>Practice</h2>
+
+<p>Commit to an answer, and the one-sentence reason, before revealing the options.</p>
+
+<div id="inward-quiz"></div>
+
+<script type="application/json" id="inward-quiz-data">
+{
+  "title": "Retrieval practice — the inward walk",
+  "commit": "Say the answer and the licence check out loud before you look. If you can't state why the move is safe, you're pattern-matching the code shape rather than the proof.",
+  "perfect": "Six from six. Now go do LeetCode 1 and 167 back to back, and notice that 167 is fewer lines and no import.",
+  "questions": [
+    {
+      "tag": "the licence",
+      "stem": "Two Sum II works with an inward walk instead of a hash map. What single fact about the input makes that safe?",
+      "given": "nums is sorted in non-decreasing order",
+      "options": [
+        { "text": "The array is sorted ascending", "correct": true },
+        { "text": "The array has no duplicates" },
+        { "text": "The target is always positive" },
+        { "text": "The array size is huge" }
+      ],
+      "why": "<p>Sortedness is what makes \"nums[right] is the largest value still in play\" a true statement about the array rather than a guess. Duplicates, sign of the target and array size affect nothing about whether the discard argument holds.</p>"
+    },
+    {
+      "tag": "which pointer moves",
+      "stem": "nums[left] + nums[right] is smaller than target. Which pointer moves, and which way?",
+      "given": "left = 0, right = n - 1",
+      "options": [
+        { "text": "left moves forwards, toward right", "correct": true },
+        { "text": "right moves backward, toward left" },
+        { "text": "both pointers move inward together" },
+        { "text": "left moves backward, toward center" }
+      ],
+      "why": "<p>right is already anchored on the largest remaining value, so it can't supply more sum. left is the only lever that can raise the total, and advancing it is the only move that keeps every discarded index provably out of the answer.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0004",
+      "stem": "Same problem, but the array is NOT sorted and you may not sort it. Which O(n) tool from an earlier lesson still works?",
+      "given": "nums = [8, -1, 5, 2], target = 7 (order fixed, unsorted)",
+      "options": [
+        { "text": "Complement lookup in a map", "correct": true },
+        { "text": "Inward walk from both ends" },
+        { "text": "Sliding window shrinking on overflow" },
+        { "text": "A prefix-sum pair of boundaries" }
+      ],
+      "why": "<p>The inward walk needs sortedness and you're not allowed to sort. The complement lookup from <a href='0004-the-prefix-pair.html#lookup'>lesson 0004</a> asks a hash map whether target &minus; nums[i] has been seen, and never assumes an order at all &mdash; O(n) time, O(n) space instead of O(1).</p>"
+    },
+    {
+      "tag": "the invariant",
+      "stem": "At the top of the loop, what is guaranteed true about nums[left..right]?",
+      "given": "the loop has not yet returned",
+      "options": [
+        { "text": "Any valid pair lies fully inside range", "correct": true },
+        { "text": "This range is sorted in decreasing order" },
+        { "text": "nums[left] is always less than the target" },
+        { "text": "The valid pair always starts at left" }
+      ],
+      "why": "<p>The invariant is about where the answer <em>could still be</em>, not a claim about a specific index. Each step shrinks the range from one end only, and only the end that's just been proven unable to contribute &mdash; which is what makes it safe to keep narrowing rather than backtrack.</p>"
+    },
+    {
+      "tag": "budget check (interleave: lesson 0001)",
+      "stem": "n <= 3*10^5, array already sorted, need indices summing to target. Read the bound: which complexity is the inward walk actually buying you here?",
+      "given": "1 <= n <= 300000",
+      "options": [
+        { "text": "Same O(n) time, but less space", "correct": true },
+        { "text": "O(log n) time, from the sort" },
+        { "text": "O(n) time, replacing a hash map" },
+        { "text": "No real benefit at this size" }
+      ],
+      "why": "<p>Both tools are O(n) time; sortedness doesn't buy you a faster sweep here; it buys you dropping the hash map entirely. At n = 3&middot;10<sup>5</sup> that's a constant-factor and memory win, not a different row on the <a href='../reference/0001-constraint-ladder.html'>constraint ladder</a> &mdash; a reminder that not every optimisation shows up as a complexity class.</p>"
+    },
+    {
+      "tag": "when it breaks",
+      "stem": "Which change to Two Sum II would break the inward walk, forcing you back to a hash map?",
+      "given": "the walk as written above",
+      "options": [
+        { "text": "The array can no longer be sorted", "correct": true },
+        { "text": "The array now has one more entry" },
+        { "text": "The target flips from plus to minus" },
+        { "text": "The array now holds repeated values too" }
+      ],
+      "why": "<p>Losing sortedness removes the one fact the discard proof depends on &mdash; measured above at a 28.6% disagreement rate against brute force. Array size, sign of the target, and duplicates all leave the proof, and therefore the code, untouched.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('inward-quiz', 'inward-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"n is 3e5, sorted, asking for a pair. A hash-map complement lookup
+ from lesson 0004 already solves this in O(n) time and O(n) space,
+ regardless of order.
+
+ But it's sorted, and that's a stronger fact than 'seen before' - it
+ tells me which end is extreme. So I'll walk in from both ends instead:
+ if the current pair sums too low, right is already the largest value
+ left in play, so left is the only lever - advance it. Too high, the
+ mirror move on right. Either move only discards an index once I can
+ prove no valid pair needs it.
+
+ O(n) time, same as the map, but O(1) space - and the win is provable,
+ not assumed, because the discard argument only holds under sortedness."</code></pre>
+
+<p>The sentence worth saying to an interviewer is the middle one: not "I'll use two pointers" but
+"sortedness lets me prove which index to throw away, so I don't need to remember what I've seen."
+That's the same trade-off-analysis move lesson 0004 asked for, aimed at a different fact about the
+input.</p>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/silver/two-pointers">USACO Guide &mdash; Two Pointers</a>,
+  specifically the "opposite ends" section — short, and it's the source for the licence sentence
+  quoted above. Then do <a href="https://leetcode.com/problems/two-sum/">LeetCode 1</a> and
+  <a href="https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/">LeetCode 167</a> back
+  to back, same as the CSES pair from last lesson.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; no new terms this lesson; <em>two pointers</em>
+      and <em>monotonic</em> both get a second, opposite-ends reading.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0004-the-prefix-pair.html">Lesson 0004</a> &mdash; the complement lookup is what
+      this lesson's O(1)-space version replaces, and only when sortedness is available.</li>
+    <li><a href="0003-the-window-invariant.html">Lesson 0003</a> &mdash; same amortised-O(n)
+      argument for why the loop terminates, aimed at a pair instead of a window.</li>
+    <li><strong>Next lesson:</strong> binary search on the answer &mdash; the one case where you
+      choose the search space rather than being handed it.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: give
+    me any two-index problem and say in one sentence whether sortedness (or some other provable
+    discard) licenses an inward walk, or whether you actually need the hash map. Or ask me to work
+    through the Container With Most Water proof in full &mdash; it's the natural next example and
+    was deliberately left out above to keep this lesson to one sitting.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0004-the-prefix-pair.html">&larr; Lesson 0004</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
