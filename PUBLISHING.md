@@ -13,7 +13,8 @@ https://thrllionaire.github.io/algoprep/
   `resources.html`, `glossary.html`, `MISSION.md`, `RESOURCES.md`, `GLOSSARY.md`,
   `README.md`, `build.sh`, `PUBLISHING.md`.
 - The **inner repo**, rooted at `learning-records/` (private:
-  `github.com/Thrllionaire/algoprep-progress`) — tracks `learning-records/*.md`.
+  `github.com/Thrllionaire/algoprep-progress`) — tracks `learning-records/*.md`, including
+  `STATUS.md`, the per-lesson tracker of what has been worked through, scores and review dates.
   `NOTES.md` is untracked in both, because it holds candid notes about the learner.
 
 The outer repo's `.gitignore` excludes `/learning-records/` and `NOTES.md`, so
