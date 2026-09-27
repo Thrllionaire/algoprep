@@ -57,6 +57,50 @@ estimate … is 10^8, but it could be closer to 5·10^8 given good constant
 factors"). Use for: everything about reading constraints. Primary source
 for <a href="./lessons/0001-read-the-constraints-first.html">lesson
 0001</a>.</p></li>
+<li><p><a href="https://usaco.guide/silver/two-pointers">USACO Guide —
+Two Pointers</a> States the <em>validity condition</em> for a
+two-pointer sweep instead of handing out a template: "movement in one
+direction should not reverse the effects of movement in the other
+direction." Splits same-direction (sliding window) from opposite-ends
+(sorted input). Use for: deciding whether a window is legal at all.
+Primary source for <a
+href="./lessons/0002-the-shape-of-the-answer.html">lesson
+0002</a>.</p></li>
+<li><p><a href="https://usaco.guide/silver/prefix-sums">USACO Guide —
+Introduction to Prefix Sums</a> and <a
+href="https://usaco.guide/silver/more-prefix-sums">More on Prefix
+Sums</a> The identity <code>sum(l..r) = p[r] − p[l−1]</code>, then
+max-subarray-via-running-minimum-prefix (i.e. Kadane), 2-D prefix sums
+and difference arrays. Use for: everything contiguous that isn't a
+window. Note the introductory module covers <em>static range queries
+only</em> — the hash-map counting trick is not there; it's in the
+problem solution below.</p></li>
+<li><p><a
+href="https://usaco.guide/problems/cses-1661-subarray-sums-ii/solution">USACO
+Guide — CSES Subarray Sums II solution</a> The prefix-sum + hash-map
+counting technique, worked: "at each index i, we can count the number of
+prefixes with sum equal to prefixSum[i]−x". Use for: counting exact-sum
+subarrays, which is the one contiguous problem a sliding window gets
+<em>wrong</em> rather than slow.</p></li>
+<li><p><a href="https://cses.fi/book/book.pdf">Competitive Programmer's
+Handbook — ch. 8, <em>Amortized analysis</em></a> Pages 77–79. Presents
+two pointers as an <em>amortisation result</em> rather than a template,
+which is the framing that makes the nested <code>while</code>
+defensible: <em>"While there is no useful upper bound on how many steps
+the pointer can move on a single turn, we know that the pointer moves a
+total of O(n) steps during the algorithm, because it only moves to the
+right."</em> Note its subarray-sum loop is the mirror image of the usual
+template (left outer, right inner) — useful evidence that the template
+is not the technique. Primary source for <a
+href="./lessons/0003-the-window-invariant.html">lesson
+0003</a>.</p></li>
+<li><p><a href="https://usaco.guide/gold/sliding-window">USACO Guide —
+Sliding Window</a> Covers the fixed-size window and the monotonic-deque
+variant for window minimum/maximum — the two cases where the general
+shrink-loop template does not apply. Quotes CPH for the definition:
+<em>"A sliding window is a constant-size subarray that moves from left
+to right through the array."</em> Use for: the variants deliberately
+deferred out of lesson 0003.</p></li>
 <li><p><a href="https://cses.fi/book/book.pdf">Competitive Programmer's
 Handbook — Antti Laaksonen (free PDF)</a> Rigorous, free, and short on
 hand-waving. Chapters 1–2 cover complexity; 6 is greedy; 7 is DP; 11–14
@@ -88,17 +132,36 @@ compensation doom-scrolling.</p></li>
 </ul>
 <h2 id="gaps">Gaps</h2>
 <ul>
-<li><strong>No trusted source yet for reservoir sampling / randomised
+<li><p><strong>No trusted source yet for reservoir sampling / randomised
 algorithms in an interview context.</strong> Naren named it explicitly;
-needs a search before that lesson.</li>
-<li><strong>No source yet on the Staff+-specific bar</strong> — how much
-the algorithm round actually weighs versus design at that level, and
-what "senior-flavoured" narration looks like. Worth resolving early,
-because it could reshape the mission.</li>
-<li>No verified Python-specific idiom reference (e.g. when
+needs a search before that lesson.</p></li>
+<li><p><strong>No source yet on the Staff+-specific bar</strong> — how
+much the algorithm round actually weighs versus design at that level,
+and what "senior-flavoured" narration looks like. Worth resolving early,
+because it could reshape the mission.</p></li>
+<li><p>No verified Python-specific idiom reference (e.g. when
 <code>bisect</code>, <code>heapq</code>, <code>deque</code>,
 <code>collections.Counter</code> are the intended tool). Likely needed
-as a reference doc.</li>
+as a reference doc.</p></li>
+<li><p><strong>No trusted source yet for greedy-versus-DP.</strong>
+Lesson 0002 deliberately left greedy out of the shape × return-type grid
+because it is a proof obligation rather than a shape. That needs its own
+lesson and a source on <em>exchange arguments</em>, which nothing here
+covers.</p></li>
+<li><p>Searched for high-trust "how to recognise patterns" writing and
+found mostly SEO content (leetcopilot, studocu, assorted Medium posts).
+Deliberately excluded. The USACO Guide modules above are the trustworthy
+substitute: they state conditions rather than listing
+templates.</p></li>
+<li><p><strong>No high-trust source for the
+<code>exactly(k) = atMost(k) - atMost(k-1)</code> counting
+identity.</strong> Searched; the results are entirely SEO content and
+LeetCode discussion posts, which this course excludes. It is one line of
+inclusion–exclusion, so <a
+href="./lessons/0003-the-window-invariant.html">lesson 0003</a>
+<strong>derives it in place</strong> rather than citing anyone. Flagged
+here so the lack of a citation is a recorded decision rather than an
+oversight.</p></li>
 </ul>
 </div>
 

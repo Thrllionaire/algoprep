@@ -317,3 +317,117 @@
   .grid-cell { color: var(--ink) !important; background: none !important; }
   .grid-panel { min-height: 0; }
 }
+
+/* ---------- window tracer (assets/window.js) ----------------------------- */
+
+.wt-invariant {
+  font-family: var(--serif);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-bg);
+  padding: 0.6rem 0.85rem;
+  margin: 0 0 1rem;
+}
+.wt-invariant strong { font-weight: 600; }
+
+.wt-ask {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 0.9rem;
+}
+.wt-ask code { font-size: 0.86em; }
+
+.wt-tape {
+  display: flex;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.9rem;
+}
+.wt-cell {
+  position: relative;
+  width: 2.5rem;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  text-align: center;
+  padding: 0.2rem 0 0.35rem;
+}
+.wt-idx {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: var(--ink-soft);   /* not --ink-faint: 3.47:1 fails AA at this size */
+  line-height: 1.4;
+}
+.wt-val {
+  display: block;
+  font-family: var(--mono);
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+/* cells the left pointer has already passed, in earlier turns.
+   0.6 is the floor that still clears WCAG AA on the composited glyph;
+   the strikethrough carries the meaning, not the fade. */
+.wt-cell.is-gone { opacity: 0.6; }
+.wt-cell.is-gone .wt-val { text-decoration: line-through; }
+/* the candidate window [lFrom, r] for this turn */
+.wt-cell.is-win { background: var(--code-bg); }
+/* not yet reached by the right pointer */
+.wt-cell.is-ahead { border-style: dashed; }
+.wt-cell.is-ahead .wt-val { color: var(--ink-soft); }  /* dashed border carries "not reached" */
+/* the cell the right pointer just took in */
+.wt-cell.is-r { border-color: var(--ink); box-shadow: inset 0 -3px 0 var(--ink); }
+
+/* the invisible click target laid over a reachable cell */
+.wt-cell.is-live { cursor: pointer; }
+.wt-cell.is-live:hover { background: var(--accent-bg); border-color: var(--accent); }
+.wt-hit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.wt-hit:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* after answering */
+.wt-cell.is-target {
+  border-color: var(--good);
+  background: var(--good-bg);
+  box-shadow: inset 3px 0 0 var(--good);
+}
+.wt-cell.is-target .wt-val { font-weight: 600; }
+.wt-cell.is-miss {
+  border-color: var(--bad);
+  background: var(--bad-bg);
+}
+
+.wt-state {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  background: var(--code-bg);
+  padding: 0.45rem 0.7rem;
+  margin: 0 0 0.4rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+.wt-state span {
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);   /* AA at 0.62rem; --ink-faint is 3.47:1 */
+  margin-right: 0.55rem;
+}
+
+@media print {
+  .wt-hit { display: none; }
+  .wt-cell.is-gone { opacity: 1; }
+  .wt-cell.is-ahead { border-style: solid; }
+}

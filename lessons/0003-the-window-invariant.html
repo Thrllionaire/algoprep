@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Window Invariant</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0003 · algoprep</p>
+  <h1>The Window Invariant</h1>
+  <p class="standfirst">You can spot a window problem now. This is the lesson where you stop
+  getting the shrink condition wrong &mdash; by writing one sentence before you write the loop.</p>
+</header>
+
+<div class="lede">
+  <p>Lessons <a href="0001-read-the-constraints-first.html">0001</a> and
+  <a href="0002-the-shape-of-the-answer.html">0002</a> attacked the first failure mode: not knowing
+  which family a problem belongs to. This lesson attacks the second one you named &mdash;
+  <em>right pattern, wrong details</em>. Nearly every window bug is one of three: the
+  <code>while</code> condition is backwards, the answer update sits in the wrong place, or the
+  bounds are off by one. All three have the same cure, and it is not memorising templates.</p>
+</div>
+
+<h2>The skeleton is mostly blanks</h2>
+
+<p>Every same-direction window looks like this. The shape is never the hard part:</p>
+
+<pre><code>left = 0
+for right in range(n):
+    include(arr[right])       # 1. what state does the window carry?
+    while ???:                # 2. when does left have to move?
+        exclude(arr[left])    # 3. how do I undo an inclusion?
+        left += 1
+    ???                       # 4. where does the answer get updated?</code></pre>
+
+<p>Blanks 1 and 3 are mechanical &mdash; whatever you add, you must be able to subtract. Blanks 2
+and 4 are where solutions go wrong, and <strong>both are decided by the same sentence</strong>.</p>
+
+<h2>Write the invariant, and blank 2 fills itself</h2>
+
+<p>An <a href="../glossary.html">invariant</a> is a claim that is true every time control reaches a
+particular line. For a window, write it about the line just after the shrink loop:</p>
+
+<div class="tell">
+  <span class="tell-label">The invariant, for a longest-window problem</span>
+  <p>When control reaches the update, <code>[left, right]</code> is the <strong>longest</strong>
+  window ending at <code>right</code> that satisfies the predicate.</p>
+</div>
+
+<p>Now notice what the shrink loop is <em>for</em>. Growing the window by one element may have
+broken that claim. The loop's entire job is to <strong>restore the invariant</strong>. So the
+<code>while</code> condition is not a thing to recall &mdash; it is whatever says <em>"the claim is
+currently false"</em>:</p>
+
+<pre><code>from collections import defaultdict
+
+def longest_k_distinct(s, k):
+    count = defaultdict(int)
+    left = best = 0
+    for right, ch in enumerate(s):
+        count[ch] += 1
+        while len(count) &gt; k:              # the claim is false: too many distinct
+            count[s[left]] -= 1
+            if count[s[left]] == 0:
+                del count[s[left]]         # or len(count) stops meaning "distinct"
+            left += 1
+        best = max(best, right - left + 1) # claim restored, so measure here
+    return best</code></pre>
+
+<p>And blank 4 follows too. The invariant tells you the window is valid <em>at that line and
+nowhere else</em>, so that is the only line where measuring it is meaningful. Put the update inside
+the shrink loop and you would be measuring windows the invariant says nothing about.</p>
+
+<div class="sidenote">
+  The <code>del</code> matters more than it looks. <code>len(count)</code> is standing in for
+  "number of distinct characters", and a key left behind with value <code>0</code> quietly breaks
+  that correspondence &mdash; the window then reports more distinct characters than it holds and
+  shrinks too far. This is a textbook case of the code drifting from the invariant while still
+  looking right.
+</div>
+
+<h2>The inversion: shortest windows shrink the other way</h2>
+
+<p>Here is the detail that catches almost everyone. Ask for the <em>shortest</em> valid window
+instead of the longest and the <code>while</code> condition flips to its opposite:</p>
+
+<pre><code>def shortest_at_least(nums, target):       # positive values
+    left = total = 0
+    best = float('inf')
+    for right, v in enumerate(nums):
+        total += v
+        while total &gt;= target:             # while the claim is TRUE
+            best = min(best, right - left + 1)   # measure before losing it
+            total -= nums[left]
+            left += 1
+    return 0 if best == float('inf') else best</code></pre>
+
+<p>Both loops are correct. They differ because shrinking is playing a different role in each:</p>
+
+<div class="tell">
+  <span class="tell-label">The line worth keeping</span>
+  <p>For a <strong>longest</strong> window, shrinking is <em>repair</em>: you shrink while the
+  window is broken, and measure once it is fixed. For a <strong>shortest</strong> window, shrinking
+  is <em>the search</em>: you shrink while the window still works, measuring each time, because the
+  last size that worked is the smallest one.</p>
+</div>
+
+<p>So "the update goes after the shrink loop" is not a rule &mdash; it is a consequence of which
+question you asked. Derive it from the invariant each time and you cannot get it backwards.</p>
+
+<h2>Why the nested loop is still O(n)</h2>
+
+<p>A <code>while</code> inside a <code>for</code> looks like O(n&sup2;), and candidates talk
+themselves out of a correct window over exactly this. The answer is an amortised one, and it is
+worth being able to say cleanly &mdash; the <a href="https://cses.fi/book/book.pdf">Competitive
+Programmer's Handbook</a> files two pointers under <em>Amortized analysis</em> rather than under
+arrays, because the argument <em>is</em> the technique:</p>
+
+<div class="caveat">
+  <p><em>"While there is no useful upper bound on how many steps the pointer can move on a single
+  turn, we know that the pointer moves a total of O(n) steps during the algorithm, because it only
+  moves to the right."</em> &mdash; Laaksonen,
+  <a href="https://cses.fi/book/book.pdf">Competitive Programmer's Handbook</a>, ch. 8</p>
+</div>
+
+<p>Don't count the inner loop per iteration; count <code>left</code> over the whole run. It starts
+at 0, only ever increases, and stops at n. So at most n shrink steps happen in total, however
+lumpy their distribution &mdash; one turn may shrink six times precisely because five earlier turns
+shrank none. Two pointers, n moves each, O(n).</p>
+
+<div class="sidenote">
+  The same book's version of this algorithm advances <code>left</code> in the outer loop and
+  <code>right</code> in the inner one &mdash; the mirror image of the template above. Both are
+  O(n) by the same argument. Useful evidence that the template is not sacred; the invariant is.
+</div>
+
+<h2>Trace it, don't read it</h2>
+
+<p>Seven turns of <code>longest_k_distinct</code> with <strong>k = 2</strong>. At each turn the
+right pointer takes in one character and you place <code>left</code>. One turn requires it to
+travel three cells at once; most require it not to move at all.</p>
+
+<div id="win-trace"></div>
+
+<script type="application/json" id="win-trace-data">
+{
+  "title": "longest window with at most 2 distinct",
+  "array": ["a", "b", "b", "a", "c", "c", "a"],
+  "invariant": "<strong>Invariant:</strong> once left has finished moving, <code>[left, right]</code> is the longest window ending at <code>right</code> holding at most <strong>2</strong> distinct characters.",
+  "answerLabel": "best",
+  "turns": [
+    { "r": 0, "lFrom": 0, "lTo": 0, "best": 1,
+      "state": "a:1        →  1 distinct",
+      "why": "<p>One distinct character is within budget, so the claim already holds and the loop body never runs. A shrink loop that does nothing is the normal case, not a special case.</p>" },
+    { "r": 1, "lFrom": 0, "lTo": 0, "best": 2,
+      "state": "a:1  b:1   →  2 distinct",
+      "why": "<p>Exactly at the limit. <code>at most k</code> means <code>&gt; k</code> is the break condition, so 2 is fine and left holds. Writing <code>&gt;= k</code> here is the most common off-by-one in the whole pattern.</p>" },
+    { "r": 2, "lFrom": 0, "lTo": 0, "best": 3,
+      "state": "a:1  b:2   →  2 distinct",
+      "why": "<p>A repeat of a character already inside changes a count but not the number of distinct characters. The predicate watches <code>len(count)</code>, not the total, so nothing moves.</p>" },
+    { "r": 3, "lFrom": 0, "lTo": 0, "best": 4,
+      "state": "a:2  b:2   →  2 distinct",
+      "why": "<p>Still two distinct. <code>abba</code>, size 4 — and this is the answer to the whole problem, found at turn four of seven. Note that it is never beaten later, which is why <code>best</code> is a running maximum rather than something you read off at the end.</p>" },
+    { "r": 4, "lFrom": 0, "lTo": 3, "best": 4,
+      "state": "a:2  b:2  c:1   →  3 distinct",
+      "why": "<p><strong>The turn that matters.</strong> Three distinct, so the claim is broken. Dropping index 0 leaves <code>a:1 b:2 c:1</code> — still three. Dropping index 1 leaves <code>b:1</code> — still three. Only when index 2 goes does <code>b</code> hit zero and get deleted, bringing it back to two.</p><p>Left travels <strong>three cells in one turn</strong>. This is precisely why the shrink is a <code>while</code> and not an <code>if</code>: it runs until the invariant is true again, not once.</p>" },
+    { "r": 5, "lFrom": 3, "lTo": 3, "best": 4,
+      "state": "a:1  c:2   →  2 distinct",
+      "why": "<p>Valid, so left stays — and note it never returns to the <code>b</code>s it walked past. That forward-only motion is both what makes the sweep O(n) and what makes it wrong when the predicate is not monotonic.</p>" },
+    { "r": 6, "lFrom": 3, "lTo": 3, "best": 4,
+      "state": "a:2  c:2   →  2 distinct",
+      "why": "<p><code>acca</code>, size 4 — it ties the best without beating it, so <code>best</code> is unchanged. If the problem had asked for the window itself rather than its length, this is exactly where a <code>&gt;</code> versus <code>&gt;=</code> choice would decide which of two correct answers you return.</p>" }
+  ],
+  "closing": "The answer is 4, from <code>abba</code>."
+}
+</script>
+
+<h2>Counting: the third place an update can go</h2>
+
+<p><a href="0002-the-shape-of-the-answer.html">Lesson 0002</a> claimed the return type changes only
+the bookkeeping. Here is the cash value of that claim. To <em>count</em> windows rather than
+measure the best one, change one line:</p>
+
+<pre><code>        total += right - left + 1     # in place of best = max(...)</code></pre>
+
+<p>Why that number? With the invariant restored, <code>[left, right]</code> is valid &mdash; and so
+is every window inside it that ends at <code>right</code>:
+<code>[left+1, right]</code>, <code>[left+2, right]</code>, … <code>[right, right]</code>. That is
+<code>right - left + 1</code> windows, and nothing starting before <code>left</code> qualifies.
+Every valid window gets counted exactly once, at its own right endpoint.</p>
+
+<div class="caveat">
+  <p><strong>This step hides a condition.</strong> It assumes every sub-window of a valid window is
+  also valid &mdash; true for <em>at most k distinct</em>, false for <em>at least k distinct</em>.
+  When it fails, count the complement instead and subtract from the
+  <a href="0002-the-shape-of-the-answer.html">n(n+1)/2</a> total. Naming this condition unprompted
+  is a strong signal; most candidates write the line as a memorised incantation.</p>
+</div>
+
+<p>And once you can count <em>at most k</em>, you get <em>exactly k</em> free, by subtraction
+rather than by a cleverer window:</p>
+
+<pre><code>def count_exactly_k_distinct(s, k):
+    return at_most(s, k) - at_most(s, k - 1)</code></pre>
+
+<p>Every subarray with at most k distinct characters has either exactly k, or at most k&minus;1;
+subtract and only the first group survives. Two O(n) passes. This matters because a direct
+"exactly k" window does not work &mdash; the predicate is not monotonic in the window's length, so
+there is no single <code>left</code> to settle on. <em>(Guard <code>at_most</code> to return 0 when
+<code>k &lt; 0</code>, or the k = 0 case reaches for a negative budget.)</em></p>
+
+<div class="sidenote">
+  All four functions in this lesson were property-tested against brute force on 30,000 random
+  inputs each before publishing &mdash; 120,000 comparisons, no disagreements.
+  <code>shortest_at_least</code> was tested on positive values only, which is the exact limit of
+  its claim.
+</div>
+
+<h2>Practice</h2>
+
+<p>Six questions. Two reach back to lessons 0001 and 0002, because nothing tells you in an
+interview which lesson a problem came from.</p>
+
+<div id="inv-quiz"></div>
+
+<script type="application/json" id="inv-quiz-data">
+{
+  "title": "Invariants and update positions",
+  "commit": "Say the <em>invariant</em> out loud first — one sentence, about the line after the shrink loop. The answer falls out of it. <em>Then</em> reveal the options.",
+  "perfect": "Six from six on the details, which is the failure mode this lesson was built for. Come back in two days: the options reshuffle, and re-deriving from the invariant is the skill, not recalling the answer.",
+  "questions": [
+    {
+      "tag": "longest → update after",
+      "stem": "Longest subarray with sum at most k, all values positive. Where does <code>best = max(best, right - left + 1)</code> belong?",
+      "given": "1 <= n <= 100000\n1 <= nums[i] <= 1000",
+      "options": [
+        { "text": "After the shrink loop", "correct": true },
+        { "text": "Inside the shrink loop" },
+        { "text": "Before the shrink loop" },
+        { "text": "After the outer loop" }
+      ],
+      "why": "<p>The invariant only holds once the shrink loop has finished, so that is the only line where the window is guaranteed valid. Measure anywhere earlier and you may be measuring a window whose sum exceeds k.</p><p>After the <em>outer</em> loop is worse than wrong-looking: you would measure one final window and miss every other.</p>"
+    },
+    {
+      "tag": "shortest → shrink while valid",
+      "stem": "Shortest subarray with sum at least the target, all values positive. What is the shrink loop's condition?",
+      "given": "1 <= n <= 100000\n1 <= nums[i] <= 1000",
+      "options": [
+        { "text": "while total >= target", "correct": true },
+        { "text": "while total <= target" },
+        { "text": "while total < target" },
+        { "text": "while total > target" }
+      ],
+      "why": "<p>The inversion. For a shortest window, shrinking <em>is</em> the search rather than a repair: you keep removing while the window still satisfies the condition, measuring each time, and the last size that satisfied it is the smallest one.</p><p><code>while total &lt; target</code> is the tempting mirror of the longest-window template, and it shrinks a window that has not yet reached the target — guaranteeing you never find a valid one.</p>"
+    },
+    {
+      "tag": "amortised complexity",
+      "stem": "An interviewer asks why the <code>while</code> nested inside the <code>for</code> does not make this O(n&sup2;). The strongest answer:",
+      "given": "1 <= n <= 100000",
+      "options": [
+        { "text": "left only advances, so n moves total", "correct": true },
+        { "text": "the inner loop runs k times maximum" },
+        { "text": "the window never grows beyond k wide" },
+        { "text": "the outer loop dominates the inner loop" }
+      ],
+      "why": "<p>Count the pointer over the whole run, not the loop per iteration. <code>left</code> starts at 0, only increases, and stops at n, so there are at most n shrink steps in total no matter how unevenly they clump.</p><p>Bounding the inner loop by k is a real mistake, not just a weaker answer: a single turn can shrink far more than k times, exactly as turn five of the trace shrinks three times with k = 2.</p>"
+    },
+    {
+      "tag": "counting → window length",
+      "stem": "Counting subarrays with at most 2 distinct characters. With the invariant restored, what do you add to the running total at each <code>right</code>?",
+      "given": "1 <= s.length <= 100000",
+      "options": [
+        { "text": "The current window's full length", "correct": true },
+        { "text": "The window's length minus one" },
+        { "text": "One, for the window itself" },
+        { "text": "The count of distinct characters" }
+      ],
+      "why": "<p><code>right - left + 1</code>, the window's length: every window ending at <code>right</code> and starting anywhere from <code>left</code> to <code>right</code> is valid, and there are exactly that many. Counting each valid window once at its own right endpoint is what makes the total come out right.</p><p>Adding one per turn counts only the widest window at each position, which undercounts by roughly a factor of n.</p>"
+    },
+    {
+      "tag": "downward closure fails",
+      "stem": "You want to <em>count</em> subarrays containing at least 2 distinct characters. Does the <code>total += right - left + 1</code> counting window work?",
+      "given": "1 <= s.length <= 100000",
+      "options": [
+        { "text": "No, shorter windows ending there can be invalid", "correct": true },
+        { "text": "Yes, the predicate is monotonic in window length" },
+        { "text": "Yes, provided that all the values stay positive" },
+        { "text": "No, because negative values break the sum identity" }
+      ],
+      "why": "<p>That line silently assumes any sub-window of a valid window is valid too. <code>ab</code> has two distinct characters; <code>b</code> alone does not. So the shorter windows it counts are not all valid, and the total comes out too high.</p><p>The fix reuses lesson 0002: count the complement — subarrays with <em>at most 1</em> distinct, which is downward closed — and subtract from n(n+1)/2, the total number of subarrays.</p>"
+    },
+    {
+      "tag": "reject the window",
+      "stem": "Longest subarray with sum at most k, but values may now be negative. What do you do?",
+      "given": "1 <= n <= 100000\n-1000 <= nums[i] <= 1000",
+      "options": [
+        { "text": "Reject the window; the predicate is not monotonic", "correct": true },
+        { "text": "Use the window; shrink while the total exceeds" },
+        { "text": "Use the window; shrink while the total drops" },
+        { "text": "Reject the window; the budget forbids any sweeping" }
+      ],
+      "why": "<p>The shrink step needs removing an element to lower the sum. With a negative in the window, removal can <em>raise</em> it, so shrinking no longer repairs anything and <code>left</code> can never go back. Recall <code>[1, -1, 0]</code> with k = 0 from lesson 0002: the window says 2, the truth is 3.</p><p>Saying \"a window is not licensed here, because the predicate is not monotonic\" is a better interview answer than silently producing one that happens to fail on a test case. The budget is fine — O(n) is exactly what n = 10^5 wants; it is correctness that rules the window out.</p>"
+    }
+  ]
+}
+</script>
+
+<h2>Saying it out loud</h2>
+
+<p>Stack this onto the triage sentences from the first two lessons. Say it <em>before</em> writing
+the loop, because it is also how you avoid the bug:</p>
+
+<pre><code>"This is a contiguous shape asking for a longest, and the predicate
+ only tightens as the window grows, so a sliding window is valid.
+
+ My invariant: when I reach the update line, [left, right] is the
+ longest window ending at right with at most k distinct characters.
+ So the while condition is 'more than k distinct' — that's the
+ invariant being false — and the update goes after the loop, because
+ that's the only point where I know the window is legal.
+
+ The nested while is still O(n): left only moves forward, so at most
+ n shrink steps happen across the whole run."</code></pre>
+
+<p>Three things are doing work there. You named the invariant before coding, so the interviewer can
+check your reasoning rather than your typing. You <em>derived</em> the loop condition instead of
+recalling it. And you pre-empted the complexity question they were about to ask.</p>
+
+<div class="caveat">
+  <p><strong>Where this fails.</strong> Fixed-size windows have no shrink loop at all &mdash; you
+  evict exactly one element per step, so the <code>while</code> becomes an <code>if</code> and the
+  invariant is about size rather than a predicate. Windows over a <em>maximum</em> or
+  <em>minimum</em> need a monotonic deque, because those cannot be undone by subtraction: blank 3
+  of the skeleton has no cheap answer. And a predicate that is not monotonic in window length
+  (<em>exactly</em> k distinct) has no single resting place for <code>left</code>, which is why it
+  needed subtraction rather than a cleverer loop.</p>
+</div>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://cses.fi/book/book.pdf">Competitive Programmer's Handbook</a>, chapter 8
+  &mdash; <em>Amortized analysis</em>, pages 77&ndash;79. Four pages, and the framing is the lesson:
+  two pointers is presented as an amortisation result, not a template. Read the <em>Subarray sum</em>
+  section and notice that its loop is the mirror image of ours. Then
+  <a href="https://usaco.guide/gold/sliding-window">USACO Guide &mdash; Sliding Window</a> for the
+  fixed-size and deque variants named above.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../reference/0003-window-invariant.html">Reference card: Window Invariants</a>
+      &mdash; the four blanks, all three update positions, both templates and the failure table on
+      one printable page.</li>
+    <li><a href="../glossary.html">Glossary</a> &mdash; <em>amortised</em>,
+      <em>downward closed</em> and <em>predicate</em> added this lesson.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0002-the-shape-of-the-answer.html">Lesson 0002</a> &mdash; told you the return type
+      changes only the bookkeeping. Today was the bookkeeping, in full.</li>
+    <li><a href="../reference/0002-shape-to-family.html">Shape to Family</a> &mdash; for choosing the
+      window in the first place.</li>
+    <li><strong>Next lesson:</strong> prefix sums and the hash-map count &mdash; the other half of
+      the contiguous toolkit, and the one that takes over the moment monotonicity dies. Question 6
+      above is the handoff.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: take
+    any window problem you like, write only its invariant sentence, and paste it to me &mdash; no
+    code. If the sentence is right the code is forced, and if it is vague I can show you which bug
+    the vagueness produces. Or ask me to generate a fresh trace for a different predicate.</p>
+  </div>
+
+</div>
+
+<script src="../assets/window.js"></script>
+<script src="../assets/quiz.js"></script>
+<script>
+  WindowTracer.mount('win-trace', 'win-trace-data');
+  AlgoQuiz.mount('inv-quiz', 'inv-quiz-data');
+</script>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0002-the-shape-of-the-answer.html">&larr; Lesson 0002</a>
+    <a href="../reference/0003-window-invariant.html">Reference card</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

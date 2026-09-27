@@ -54,6 +54,12 @@ would duplicate:**
 - `assets/grid.js` — `DecisionGrid.mount(rootId, dataId)`. A generic two-axis lookup
   table with a detail panel. The axes and cells are data, so any taxonomy can reuse
   it; see lesson 0002 for the shape × return-type instance.
+- `assets/window.js` — `WindowTracer.mount(rootId, dataId)`. A step-through trace of any
+  forward-only two-pointer sweep: the learner clicks the cell where `left` comes to rest,
+  so it is free retrieval rather than multiple choice. The array and per-turn data are
+  config; see lesson 0003. **Generate the turn data by replaying the published Python and
+  asserting it against the JSON** — a hand-written trace drifts silently, and a wrong trace
+  teaches a wrong invariant.
 
 Two rules on links from a file in `lessons/` or `reference/`:
 
@@ -159,6 +165,7 @@ import json, re, pathlib, sys
 for p in pathlib.Path('lessons').glob('*.html'):
     for m in re.finditer(r'<script type="application/json"[^>]*>(.*?)</script>', p.read_text(), re.S):
         d = json.loads(m.group(1))
+        if 'questions' not in d: continue   # skip tracer/grid config blocks
         for q in d['questions']:
             ln = {o['text']: len(o['text']) for o in q['options']}
             c = [o['text'] for o in q['options'] if o.get('correct')]

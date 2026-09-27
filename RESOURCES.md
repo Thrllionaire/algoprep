@@ -54,6 +54,21 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   of prefixes with sum equal to prefixSum[i]−x". Use for: counting exact-sum subarrays, which is
   the one contiguous problem a sliding window gets *wrong* rather than slow.
 
+- [Competitive Programmer's Handbook — ch. 8, *Amortized analysis*](https://cses.fi/book/book.pdf)
+  Pages 77–79. Presents two pointers as an *amortisation result* rather than a template, which is
+  the framing that makes the nested `while` defensible: *"While there is no useful upper bound on
+  how many steps the pointer can move on a single turn, we know that the pointer moves a total of
+  O(n) steps during the algorithm, because it only moves to the right."* Note its subarray-sum
+  loop is the mirror image of the usual template (left outer, right inner) — useful evidence that
+  the template is not the technique. Primary source for
+  [lesson 0003](./lessons/0003-the-window-invariant.html).
+
+- [USACO Guide — Sliding Window](https://usaco.guide/gold/sliding-window)
+  Covers the fixed-size window and the monotonic-deque variant for window minimum/maximum — the
+  two cases where the general shrink-loop template does not apply. Quotes CPH for the definition:
+  *"A sliding window is a constant-size subarray that moves from left to right through the array."*
+  Use for: the variants deliberately deferred out of lesson 0003.
+
 - [Competitive Programmer's Handbook — Antti Laaksonen (free PDF)](https://cses.fi/book/book.pdf)
   Rigorous, free, and short on hand-waving. Chapters 1–2 cover complexity; 6 is greedy; 7 is
   DP; 11–14 graphs. Use for: when a pattern's *why* is unclear and blog posts are being vague.
@@ -98,3 +113,9 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
 - Searched for high-trust "how to recognise patterns" writing and found mostly SEO content
   (leetcopilot, studocu, assorted Medium posts). Deliberately excluded. The USACO Guide modules
   above are the trustworthy substitute: they state conditions rather than listing templates.
+
+- **No high-trust source for the `exactly(k) = atMost(k) - atMost(k-1)` counting identity.**
+  Searched; the results are entirely SEO content and LeetCode discussion posts, which this course
+  excludes. It is one line of inclusion–exclusion, so [lesson 0003](./lessons/0003-the-window-invariant.html)
+  **derives it in place** rather than citing anyone. Flagged here so the lack of a citation is a
+  recorded decision rather than an oversight.

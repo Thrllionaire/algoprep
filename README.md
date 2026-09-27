@@ -19,6 +19,10 @@ apply is far easier than naming the one that does — and it does most of the wo
    — count the candidates the answer's shape implies, divide by the budget, and the machinery is
    forced. Includes the one contrast that fails *silently* when you get it wrong: sliding window
    versus prefix sums.
+3. [The Window Invariant](https://thrllionaire.github.io/algoprep/lessons/0003-the-window-invariant.html)
+   — write one sentence before the loop and the shrink condition stops being something you recall.
+   Includes a step-through trace where you place `left` yourself, and the longest-versus-shortest
+   inversion that catches almost everyone.
 
 ## Reference cards
 
@@ -29,6 +33,9 @@ Printable, revisit-often distillations. These are the durable artefacts; lessons
 2. [Shape to Family](https://thrllionaire.github.io/algoprep/reference/0002-shape-to-family.html)
    — candidate counts per shape, the shape × return-type matrix, the window-vs-prefix-sum rule,
    and both Python templates.
+3. [Window Invariants](https://thrllionaire.github.io/algoprep/reference/0003-window-invariant.html)
+   — the skeleton's four blanks, all three update positions, the longest and shortest templates
+   side by side, and the table of cases where a window is the wrong tool.
 
 ## Course materials
 
@@ -61,6 +68,9 @@ Shared components in `assets/`:
 - `ladder.js` — `ConstraintLadder`: type an `n`, see your budget and the surviving families.
 - `grid.js` — `DecisionGrid`: a generic two-axis lookup table with a detail panel. Used for
   shape × return type; reuse it for any future taxonomy.
+- `window.js` — `WindowTracer`: a step-through trace of any forward-only two-pointer sweep. The
+  learner clicks where `left` comes to rest, so it is free retrieval rather than multiple choice.
+  Reuse it for prefix sums, opposite-ends two pointers, or binary search on the answer.
 
 Learning records and working notes live in a separate private repo; see
 [PUBLISHING.md](./PUBLISHING.md).

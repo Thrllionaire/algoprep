@@ -18,6 +18,15 @@ Where a term is <em>ours</em> — coined for this course rather than
 standard — it says so, so you don't carry it into an interview expecting
 to be understood.</p>
 <hr />
+<p><strong>Amortised</strong> — averaged over a whole run rather than
+measured per step. A sliding window's inner shrink loop has no useful
+per-iteration bound, yet the sweep is O(n) because <code>left</code>
+only moves forward and so takes at most n steps <em>in total</em>.
+<em>"While there is no useful upper bound on how many steps the pointer
+can move on a single turn, we know that the pointer moves a total of
+O(n) steps during the algorithm, because it only moves to the
+right."</em> (<a href="https://cses.fi/book/book.pdf">Competitive
+Programmer's Handbook</a>, ch. 8)</p>
 <p><strong>Budget</strong> <em>(our term)</em> — the slowest time
 complexity you can afford, read off the input constraints. See <a
 href="./lessons/0001-read-the-constraints-first.html">lesson 0001</a>
@@ -27,6 +36,13 @@ ladder</a>.</p>
 nothing skipped. The single most load-bearing word in a problem
 statement: it separates subarrays from subsequences, and therefore
 separates an O(n²) search space from a 2ⁿ one.</p>
+<p><strong>Downward closed</strong> — a property that every sub-window
+of a valid window also has. <em>At most k distinct</em> is downward
+closed; <em>at least k distinct</em> is not. This is the unstated
+condition behind <code>total += right - left + 1</code> in a counting
+window: it counts every shorter window ending at the same place, so
+those must be valid too. See <a
+href="./lessons/0003-the-window-invariant.html">lesson 0003</a>.</p>
 <p><strong>Dynamic programming (DP)</strong> — solving a problem by
 combining answers to smaller overlapping subproblems, each computed once
 and reused. The defining feature is <em>overlap</em>: if subproblems
@@ -35,7 +51,11 @@ never repeat, you have plain recursion, not DP.</p>
 control reaches a particular point in the algorithm. "The window always
 contains at most k distinct characters" is an invariant. Getting the
 invariant wrong, rather than the pattern wrong, is the most common way a
-correctly-identified approach still fails.</p>
+correctly-identified approach still fails. Write it before the loop,
+about the line <em>after</em> the shrink step: the <code>while</code>
+condition is then exactly the invariant being false, and the answer
+update belongs at the one line where it is true. See <a
+href="./lessons/0003-the-window-invariant.html">lesson 0003</a>.</p>
 <p><strong>Kadane's algorithm</strong> — the O(n) sweep for maximum-sum
 contiguous subarray. Equivalently, a prefix-sum sweep that tracks the
 running <em>minimum</em> prefix seen so far; the best subarray ending at
@@ -47,6 +67,11 @@ window grows, it stays false. This is the precise condition that
 licenses a sliding window: <em>"movement in one direction should not
 reverse the effects of movement in the other direction."</em> (<a
 href="https://usaco.guide/silver/two-pointers">USACO Guide</a>)</p>
+<p><strong>Predicate</strong> — the yes/no test a window must satisfy:
+"holds at most k distinct characters", "sums to at least target".
+Windows are built around predicates, and whether the predicate is
+<em>monotonic</em> (below) in the window's length is what decides
+whether a window is legal at all.</p>
 <p><strong>Prefix sum</strong> — an array <code>p</code> where
 <code>p[k]</code> is the sum of the original array's first
 <code>k</code> elements. Its whole purpose is the identity
@@ -72,7 +97,10 @@ href="./lessons/0002-the-shape-of-the-answer.html">lesson 0002</a>.</p>
 <code>l ≤ r</code> sweeping left to right over a sequence, where each
 index only ever moves forward. Because both move at most n times in
 total, the sweep is O(n) even though it examines many windows. Valid
-only when the governing predicate is monotonic.</p>
+only when the governing predicate is monotonic. For a <em>longest</em>
+window, shrinking is repair — shrink while the window is broken, measure
+after. For a <em>shortest</em> window, shrinking is the search — shrink
+while the window still works, measuring each time.</p>
 <p><strong>Subarray</strong> — a contiguous slice of an array. There are
 n(n+1)/2 non-empty subarrays of an n-element array (choose a start and
 an end), which is O(n²) of them.</p>
