@@ -154,15 +154,22 @@ clump. Two pointers, n moves each, <strong>O(n)</strong>.</p>
 
 <h2>When the window is the wrong tool</h2>
 
+<p><strong>Run this first, before the invariant.</strong> A window is only licensed when the
+predicate is monotonic: grow the window and, once the predicate turns false, it must stay false.
+Two questions &mdash; (1) what is my predicate, as one expression over the window's state?
+(2) if growing the window makes it false, can growing it further make it true again? A yes to the
+second means no window. Tells: mixed-sign sums, and the word <em>exactly</em>.</p>
+
+
 <div class="table-scroll">
 <table>
   <thead><tr><th>Symptom</th><th>Why the window breaks</th><th>Reach for</th></tr></thead>
   <tbody>
     <tr><td>Negative values, sum predicate</td>
-        <td>removing can raise the sum, so shrinking repairs nothing</td>
+        <td>removing can raise the sum, so a false predicate turns true again</td>
         <td>prefix sums + hash map</td></tr>
     <tr><td>"Exactly k", not "at most k"</td>
-        <td>not monotonic in length; no resting place for <code>left</code></td>
+        <td>valid starts form a band, not a run &mdash; two boundaries, one <code>left</code></td>
         <td><code>at_most(k) - at_most(k-1)</code></td></tr>
     <tr><td>Window max or min needed</td>
         <td>blank 3 has no cheap inverse &mdash; you cannot un-max</td>

@@ -13,9 +13,22 @@ how many steps the pointer can move on a single turn, we know that the pointer m
 O(n) steps during the algorithm, because it only moves to the right."*
 ([Competitive Programmer's Handbook](https://cses.fi/book/book.pdf), ch. 8)
 
+**Boundary** *(our term)* — one of the n + 1 positions *between* array elements, counting both
+ends. Prefix value `p[i]` belongs to boundary `i`. A subarray is exactly one pair of boundaries
+`i < j` — namely `arr[i..j-1]` — and its sum is `p[j] − p[i]`. Thinking in boundaries rather than in
+runs is what converts a contiguous problem into a *pair* problem, and it is the whole content of
+[lesson 0004](./lessons/0004-the-prefix-pair.html#pair).
+
 **Budget** *(our term)* — the slowest time complexity you can afford, read off the input
 constraints. See [lesson 0001](./lessons/0001-read-the-constraints-first.html) and the
 [constraint ladder](./reference/0001-constraint-ladder.html).
+
+**Complement lookup** *(our term)* — restating a condition on a subarray as a condition on two
+prefix values, rearranging for the one you do not know, and finding it in a hash map in O(1). "Sums
+to x" becomes "an earlier boundary holds `p[j] − x`". The technique is standard; the name is ours,
+by analogy with two-sum. Unlike a sliding window it needs no monotonicity, because the prefix
+identity is arithmetic rather than a promise about growth. See
+[lesson 0004](./lessons/0004-the-prefix-pair.html#lookup).
 
 **Contiguous** — occupying consecutive positions, with nothing skipped. The single most
 load-bearing word in a problem statement: it separates subarrays from subsequences, and
@@ -43,17 +56,30 @@ at `r` is `p[r]` minus that minimum.
 ([USACO Guide](https://usaco.guide/silver/more-prefix-sums))
 
 **Monotonic** — moving in one direction only. A predicate is monotonic over a window if, once it
-becomes false as the window grows, it stays false. This is the precise condition that licenses a
+becomes false as the window grows, it stays false. Equivalently: for each right endpoint the valid
+start positions form one unbroken run, so a single forward-only `left` can mark the boundary. See
+the [licence check](./lessons/0003-the-window-invariant.html#licence) for the two ways it fails —
+mixed-sign sums, where a false predicate turns true again, and *exactly k*, where the valid starts
+form a band with no single edge. The precise rule is that a band **wider than one** defeats a single
+pointer: an *exactly* question over strictly positive values has a band one cell wide and is fine,
+which is why CSES 1660 is a window and CSES 1661 is not
+([lesson 0004](./lessons/0004-the-prefix-pair.html)). This is the precise condition that licenses a
 sliding window: *"movement in one direction should not reverse the effects of movement in the
 other direction."* ([USACO Guide](https://usaco.guide/silver/two-pointers))
 
 **Predicate** — the yes/no test a window must satisfy: "holds at most k distinct characters",
-"sums to at least target". Windows are built around predicates, and whether the predicate is
-*monotonic* (below) in the window's length is what decides whether a window is legal at all.
+"sums to at least target". Not the same thing as an *invariant*: the invariant is a claim about
+where the pointers have come to rest, and the predicate is the test that claim refers to. Whether
+the predicate is *monotonic* (above) in the window's length is what decides whether a window is
+legal at all. See [lesson 0003](./lessons/0003-the-window-invariant.html#licence).
 
-**Prefix sum** — an array `p` where `p[k]` is the sum of the original array's first `k` elements.
-Its whole purpose is the identity `sum(arr[l..r]) = p[r] − p[l−1]`, which turns any range-sum
-question into one subtraction. ([USACO Guide](https://usaco.guide/silver/prefix-sums))
+**Prefix sum** — an array `p` where `p[k]` is the sum of the original array's first `k` elements,
+so `p[0] = 0` and `p` has **n + 1 entries**. Its whole purpose is the identity
+`sum(arr[l..r]) = p[r+1] − p[l]`, which turns any range-sum question into one subtraction. Keep that
+0-indexed form rather than the USACO Guide's 1-indexed `p[R] − p[L−1]`; they are the same identity,
+and every off-by-one in this pattern comes from improvising between them.
+([USACO Guide](https://usaco.guide/silver/prefix-sums)) Its second, larger use is the
+**complement lookup** above.
 
 **Return type** *(our term)* — what the problem asks you to hand back: *existence* (a yes/no),
 a *count*, an *optimum* (a min or max value), the *object itself* (reconstruct the winning
@@ -69,9 +95,11 @@ run, an order-preserving selection, an unordered selection, a pair, or an arrang
 
 **Sliding window** — a pair of indices `l ≤ r` sweeping left to right over a sequence, where
 each index only ever moves forward. Because both move at most n times in total, the sweep is
-O(n) even though it examines many windows. Valid only when the governing predicate is monotonic. For a *longest* window, shrinking is repair — shrink while the window is
-broken, measure after. For a *shortest* window, shrinking is the search — shrink while the window
-still works, measuring each time.
+O(n) even though it examines many windows. Valid only when the governing predicate is
+[monotonic](./lessons/0003-the-window-invariant.html#licence) — that is the licence, and it is
+worth checking before anything else. For a *longest* window, shrinking is repair — shrink while
+the window is broken, measure after. For a *shortest* window, shrinking is the search — shrink
+while the window still works, measuring each time.
 
 **Subarray** — a contiguous slice of an array. There are n(n+1)/2 non-empty subarrays of an
 n-element array (choose a start and an end), which is O(n²) of them.

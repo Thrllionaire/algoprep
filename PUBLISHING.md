@@ -61,6 +61,12 @@ would duplicate:**
   config; see lesson 0003. **Generate the turn data by replaying the published Python and
   asserting it against the JSON** — a hand-written trace drifts silently, and a wrong trace
   teaches a wrong invariant.
+- `assets/prefix.js` — `PrefixTracer.mount(rootId, dataId)`. A step-through trace of any
+  complement-lookup sweep over a prefix array: the learner multi-selects *every* earlier boundary
+  that closes a qualifying subarray, so a turn with two partners is what motivates storing counts
+  rather than positions. Generic over the prefix statistic — sums, sums mod k, ±1 balance, parity
+  masks — so pass whatever you like in `prefix` and label it with `keyLabel`; see lesson 0004. The
+  same generate-and-assert rule as `window.js` applies to its turn data.
 
 Two rules on links from a file in `lessons/` or `reference/`:
 

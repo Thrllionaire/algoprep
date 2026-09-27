@@ -357,7 +357,7 @@
   display: block;
   font-family: var(--mono);
   font-size: 0.58rem;
-  color: var(--ink-soft);   /* not --ink-faint: 3.47:1 fails AA at this size */
+  color: var(--ink-soft);   /* deliberately stronger than --ink-faint at this size */
   line-height: 1.4;
 }
 .wt-val {
@@ -430,4 +430,100 @@
   .wt-hit { display: none; }
   .wt-cell.is-gone { opacity: 1; }
   .wt-cell.is-ahead { border-style: solid; }
+}
+
+/* ---------- prefix tracer (assets/prefix.js) ----------------------------- */
+
+/* Two rows that must stay aligned: prefix boundaries 0..n on top, and the
+   array elements that sit *between* them below, offset by half a cell. Hence
+   nowrap plus a scrollbar rather than the wrapping the window tracer uses —
+   a wrapped second row would no longer line up with the first. */
+.pt-tape { overflow-x: auto; margin: 0 0 0.9rem; padding-bottom: 0.2rem; }
+.pt-row { display: flex; flex-wrap: nowrap; gap: 0.2rem; width: max-content; }
+
+.pt-cell {
+  position: relative;
+  width: 2.6rem;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  text-align: center;
+  padding: 0.2rem 0 0.35rem;
+}
+.pt-idx {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: var(--ink-soft);   /* --ink-faint is 3.47:1 and fails AA at this size */
+  line-height: 1.4;
+}
+.pt-val {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+/* the boundary the sweep has just reached */
+.pt-cell.is-now { border-color: var(--ink); box-shadow: inset 0 -3px 0 var(--ink); }
+/* boundaries the sweep has not reached: unavailable as partners */
+.pt-cell.is-ahead { border-style: dashed; }
+.pt-cell.is-ahead .pt-val { color: var(--ink-soft); }
+
+.pt-cell.is-live { cursor: pointer; }
+.pt-cell.is-live:hover { background: var(--accent-bg); border-color: var(--accent); }
+.pt-cell.is-picked { border-color: var(--accent); background: var(--accent-bg); }
+.pt-cell.is-picked .pt-val { font-weight: 600; }
+
+.pt-hit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.pt-hit:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* after checking. Weight and strikethrough carry the meaning as well as hue,
+   and the verdict text names the indices outright. */
+.pt-cell.is-hit {
+  border-color: var(--good);
+  background: var(--good-bg);
+  box-shadow: inset 3px 0 0 var(--good);
+}
+.pt-cell.is-hit .pt-val { font-weight: 600; }
+.pt-cell.is-missed { border: 1px dashed var(--good); }
+.pt-cell.is-missed .pt-val { font-weight: 600; }
+.pt-cell.is-false { border-color: var(--bad); background: var(--bad-bg); }
+.pt-cell.is-false .pt-val { text-decoration: line-through; text-decoration-color: var(--bad); }
+
+/* the array row, shifted half a cell so each element sits between the two
+   boundaries whose difference it contributes to */
+.pt-arr { margin: 0.25rem 0 0 1.4rem; }
+.pt-el {
+  width: 2.6rem;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  padding: 0.15rem 0;
+  border-top: 1px solid var(--rule-soft);
+}
+.pt-el.is-now { color: var(--ink); font-weight: 600; border-top-color: var(--ink); }
+.pt-el.is-ahead { opacity: 0.6; }
+
+.pt-count {
+  align-self: center;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+@media print {
+  .pt-hit { display: none; }
+  .pt-tape { overflow-x: visible; }
+  .pt-cell.is-ahead { border-style: solid; }
+  .pt-el.is-ahead { opacity: 1; }
 }

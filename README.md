@@ -23,6 +23,10 @@ apply is far easier than naming the one that does — and it does most of the wo
    — write one sentence before the loop and the shrink condition stops being something you recall.
    Includes a step-through trace where you place `left` yourself, and the longest-versus-shortest
    inversion that catches almost everyone.
+4. [The Prefix Pair](https://thrllionaire.github.io/algoprep/lessons/0004-the-prefix-pair.html)
+   — two CSES problems one word apart, and the technique changes completely. Stop thinking about
+   subarrays and think about the boundaries either side of them; the hash map is only how you stop
+   paying for the search. Includes a multi-select trace over a prefix tape.
 
 ## Reference cards
 
@@ -36,6 +40,9 @@ Printable, revisit-often distillations. These are the durable artefacts; lessons
 3. [Window Invariants](https://thrllionaire.github.io/algoprep/reference/0003-window-invariant.html)
    — the skeleton's four blanks, all three update positions, the longest and shortest templates
    side by side, and the table of cases where a window is the wrong tool.
+4. [The Prefix Pair](https://thrllionaire.github.io/algoprep/reference/0004-prefix-pair.html)
+   — the identity, the four templates, the key-selection table, the four silent bugs, and the
+   window-versus-prefix decision on one page.
 
 ## Course materials
 
@@ -70,7 +77,10 @@ Shared components in `assets/`:
   shape × return type; reuse it for any future taxonomy.
 - `window.js` — `WindowTracer`: a step-through trace of any forward-only two-pointer sweep. The
   learner clicks where `left` comes to rest, so it is free retrieval rather than multiple choice.
-  Reuse it for prefix sums, opposite-ends two pointers, or binary search on the answer.
+  Reuse it for opposite-ends two pointers, or binary search on the answer.
+- `prefix.js` — `PrefixTracer`: a step-through trace of any complement-lookup sweep over a prefix
+  array. The learner multi-selects *every* earlier boundary that closes a qualifying subarray.
+  Generic over the prefix statistic, so reuse it for sums, sums mod k, ±1 balance, or parity masks.
 
 Learning records and working notes live in a separate private repo; see
 [PUBLISHING.md](./PUBLISHING.md).

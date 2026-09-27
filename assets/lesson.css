@@ -7,7 +7,7 @@
 :root {
   --ink:        #111111;
   --ink-soft:   #4a4a44;
-  --ink-faint:  #8a8a80;
+  --ink-faint:  #6a6a60;   /* 4.55:1 on rule-soft, the tightest of the three backgrounds */
   --paper:      #fffff8;
   --rule:       #d8d8cc;
   --rule-soft:  #ebebe0;
@@ -31,7 +31,7 @@
   :root:not([data-theme="light"]) {
     --ink:       #e8e6dd;
     --ink-soft:  #b3b0a4;
-    --ink-faint: #7d7a70;
+    --ink-faint: #908d7f;
     --paper:     #14140f;
     --rule:      #3a3a30;
     --rule-soft: #26261e;
@@ -47,7 +47,7 @@
 :root[data-theme="dark"] {
   --ink:       #e8e6dd;
   --ink-soft:  #b3b0a4;
-  --ink-faint: #7d7a70;
+  --ink-faint: #908d7f;
   --paper:     #14140f;
   --rule:      #3a3a30;
   --rule-soft: #26261e;
@@ -257,6 +257,13 @@ tbody tr:last-child td { border-bottom: 1px solid var(--ink-faint); }
   margin: 0 0 1.35rem;
 }
 .caveat p:last-child { margin-bottom: 0; }
+
+.src {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin-top: 0.55rem;
+}
 
 /* ---------- footer: source, next steps, ask-your-teacher ---------------- */
 

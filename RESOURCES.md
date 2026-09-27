@@ -54,6 +54,15 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   of prefixes with sum equal to prefixSum[i]−x". Use for: counting exact-sum subarrays, which is
   the one contiguous problem a sliding window gets *wrong* rather than slow.
 
+- [CSES Problem Set — Subarray Sums I (1660)](https://cses.fi/problemset/task/1660) and
+  [Subarray Sums II (1661)](https://cses.fi/problemset/task/1661)
+  The cleanest natural experiment in interview prep: two problems whose statements differ by the
+  single word *positive*, with the same bound (n ≤ 2·10⁵) and the same return type, that require
+  different techniques. 1660 is a window; 1661 is a prefix-sum hash map, because the window is no
+  longer licensed. Use for: the window-versus-prefix decision, and as the practice pair for
+  [lesson 0004](./lessons/0004-the-prefix-pair.html). Primary practice source for that lesson;
+  the technique source is the USACO solution page above.
+
 - [Competitive Programmer's Handbook — ch. 8, *Amortized analysis*](https://cses.fi/book/book.pdf)
   Pages 77–79. Presents two pointers as an *amortisation result* rather than a template, which is
   the framing that makes the nested `while` defensible: *"While there is no useful upper bound on
@@ -97,6 +106,11 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   compensation doom-scrolling.
 
 ## Gaps
+
+- **Resolved this session:** the prefix-sum *counting* technique did have a trusted source after
+  all — the USACO Guide's CSES 1661 solution page, already listed above. Lesson 0004 cites it
+  directly and derives nothing in place. This is unlike the `exactly(k) = atMost(k) − atMost(k−1)`
+  identity below, which genuinely has none.
 
 - **No trusted source yet for reservoir sampling / randomised algorithms in an interview
   context.** Naren named it explicitly; needs a search before that lesson.

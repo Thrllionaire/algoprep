@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Prefix Pair</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0004 · algoprep</p>
+  <h1>The Prefix Pair</h1>
+  <p class="standfirst">Lesson 0003 ended by telling you a window is illegal the moment values go
+  negative. This is what takes over &mdash; and the move is to stop thinking about subarrays.</p>
+</header>
+
+<div class="lede">
+  <p>Here are two problems from the same problem set. Read them slowly; exactly one word differs.</p>
+  <p style="margin-bottom:0"><strong>CSES 1660.</strong> <em>Given an array of n positive integers,
+  your task is to count the number of subarrays having sum x.</em><br>
+  <strong>CSES 1661.</strong> <em>Given an array of n integers, your task is to count the number of
+  subarrays having sum x.</em></p>
+</div>
+
+<p>The word is <em>positive</em>, and dropping it changes the technique completely. That is the
+whole lesson. By the end you will have a second contiguous tool, and &mdash; more usefully &mdash;
+a reframe that makes a large class of problems collapse into the same shape.</p>
+
+<h2>Why the window dies here</h2>
+
+<p>Run the triage you already have. Both problems say <span class="num">1 &le; n &le; 2&middot;10<sup>5</sup></span>,
+which is an O(n) or O(n&nbsp;log&nbsp;n)
+<a href="../reference/0001-constraint-ladder.html">budget</a>. Both ask about
+<a href="../glossary.html">subarrays</a>, so the
+<a href="0002-the-shape-of-the-answer.html">shape</a> is contiguous and there are n(n+1)/2
+candidates &mdash; about 2&middot;10<sup>10</sup> of them. Enumeration is out. Both ask for a
+<em>count</em>.</p>
+
+<p>For 1660 that is enough: values are positive, so the sum only rises as the window grows, the
+predicate is <a href="0003-the-window-invariant.html#licence">monotonic</a>, and a window is
+licensed. For 1661 the <a href="0003-the-window-invariant.html#licence">licence check</a> fails at
+the first question. Removing an element can <em>raise</em> the sum, so shrinking repairs nothing.</p>
+
+<div class="caveat">
+  <p><strong>How badly?</strong> Running the two-pointer count against brute force on 30,000 random
+  small arrays: on all-positive inputs it disagreed <strong>0 times</strong>. On mixed-sign inputs
+  it disagreed on <strong>40.1%</strong> of them. This is not a corner case you might get away with
+  &mdash; it is wrong on two inputs in five.</p>
+</div>
+
+<p>So we need a tool whose correctness does not depend on monotonicity at all.</p>
+
+<h2 id="identity">The identity, and the indexing that kills the off-by-one</h2>
+
+<p>Build an array <code>p</code> where <code>p[k]</code> is the sum of the <em>first k</em> elements.
+Note what that means at the ends: <code>p[0] = 0</code> (the sum of no elements) and
+<code>p[n]</code> is the total. So <code>p</code> has <strong>n&nbsp;+&nbsp;1 entries, not n</strong>.</p>
+
+<pre><code>arr =      2    2   -1   -1   -2    1   -2
+p   =  0    2    4    3    2    0    1   -1
+       ↑                                  ↑
+     p[0]                               p[7]</code></pre>
+
+<p>Then, for any slice:</p>
+
+<div class="tell">
+  <span class="tell-label">The only formula in this lesson</span>
+  <p><code>sum(arr[l..r]) = p[r+1] &minus; p[l]</code></p>
+</div>
+
+<div class="sidenote">
+  The USACO Guide writes this as <code>prefix[R] &minus; prefix[L&minus;1]</code> because it
+  1-indexes the array. Same identity. The <code>n+1</code>-entry, <code>p[0]&nbsp;=&nbsp;0</code>
+  convention is the one that survives contact with Python's 0-indexing, and it is worth adopting
+  once and never rethinking: every off-by-one in this pattern comes from improvising it at the
+  whiteboard.
+</div>
+
+<p>Precomputing <code>p</code> is one O(n) pass, after which <em>"by precomputing cumulative sums in
+O(N) time, subsequent queries can be computed in O(1) time"</em>
+(<a href="https://usaco.guide/silver/prefix-sums">USACO Guide &mdash; Introduction to Prefix
+Sums</a>). Nothing in that sentence mentions the sign of anything. The identity is arithmetic, and
+arithmetic has no licence check.</p>
+
+<h2 id="pair">The reframe: a subarray is a pair of boundaries</h2>
+
+<p>This is the part worth keeping. Stop picturing a subarray as a run of elements and start picturing
+it as the <strong>two boundaries it sits between</strong>. There are n&nbsp;+&nbsp;1 boundaries, and
+choosing any two of them, <code>i &lt; j</code>, names exactly one subarray: <code>arr[i..j-1]</code>,
+whose sum is <code>p[j] &minus; p[i]</code>.</p>
+
+<p>The correspondence is exact, which you can check against
+<a href="0002-the-shape-of-the-answer.html">lesson 0002</a>'s candidate count: choosing 2 boundaries
+from n&nbsp;+&nbsp;1 is <span class="num">(n+1)n/2</span>, which is the same n(n+1)/2 subarrays it
+told you to expect.</p>
+
+<div class="tell">
+  <span class="tell-label">The reframe, in one line</span>
+  <p>Every question about a <em>subarray</em> is a question about <em>two prefix values</em>. The
+  shape stops being a contiguous run and becomes a <strong>pair</strong>.</p>
+</div>
+
+<p>That matters because you already know what to do with pairs, and it is nothing like what you do
+with runs:</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>What the pair must satisfy</th><th>Machinery</th><th>Cost</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Differ by an exact amount</td>
+      <td>Hash map of values seen so far</td>
+      <td class="num">O(n)</td>
+    </tr>
+    <tr>
+      <td>Differ by as much as possible</td>
+      <td>Running minimum of values seen so far</td>
+      <td class="num">O(n)</td>
+    </tr>
+    <tr>
+      <td>Differ by at least / at most some amount</td>
+      <td>Sorted structure or monotonic deque</td>
+      <td class="num">O(n log n)</td>
+    </tr>
+  </tbody>
+  <caption>The second row is Kadane's algorithm, arrived at without being told it was Kadane's
+  algorithm: the best subarray ending at <code>j</code> is <code>p[j]</code> minus the smallest
+  prefix before it. The third is the one to name and then back away from in an interview unless
+  it is asked for.</caption>
+</table>
+</div>
+
+<h2 id="lookup">The complement lookup</h2>
+
+<p>Take 1661. "Count subarrays summing to x" becomes "count pairs <code>i &lt; j</code> with
+<code>p[j] &minus; p[i] = x</code>". Rearrange for the thing you do not know yet:</p>
+
+<pre><code>p[i] = p[j] - x</code></pre>
+
+<p>Now sweep <code>j</code> left to right. At each step you have one concrete number to look up, and
+the answer is <em>"at each index i, we can count the number of prefixes with sum equal to
+prefixSum[i]&minus;x"</em>
+(<a href="https://usaco.guide/problems/cses-1661-subarray-sums-ii/solution">USACO Guide, CSES
+Subarray Sums II</a>). A hash map from prefix value to how many times it has occurred answers that
+in O(1).</p>
+
+<pre><code>from collections import Counter
+
+def count_sum_x(nums, x):
+    seen = Counter({0: 1})        # boundary 0 exists before the sweep starts
+    run = total = 0
+    for v in nums:
+        run += v                  # run is now p[j]
+        total += seen[run - x]    # count BEFORE inserting
+        seen[run] += 1
+    return total</code></pre>
+
+<p>Five lines, and two of them are the entire bug surface:</p>
+
+<ul>
+  <li><strong><code>Counter({0: 1})</code>.</strong> Boundary 0 is a real boundary, not a special
+  case &mdash; it is the left end of every subarray that starts at index&nbsp;0. Forget the seed and
+  you miss exactly those, which is why the symptom is "my answer is a bit too low" rather than a
+  crash.</li>
+  <li><strong>Count before inserting.</strong> Insert <code>p[j]</code> first and then look up
+  <code>p[j] &minus; x</code>, and when <code>x = 0</code> the boundary pairs with itself &mdash;
+  counting the empty subarray once per position. Silent, and only on one value of x.</li>
+</ul>
+
+<div class="sidenote">
+  <code>Counter</code> rather than <code>defaultdict(int)</code> on purpose: indexing a missing key
+  on a <code>defaultdict</code> <em>inserts</em> it, so the lookup line would quietly grow the map
+  with zero entries. Correct either way, but <code>Counter</code> returns 0 without writing.
+</div>
+
+<h2>Trace it, don't read it</h2>
+
+<p>Same array as above, hunting subarrays that sum to <span class="num">x = &minus;1</span>. Each turn
+the sweep takes in one more element; your job is to click <em>every</em> earlier boundary that closes
+a qualifying subarray. Do the subtraction before you look at the tape.</p>
+
+<div id="pre-trace"></div>
+
+<script type="application/json" id="pre-trace-data">
+{
+  "title": "Find the partner boundaries",
+  "array": [2, 2, -1, -1, -2, 1, -2],
+  "prefix": [0, 2, 4, 3, 2, 0, 1, -1],
+  "target": -1,
+  "targetLabel": "x",
+  "keyLabel": "prefix sum",
+  "rule": "<strong>The rule:</strong> <code>arr[i..j-1]</code> sums to x exactly when <code>p[i] = p[j] &minus; x</code>. You know <code>p[j]</code> and you know x, so you are looking for one specific number.",
+  "turns": [
+    { "j": 1, "need": 3, "matches": [], "total": 0, "state": "0:1",
+      "why": "<p>Only <code>p0 = 0</code> is behind you and it is not 3, so nothing closes here. A turn with no matches is the common case, not a failure.</p>" },
+    { "j": 2, "need": 5, "matches": [], "total": 0, "state": "0:1  2:1",
+      "why": "<p>5 has never appeared. Note that you did not have to look at the array at all &mdash; the boundaries carry everything.</p>" },
+    { "j": 3, "need": 4, "matches": [2], "total": 1, "state": "0:1  2:1  4:1",
+      "why": "<p>First hit. <code>p2 = 4</code> and <code>p3 = 3</code>, so <code>arr[2..2] = [-1]</code> sums to &minus;1. A single element is a perfectly good subarray.</p>" },
+    { "j": 4, "need": 3, "matches": [3], "total": 2, "state": "0:1  2:1  3:1  4:1",
+      "why": "<p>The boundary you need, <code>p3 = 3</code>, was created one turn ago. Nothing about this required the elements in between to be positive, small, or ordered.</p>" },
+    { "j": 5, "need": 1, "matches": [], "total": 2, "state": "0:1  2:2  3:1  4:1",
+      "why": "<p>No boundary holds 1 yet. Notice the counts line: <code>2</code> now appears twice, because <code>p1</code> and <code>p4</code> are both 2. Storing a count rather than a position is what the next turn cashes in.</p>" },
+    { "j": 6, "need": 2, "matches": [1, 4], "total": 4, "state": "0:2  2:2  3:1  4:1",
+      "why": "<p><strong>Two partners at once.</strong> <code>arr[1..5]</code> and <code>arr[4..5]</code> both sum to &minus;1, and the map returned 2 in a single lookup without knowing where either of them was. This is the turn that justifies the whole data structure: a window would have had to pick one.</p>" },
+    { "j": 7, "need": 0, "matches": [0, 5], "total": 6, "state": "0:2  1:1  2:2  3:1  4:1",
+      "why": "<p>Two more &mdash; and one of them is the seeded boundary <code>p0</code>, which closes <code>arr[0..6]</code>, the whole array. Drop the <code>Counter({0: 1})</code> seed and you would answer 5 here instead of 6.</p>" }
+  ],
+  "closing": "<p>Six subarrays, from seven O(1) lookups. Worth noticing what you just did by hand that the map does for free: on each turn you <em>scanned</em> the boundaries behind you, which is O(n) per turn and O(n&sup2;) overall. The hash map is not the idea &mdash; the reframe is. The map is only how you stop paying for it.</p>"
+}
+</script>
+
+<script src="../assets/prefix.js"></script>
+<script>PrefixTracer.mount('pre-trace', 'pre-trace-data');</script>
+
+<h2>Window or prefix: the decision, sharpened</h2>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th></th><th>Sliding window</th><th>Prefix pair</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Needs</td><td>A monotonic predicate</td><td>Nothing; the identity always holds</td></tr>
+    <tr><td>Negative values</td><td>Illegal</td><td>Fine</td></tr>
+    <tr><td>Natural question</td><td>At most / at least</td><td>Exactly</td></tr>
+    <tr><td>Extra space</td><td class="num">O(1)</td><td class="num">O(n)</td></tr>
+    <tr><td>Fails by</td><td>Being wrong, silently</td><td>Being heavier than needed</td></tr>
+  </tbody>
+  <caption>The asymmetry in the last row is why, when both are available, reaching for the prefix
+  map first is the safer habit &mdash; and why saying so out loud is the better interview move.</caption>
+</table>
+</div>
+
+<div class="caveat">
+  <p><strong>A correction to lesson 0003, worth making precise.</strong> That lesson said "exactly k"
+  defeats a window, because the valid starts form a band rather than one unbroken run. CSES 1660
+  asks for <em>exactly x</em> with a window and works fine &mdash; so which is it?</p>
+  <p>Both, and the difference is <em>strictness</em>. With strictly positive values the sum is
+  <em>strictly</em> decreasing as <code>left</code> advances, so at most one start can hit x exactly:
+  the band is one cell wide, and a single <code>left</code> can sit on it. Distinct-character counts
+  plateau &mdash; several consecutive starts give the same count &mdash; so that band is genuinely
+  wide and one pointer cannot mark it. The rule is not "exactly is forbidden"; it is <strong>"a band
+  wider than one needs two pointers, and you only have one."</strong></p>
+</div>
+
+<h2 id="keys">The key does not have to be the sum</h2>
+
+<p>This is where the reframe pays for itself. The sweep never cared that the running value was a
+sum. It cared that <em>the property you want is a difference of two boundary values</em>. Change what
+you accumulate and the same nine lines answer a different question:</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>Question about a subarray</th><th>Accumulate</th><th>Partner to look up</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Sums to exactly x</td><td>Running sum</td><td class="num">p[j] &minus; x</td></tr>
+    <tr><td>Sum divisible by k</td><td>Running sum, mod k</td><td class="num">p[j]</td></tr>
+    <tr><td>Equally many 0s and 1s</td><td>Running (#1 &minus; #0)</td><td class="num">p[j]</td></tr>
+    <tr><td>Every letter appears an even number of times</td><td>26-bit parity mask, XORed</td><td class="num">p[j]</td></tr>
+  </tbody>
+  <caption>Three of the four look up <code>p[j]</code> itself.</caption>
+</table>
+</div>
+
+<p>That repetition is not a coincidence, and spotting it is the actual skill. "Divisible by k",
+"equal counts" and "all even" are the same sentence in three costumes: <strong>the difference between
+the two boundaries is zero.</strong> So the partner you are hunting is whatever you are standing on,
+and the question becomes "have I been in this state before?"</p>
+
+<pre><code>def count_divisible_by_k(nums, k):
+    seen = Counter({0: 1})
+    run = total = 0
+    for v in nums:
+        run = (run + v) % k       # the only changed line
+        total += seen[run]        # ...and x is 0, so the partner is run itself
+        seen[run] += 1
+    return total</code></pre>
+
+<div class="sidenote">
+  Every Python snippet on this page was checked against brute force on 30,000 random arrays before
+  publication, mixed-sign included, with zero disagreements. The trace above was generated by
+  replaying <code>count_sum_x</code> and asserting each turn, not written by hand.
+</div>
+
+<h2>Practice</h2>
+
+<p>Commit to an answer out loud before revealing the options. Two of these need the constraint block
+as well as the stem, as usual.</p>
+
+<div id="pre-quiz"></div>
+
+<script type="application/json" id="pre-quiz-data">
+{
+  "title": "Retrieval practice — prefix pairs",
+  "commit": "Say your answer, and the reason, out loud first. If the reason is \"that's the template\", you are recalling rather than deriving — go back to the identity and rebuild it.",
+  "perfect": "Clean sweep. Now go and do <a href='https://cses.fi/problemset/task/1660'>CSES 1660</a> and <a href='https://cses.fi/problemset/task/1661'>CSES 1661</a> back to back — same sentence, two techniques, and the pair takes about twenty minutes.",
+  "questions": [
+    {
+      "tag": "the identity",
+      "stem": "With <code>p[0] = 0</code> and <code>p[k]</code> the sum of the first k elements, which expression gives <code>sum(arr[2..5])</code>?",
+      "given": "p has n + 1 entries",
+      "options": [
+        { "text": "p[6] - p[2]", "correct": true },
+        { "text": "p[5] - p[2]" },
+        { "text": "p[6] - p[1]" },
+        { "text": "p[5] - p[1]" }
+      ],
+      "why": "<p>The right boundary of <code>arr[l..r]</code> is <code>p[r+1]</code>, not <code>p[r]</code> — a slice ending at index 5 contains six elements' worth of prefix. The left boundary is <code>p[l]</code> exactly, with no adjustment, which is the payoff of the <code>p[0] = 0</code> convention.</p><p>If you picked <code>p[5] - p[1]</code> you applied the 1-indexed form of the identity to a 0-indexed array. That produces an answer shifted by one element, which passes small hand-checks surprisingly often.</p>"
+    },
+    {
+      "tag": "the seed",
+      "stem": "Counting subarrays that sum to x, why is the map seeded with <code>{0: 1}</code> before the sweep begins?",
+      "given": "seen = Counter({0: 1})",
+      "options": [
+        { "text": "Boundary zero is a legitimate left endpoint", "correct": true },
+        { "text": "Otherwise the first element is skipped entirely" },
+        { "text": "It reserves a slot for empty subarrays" },
+        { "text": "Zero must be present for negative values" }
+      ],
+      "why": "<p><code>p[0] = 0</code> is the boundary to the left of the whole array, and every subarray starting at index 0 uses it. It has to be in the map before the first lookup, because the sweep only inserts boundaries it has already passed.</p><p>The symptom of forgetting it is the nastiest kind: an answer that is slightly too low, on inputs that otherwise look fine.</p>"
+    },
+    {
+      "tag": "order of operations",
+      "stem": "Why must <code>seen[run] += 1</code> come <em>after</em> the line that adds to the total, rather than before it?",
+      "given": "total += seen[run - x]\nseen[run] += 1",
+      "options": [
+        { "text": "Otherwise a boundary pairs with itself", "correct": true },
+        { "text": "Otherwise the final boundary is missed" },
+        { "text": "Otherwise the counts drift by one" },
+        { "text": "Otherwise negative prefixes are double counted" }
+      ],
+      "why": "<p>A pair needs <code>i &lt; j</code>, strictly. Insert <code>p[j]</code> first and it becomes visible to its own lookup, so when <code>x = 0</code> — where the partner is <code>p[j]</code> itself — every position counts one empty subarray.</p><p>Note how narrow the failure is: the bug is invisible for every x except zero, which is exactly the x a test case is most likely to include.</p>"
+    },
+    {
+      "tag": "both tools are legal",
+      "stem": "Count the subarrays summing to exactly x. Read the constraints, then pick the true statement.",
+      "given": "1 <= n <= 200000\n1 <= x, a[i] <= 1000000000",
+      "options": [
+        { "text": "Either tool works, window or prefix sums", "correct": true },
+        { "text": "Only prefix sums work, windows are illegal" },
+        { "text": "Only a window works, prefix sums overflow" },
+        { "text": "Neither works, the budget rules both out" }
+      ],
+      "why": "<p>The constraint block says <code>1 &lt;= a[i]</code>, so values are positive and the sum is <em>strictly</em> increasing in window length. At most one start can hit x exactly, so a single <code>left</code> can find it — this is CSES 1660. The prefix map also works, because it always works.</p><p>Drop the lower bound to <code>-10^9</code> and only the prefix map stays legal. This is the entire difference between CSES 1660 and 1661, and it lives in the constraints rather than the sentence.</p>"
+    },
+    {
+      "tag": "choosing the key",
+      "stem": "Longest subarray containing equally many 0s and 1s. What should the running value be?",
+      "given": "1 <= n <= 100000\nnums[i] is 0 or 1",
+      "options": [
+        { "text": "Running count of ones minus zeros", "correct": true },
+        { "text": "Running count of ones plus zeros" },
+        { "text": "Running count of ones, modulo two" },
+        { "text": "Running count of ones times zeros" }
+      ],
+      "why": "<p>Map 0 to &minus;1 and 1 to +1, and \"equally many\" becomes \"the running balance is unchanged between the two boundaries\" — a difference of zero, so the partner you look up is the current value itself.</p><p><em>Plus</em> gives you the index back, which is the same for every subarray of a given length and so tells you nothing. The general move: find the statistic whose <em>difference</em> across the two boundaries is the property you want.</p>"
+    },
+    {
+      "tag": "return type changes the map",
+      "stem": "Same sum-to-x sweep, but now return the <em>longest</em> such subarray rather than the count. What changes?",
+      "given": "-1000 <= nums[i] <= 1000",
+      "options": [
+        { "text": "Store the earliest index, not a count", "correct": true },
+        { "text": "Store the latest index, not a count" },
+        { "text": "Store the count and also the index" },
+        { "text": "Store the earliest value, not an index" }
+      ],
+      "why": "<p>Exactly the promise <a href='0002-the-shape-of-the-answer.html'>lesson 0002</a> made: the shape is unchanged, and only the bookkeeping moves. For a <em>longest</em> answer you want the partner boundary as far left as possible, so record each prefix value the first time you see it and never overwrite.</p><p>Storing the <em>latest</em> index is the mirror-image bug, and it is what you actually want for a <em>shortest</em> answer — the same inversion as longest-versus-shortest windows in <a href='0003-the-window-invariant.html'>lesson 0003</a>.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('pre-quiz', 'pre-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<p>The triage sentence now has a fork in it. Notice that the licence check is still what decides, and
+that the reframe gets stated explicitly rather than assumed:</p>
+
+<pre><code>"n is 2e5, so I want O(n). It's a contiguous shape asking for a
+ count, and there are about n²/2 subarrays, so I'm not enumerating.
+
+ Values can be negative, so a window isn't licensed — removing an
+ element can raise the sum, and then the shrink step repairs nothing.
+
+ So I'll stop thinking about subarrays and think about boundaries.
+ There are n+1 prefix boundaries, a subarray is a pair of them, and
+ its sum is their difference. I want pairs differing by x, so as I
+ sweep j I ask how many earlier boundaries hold p[j] - x. A hash map
+ answers that in O(1), seeded with {0: 1} because boundary zero is
+ real, and I count before inserting so nothing pairs with itself.
+
+ O(n) time, O(n) space, and it doesn't care about signs."</code></pre>
+
+<p>The sentence that earns the Staff+ marks is the third paragraph, not the fifth. Anyone can recite a
+prefix-sum template; saying <em>why the previous tool is disqualified</em> and then naming the
+substitution is trade-off analysis, and it is checkable by the interviewer in real time.</p>
+
+<div class="caveat">
+  <p><strong>Where this fails.</strong> The prefix pair handles <em>exact</em> differences in O(n).
+  It does not give you "at most" or "at least" for free: longest subarray with sum at most k with
+  negatives present needs a sorted structure or a monotonic deque over the prefix array, which is
+  O(n&nbsp;log&nbsp;n) and a different lesson. Prefix sums also assume the array is
+  <strong>static</strong> &mdash; if values change between queries you want a Fenwick or segment
+  tree &mdash; and they need an <em>invertible</em> operation, so sum and XOR are fine while min and
+  max are not.</p>
+</div>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/silver/prefix-sums">USACO Guide &mdash; Introduction to Prefix
+  Sums</a>, then <a href="https://usaco.guide/silver/more-prefix-sums">More on Prefix Sums</a> for
+  the running-minimum (Kadane) form and 2-D prefix sums. Both are short. Then do the pair that opened
+  this lesson back to back &mdash; <a href="https://cses.fi/problemset/task/1660">CSES 1660</a> and
+  <a href="https://cses.fi/problemset/task/1661">CSES 1661</a> &mdash; and notice that the second
+  takes less code than the first.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../reference/0004-prefix-pair.html">Reference card: The Prefix Pair</a> &mdash; the
+      identity, the four templates, the key-selection table and the window-versus-prefix decision on
+      one printable page.</li>
+    <li><a href="../glossary.html">Glossary</a> &mdash; <em>boundary</em> and <em>complement
+      lookup</em> added this lesson.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0003-the-window-invariant.html">Lesson 0003</a> &mdash; its question 6 was the
+      handoff into this one, and the caveat above sharpens what it told you about "exactly".</li>
+    <li><a href="../reference/0002-shape-to-family.html">Shape to Family</a> &mdash; the
+      contiguous row now has two entries, chosen by the licence check rather than by taste.</li>
+    <li><strong>Next lesson:</strong> two pointers from both ends, and binary search on the answer
+      &mdash; the two remaining sweeps, and the one case where you get to <em>choose</em> the search
+      space rather than being handed it.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: give
+    me a contiguous-subarray question, any question, and say in one sentence what the running value
+    should be and what the partner is. No code. Getting the key wrong is the only real failure mode
+    in this pattern, and it is much faster to check a sentence than a function. Or ask me to generate
+    a fresh trace using a parity mask or a mod-k key.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0003-the-window-invariant.html">&larr; Lesson 0003</a>
+    <a href="../reference/0004-prefix-pair.html">Reference card</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

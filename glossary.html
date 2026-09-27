@@ -27,11 +27,27 @@ can move on a single turn, we know that the pointer moves a total of
 O(n) steps during the algorithm, because it only moves to the
 right."</em> (<a href="https://cses.fi/book/book.pdf">Competitive
 Programmer's Handbook</a>, ch. 8)</p>
+<p><strong>Boundary</strong> <em>(our term)</em> — one of the n + 1
+positions <em>between</em> array elements, counting both ends. Prefix
+value <code>p[i]</code> belongs to boundary <code>i</code>. A subarray
+is exactly one pair of boundaries <code>i &lt; j</code> — namely
+<code>arr[i..j-1]</code> — and its sum is <code>p[j] − p[i]</code>.
+Thinking in boundaries rather than in runs is what converts a contiguous
+problem into a <em>pair</em> problem, and it is the whole content of <a
+href="./lessons/0004-the-prefix-pair.html#pair">lesson 0004</a>.</p>
 <p><strong>Budget</strong> <em>(our term)</em> — the slowest time
 complexity you can afford, read off the input constraints. See <a
 href="./lessons/0001-read-the-constraints-first.html">lesson 0001</a>
 and the <a href="./reference/0001-constraint-ladder.html">constraint
 ladder</a>.</p>
+<p><strong>Complement lookup</strong> <em>(our term)</em> — restating a
+condition on a subarray as a condition on two prefix values, rearranging
+for the one you do not know, and finding it in a hash map in O(1). "Sums
+to x" becomes "an earlier boundary holds <code>p[j] − x</code>". The
+technique is standard; the name is ours, by analogy with two-sum. Unlike
+a sliding window it needs no monotonicity, because the prefix identity
+is arithmetic rather than a promise about growth. See <a
+href="./lessons/0004-the-prefix-pair.html#lookup">lesson 0004</a>.</p>
 <p><strong>Contiguous</strong> — occupying consecutive positions, with
 nothing skipped. The single most load-bearing word in a problem
 statement: it separates subarrays from subsequences, and therefore
@@ -63,21 +79,40 @@ running <em>minimum</em> prefix seen so far; the best subarray ending at
 href="https://usaco.guide/silver/more-prefix-sums">USACO Guide</a>)</p>
 <p><strong>Monotonic</strong> — moving in one direction only. A
 predicate is monotonic over a window if, once it becomes false as the
-window grows, it stays false. This is the precise condition that
-licenses a sliding window: <em>"movement in one direction should not
-reverse the effects of movement in the other direction."</em> (<a
+window grows, it stays false. Equivalently: for each right endpoint the
+valid start positions form one unbroken run, so a single forward-only
+<code>left</code> can mark the boundary. See the <a
+href="./lessons/0003-the-window-invariant.html#licence">licence
+check</a> for the two ways it fails — mixed-sign sums, where a false
+predicate turns true again, and <em>exactly k</em>, where the valid
+starts form a band with no single edge. The precise rule is that a band
+<strong>wider than one</strong> defeats a single pointer: an
+<em>exactly</em> question over strictly positive values has a band one
+cell wide and is fine, which is why CSES 1660 is a window and CSES 1661
+is not (<a href="./lessons/0004-the-prefix-pair.html">lesson 0004</a>).
+This is the precise condition that licenses a sliding window:
+<em>"movement in one direction should not reverse the effects of
+movement in the other direction."</em> (<a
 href="https://usaco.guide/silver/two-pointers">USACO Guide</a>)</p>
 <p><strong>Predicate</strong> — the yes/no test a window must satisfy:
-"holds at most k distinct characters", "sums to at least target".
-Windows are built around predicates, and whether the predicate is
-<em>monotonic</em> (below) in the window's length is what decides
-whether a window is legal at all.</p>
+"holds at most k distinct characters", "sums to at least target". Not
+the same thing as an <em>invariant</em>: the invariant is a claim about
+where the pointers have come to rest, and the predicate is the test that
+claim refers to. Whether the predicate is <em>monotonic</em> (above) in
+the window's length is what decides whether a window is legal at all.
+See <a href="./lessons/0003-the-window-invariant.html#licence">lesson
+0003</a>.</p>
 <p><strong>Prefix sum</strong> — an array <code>p</code> where
 <code>p[k]</code> is the sum of the original array's first
-<code>k</code> elements. Its whole purpose is the identity
-<code>sum(arr[l..r]) = p[r] − p[l−1]</code>, which turns any range-sum
-question into one subtraction. (<a
-href="https://usaco.guide/silver/prefix-sums">USACO Guide</a>)</p>
+<code>k</code> elements, so <code>p[0] = 0</code> and <code>p</code> has
+<strong>n + 1 entries</strong>. Its whole purpose is the identity
+<code>sum(arr[l..r]) = p[r+1] − p[l]</code>, which turns any range-sum
+question into one subtraction. Keep that 0-indexed form rather than the
+USACO Guide's 1-indexed <code>p[R] − p[L−1]</code>; they are the same
+identity, and every off-by-one in this pattern comes from improvising
+between them. (<a href="https://usaco.guide/silver/prefix-sums">USACO
+Guide</a>) Its second, larger use is the <strong>complement
+lookup</strong> above.</p>
 <p><strong>Return type</strong> <em>(our term)</em> — what the problem
 asks you to hand back: <em>existence</em> (a yes/no), a <em>count</em>,
 an <em>optimum</em> (a min or max value), the <em>object itself</em>
@@ -97,10 +132,13 @@ href="./lessons/0002-the-shape-of-the-answer.html">lesson 0002</a>.</p>
 <code>l ≤ r</code> sweeping left to right over a sequence, where each
 index only ever moves forward. Because both move at most n times in
 total, the sweep is O(n) even though it examines many windows. Valid
-only when the governing predicate is monotonic. For a <em>longest</em>
-window, shrinking is repair — shrink while the window is broken, measure
-after. For a <em>shortest</em> window, shrinking is the search — shrink
-while the window still works, measuring each time.</p>
+only when the governing predicate is <a
+href="./lessons/0003-the-window-invariant.html#licence">monotonic</a> —
+that is the licence, and it is worth checking before anything else. For
+a <em>longest</em> window, shrinking is repair — shrink while the window
+is broken, measure after. For a <em>shortest</em> window, shrinking is
+the search — shrink while the window still works, measuring each
+time.</p>
 <p><strong>Subarray</strong> — a contiguous slice of an array. There are
 n(n+1)/2 non-empty subarrays of an n-element array (choose a start and
 an end), which is O(n²) of them.</p>

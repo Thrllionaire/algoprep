@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Prefix Pair</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<style>
+  body { padding-top: 2.5rem; }
+  .wrap { max-width: 44rem; }
+  table { font-size: 0.8rem; }
+  h2 { margin-top: 2rem; }
+  pre { font-size: 0.74rem; }
+  .side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .side-by-side h3 { margin-top: 0; }
+  .side-by-side pre { margin-bottom: 0.4rem; }
+  @media (max-width: 680px) { .side-by-side { grid-template-columns: 1fr; } }
+  .keys td:nth-child(2), .keys td:nth-child(3) { font-family: var(--mono); font-size: 0.76rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Reference card · algoprep</p>
+  <h1>The Prefix Pair</h1>
+  <p class="standfirst">A subarray is a pair of boundaries, and its sum is their difference. Pick
+  what to accumulate, and the partner you look up falls out of one subtraction.</p>
+</header>
+
+<h2>The identity</h2>
+
+<pre><code>p[0] = 0                      # p has n + 1 entries, not n
+p[k] = arr[0] + ... + arr[k-1]
+
+sum(arr[l..r]) = p[r+1] - p[l]</code></pre>
+
+<p>There are <strong>n&nbsp;+&nbsp;1 boundaries</strong> and every subarray is exactly one pair
+<code>i&nbsp;&lt;&nbsp;j</code>, namely <code>arr[i..j-1]</code>. Choosing 2 from n&nbsp;+&nbsp;1 gives
+n(n+1)/2, which is the subarray count you already expect.</p>
+
+<div class="tell">
+  <span class="tell-label">The reframe</span>
+  <p>Every question about a <em>subarray</em> is a question about <em>two boundary values</em>.
+  Restate the problem that way <em>before</em> choosing machinery.</p>
+</div>
+
+<h2>What to do with the pair</h2>
+
+<div class="table-scroll">
+<table>
+  <caption>Rows one and two are O(n) and are the interview answers. Row three is the one to name,
+  and then only reach for if the problem insists.</caption>
+  <thead><tr><th>The pair must</th><th>Machinery</th><th>Name</th></tr></thead>
+  <tbody>
+    <tr><td>Differ by exactly x</td><td>Hash map of values seen</td><td>complement lookup</td></tr>
+    <tr><td>Differ by as much as possible</td><td>Running minimum of values seen</td><td>Kadane</td></tr>
+    <tr><td>Differ by at least / at most x</td><td>Sorted structure or monotonic deque</td><td class="num">O(n log n)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Choosing the key</h2>
+
+<p>The sweep never cared that the running value was a sum. It cared that the property you want is a
+<em>difference</em> of two boundary values. Find that statistic and everything else is unchanged.</p>
+
+<div class="table-scroll">
+<table class="keys">
+  <caption>When the property is "nothing changed between the boundaries" — divisible, balanced,
+  all even — the difference is zero, so the partner is <code>p[j]</code> itself and the question
+  becomes "have I been in this state before?"</caption>
+  <thead><tr><th>Question about a subarray</th><th>Accumulate</th><th>Look up</th></tr></thead>
+  <tbody>
+    <tr><td>Sums to exactly x</td><td>run += v</td><td>run - x</td></tr>
+    <tr><td>Sum divisible by k</td><td>run = (run + v) % k</td><td>run</td></tr>
+    <tr><td>Equally many 0s and 1s</td><td>run += 1 if v else -1</td><td>run</td></tr>
+    <tr><td>Equally many of any two values</td><td>run += (v==a) - (v==b)</td><td>run</td></tr>
+    <tr><td>Every letter an even count</td><td>run ^= 1 &lt;&lt; (ord(c)-97)</td><td>run</td></tr>
+    <tr><td>Max sum ending anywhere</td><td>run += v</td><td>min so far</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>The four templates</h2>
+
+<div class="side-by-side">
+  <div>
+    <h3>Count them</h3>
+<pre><code>from collections import Counter
+
+def count_sum_x(nums, x):
+    seen = Counter({0: 1})
+    run = total = 0
+    for v in nums:
+        run += v
+        total += seen[run - x]
+        seen[run] += 1
+    return total</code></pre>
+  </div>
+  <div>
+    <h3>Longest of them</h3>
+<pre><code>def longest_sum_x(nums, x):
+    first = {0: 0}      # value -> earliest j
+    run = best = 0
+    for j, v in enumerate(nums, 1):
+        run += v
+        if run - x in first:
+            best = max(best, j - first[run - x])
+        if run not in first:
+            first[run] = j
+    return best</code></pre>
+  </div>
+</div>
+
+<div class="side-by-side">
+  <div>
+    <h3>Divisible by k</h3>
+<pre><code>def count_div_k(nums, k):
+    seen = Counter({0: 1})
+    run = total = 0
+    for v in nums:
+        run = (run + v) % k
+        total += seen[run]
+        seen[run] += 1
+    return total</code></pre>
+  </div>
+  <div>
+    <h3>Maximum sum (Kadane)</h3>
+<pre><code>def max_subarray(nums):
+    lowest = run = 0
+    best = float('-inf')
+    for v in nums:
+        run += v
+        best = max(best, run - lowest)
+        lowest = min(lowest, run)
+    return best</code></pre>
+  </div>
+</div>
+
+<h2>The four silent bugs</h2>
+
+<div class="table-scroll">
+<table>
+  <caption>None of these raises. Each returns a plausible number, and the first two are wrong by
+  small amounts on inputs that look fine.</caption>
+  <thead><tr><th>Bug</th><th>Symptom</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td>Map not seeded with <code>{0: 1}</code></td>
+        <td>Answer slightly low; misses every subarray starting at index 0</td>
+        <td><code>Counter({0: 1})</code></td></tr>
+    <tr><td>Inserting before counting</td>
+        <td>Correct for every x <em>except</em> 0, where each position counts an empty subarray</td>
+        <td>Count, then insert</td></tr>
+    <tr><td><code>p[r]</code> instead of <code>p[r+1]</code></td>
+        <td>Answer shifted by one element; often survives a small hand-check</td>
+        <td>Keep the <code>p[0]=0</code>, n+1-entry convention</td></tr>
+    <tr><td>Overwriting in the <em>longest</em> map</td>
+        <td>Finds a valid subarray, but not the longest one</td>
+        <td>Record each value only the first time</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Window or prefix pair</h2>
+
+<div class="table-scroll">
+<table>
+  <caption>When both are legal, the prefix map fails by being heavier and the window fails by being
+  wrong. Prefer the one whose failure mode you can see.</caption>
+  <thead><tr><th></th><th>Sliding window</th><th>Prefix pair</th></tr></thead>
+  <tbody>
+    <tr><td>Needs</td><td>A monotonic predicate</td><td>Nothing; the identity always holds</td></tr>
+    <tr><td>Negative values</td><td>Illegal</td><td>Fine</td></tr>
+    <tr><td>Natural question</td><td>At most / at least</td><td>Exactly</td></tr>
+    <tr><td>Extra space</td><td class="num">O(1)</td><td class="num">O(n)</td></tr>
+    <tr><td>Fails by</td><td>Being wrong, silently</td><td>Being heavier than needed</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="caveat">
+  <p><strong>"Exactly" does not automatically forbid a window.</strong> With <em>strictly</em>
+  positive values the sum strictly decreases as <code>left</code> advances, so at most one start hits
+  x and one pointer can sit on it (CSES 1660). Distinct-character counts plateau, so several starts
+  tie and the valid band is genuinely wide. The rule is <strong>"a band wider than one needs two
+  pointers, and you only have one"</strong> &mdash; not "exactly is banned".</p>
+</div>
+
+<h2>Not this tool</h2>
+
+<ul>
+  <li><strong>Values change between queries.</strong> Prefix sums are static. Use a Fenwick or
+    segment tree.</li>
+  <li><strong>Non-invertible operation.</strong> Sum and XOR subtract cleanly; min and max do not.
+    Sparse table or deque instead.</li>
+  <li><strong>"At most" with negatives.</strong> Needs a sorted structure over the prefixes,
+    O(n&nbsp;log&nbsp;n), not a hash map.</li>
+  <li><strong>Range <em>updates</em>, point queries.</strong> That is a difference array &mdash; the
+    inverse construction, and worth knowing it exists.</li>
+</ul>
+
+<h2>Say it before you code</h2>
+
+<pre><code>"Contiguous shape asking for a count, n is 2e5, so O(n).
+
+ Values can be negative, so a window isn't licensed — removing an
+ element can raise the sum and the shrink step repairs nothing.
+
+ So: boundaries, not subarrays. n+1 of them, a subarray is a pair,
+ its sum is their difference. I want pairs differing by x, so at
+ each j I look up p[j] - x in a map of what I've seen. Seeded with
+ {0: 1}, and I count before inserting so nothing pairs with itself.
+
+ O(n) time, O(n) space, sign-agnostic."</code></pre>
+
+<div class="colophon">
+  <h3>See also</h3>
+  <ul class="linkrow">
+    <li><a href="../lessons/0004-the-prefix-pair.html">Lesson 0004 &mdash; The Prefix Pair</a> (where this card comes from)</li>
+    <li><a href="0003-window-invariant.html">Reference card: Window Invariants</a> &mdash; the other contiguous tool, and when it is legal</li>
+    <li><a href="0002-shape-to-family.html">Reference card: Shape to Family</a> &mdash; choosing between them</li>
+    <li><a href="../glossary.html">Glossary</a> &mdash; boundary, complement lookup, prefix sum, Kadane's algorithm</li>
+    <li><a href="https://usaco.guide/silver/prefix-sums">USACO Guide &mdash; Prefix Sums</a> &middot;
+      <a href="https://cses.fi/problemset/task/1660">CSES 1660</a> &middot;
+      <a href="https://cses.fi/problemset/task/1661">CSES 1661</a></li>
+  </ul>
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="../lessons/0004-the-prefix-pair.html">Lesson 0004</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

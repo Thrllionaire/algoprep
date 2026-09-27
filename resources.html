@@ -82,6 +82,18 @@ counting technique, worked: "at each index i, we can count the number of
 prefixes with sum equal to prefixSum[i]−x". Use for: counting exact-sum
 subarrays, which is the one contiguous problem a sliding window gets
 <em>wrong</em> rather than slow.</p></li>
+<li><p><a href="https://cses.fi/problemset/task/1660">CSES Problem Set —
+Subarray Sums I (1660)</a> and <a
+href="https://cses.fi/problemset/task/1661">Subarray Sums II (1661)</a>
+The cleanest natural experiment in interview prep: two problems whose
+statements differ by the single word <em>positive</em>, with the same
+bound (n ≤ 2·10⁵) and the same return type, that require different
+techniques. 1660 is a window; 1661 is a prefix-sum hash map, because the
+window is no longer licensed. Use for: the window-versus-prefix
+decision, and as the practice pair for <a
+href="./lessons/0004-the-prefix-pair.html">lesson 0004</a>. Primary
+practice source for that lesson; the technique source is the USACO
+solution page above.</p></li>
 <li><p><a href="https://cses.fi/book/book.pdf">Competitive Programmer's
 Handbook — ch. 8, <em>Amortized analysis</em></a> Pages 77–79. Presents
 two pointers as an <em>amortisation result</em> rather than a template,
@@ -132,6 +144,12 @@ compensation doom-scrolling.</p></li>
 </ul>
 <h2 id="gaps">Gaps</h2>
 <ul>
+<li><p><strong>Resolved this session:</strong> the prefix-sum
+<em>counting</em> technique did have a trusted source after all — the
+USACO Guide's CSES 1661 solution page, already listed above. Lesson 0004
+cites it directly and derives nothing in place. This is unlike the
+<code>exactly(k) = atMost(k) − atMost(k−1)</code> identity below, which
+genuinely has none.</p></li>
 <li><p><strong>No trusted source yet for reservoir sampling / randomised
 algorithms in an interview context.</strong> Naren named it explicitly;
 needs a search before that lesson.</p></li>
