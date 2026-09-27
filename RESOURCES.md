@@ -35,6 +35,25 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   good constant factors"). Use for: everything about reading constraints. Primary source for
   [lesson 0001](./lessons/0001-read-the-constraints-first.html).
 
+- [USACO Guide — Two Pointers](https://usaco.guide/silver/two-pointers)
+  States the *validity condition* for a two-pointer sweep instead of handing out a template:
+  "movement in one direction should not reverse the effects of movement in the other direction."
+  Splits same-direction (sliding window) from opposite-ends (sorted input). Use for: deciding
+  whether a window is legal at all. Primary source for
+  [lesson 0002](./lessons/0002-the-shape-of-the-answer.html).
+
+- [USACO Guide — Introduction to Prefix Sums](https://usaco.guide/silver/prefix-sums) and
+  [More on Prefix Sums](https://usaco.guide/silver/more-prefix-sums)
+  The identity `sum(l..r) = p[r] − p[l−1]`, then max-subarray-via-running-minimum-prefix (i.e.
+  Kadane), 2-D prefix sums and difference arrays. Use for: everything contiguous that isn't a
+  window. Note the introductory module covers *static range queries only* — the hash-map counting
+  trick is not there; it's in the problem solution below.
+
+- [USACO Guide — CSES Subarray Sums II solution](https://usaco.guide/problems/cses-1661-subarray-sums-ii/solution)
+  The prefix-sum + hash-map counting technique, worked: "at each index i, we can count the number
+  of prefixes with sum equal to prefixSum[i]−x". Use for: counting exact-sum subarrays, which is
+  the one contiguous problem a sliding window gets *wrong* rather than slow.
+
 - [Competitive Programmer's Handbook — Antti Laaksonen (free PDF)](https://cses.fi/book/book.pdf)
   Rigorous, free, and short on hand-waving. Chapters 1–2 cover complexity; 6 is greedy; 7 is
   DP; 11–14 graphs. Use for: when a pattern's *why* is unclear and blog posts are being vague.
@@ -71,3 +90,11 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   resolving early, because it could reshape the mission.
 - No verified Python-specific idiom reference (e.g. when `bisect`, `heapq`, `deque`,
   `collections.Counter` are the intended tool). Likely needed as a reference doc.
+
+- **No trusted source yet for greedy-versus-DP.** Lesson 0002 deliberately left greedy out of
+  the shape × return-type grid because it is a proof obligation rather than a shape. That needs
+  its own lesson and a source on *exchange arguments*, which nothing here covers.
+
+- Searched for high-trust "how to recognise patterns" writing and found mostly SEO content
+  (leetcopilot, studocu, assorted Medium posts). Deliberately excluded. The USACO Guide modules
+  above are the trustworthy substitute: they state conditions rather than listing templates.

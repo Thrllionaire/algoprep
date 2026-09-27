@@ -10,8 +10,8 @@ https://thrllionaire.github.io/algoprep/
 
 - The **outer repo** (this directory, public) — tracks the published site:
   `lessons/`, `reference/`, `assets/`, `index.html`, `mission.html`,
-  `resources.html`, `MISSION.md`, `RESOURCES.md`, `README.md`, `build.sh`,
-  `PUBLISHING.md`.
+  `resources.html`, `glossary.html`, `MISSION.md`, `RESOURCES.md`, `GLOSSARY.md`,
+  `README.md`, `build.sh`, `PUBLISHING.md`.
 - The **inner repo**, rooted at `learning-records/` (private:
   `github.com/Thrllionaire/algoprep-progress`) — tracks `learning-records/*.md`.
   `NOTES.md` is untracked in both, because it holds candid notes about the learner.
@@ -29,9 +29,9 @@ git add -A && git commit -m "..." && git push
 ```
 
 There is no build step for lessons — the HTML in `lessons/` and `reference/` is
-committed as-is and served directly. The only generation step is converting the two
-root markdown files (`MISSION.md`, `RESOURCES.md`) to HTML, which only needs to
-happen when those files change.
+committed as-is and served directly. The only generation step is converting the three
+root markdown files (`MISSION.md`, `RESOURCES.md`, `GLOSSARY.md`) to HTML, which
+only needs to happen when those files change.
 
 ## 1. Add the lesson files
 
@@ -51,26 +51,38 @@ would duplicate:**
   Config is a `<script type="application/json">` block; see lesson 0001.
 - `assets/ladder.js` — `ConstraintLadder.mount(rootId)`. The interactive
   constraint → budget → families table.
+- `assets/grid.js` — `DecisionGrid.mount(rootId, dataId)`. A generic two-axis lookup
+  table with a detail panel. The axes and cells are data, so any taxonomy can reuse
+  it; see lesson 0002 for the shape × return-type instance.
 
 Two rules on links from a file in `lessons/` or `reference/`:
 
 - Paths back to the repo root use `../`.
-- Link to the **generated HTML**, not the raw markdown: `../mission.html` and
-  `../resources.html`, never `../MISSION.md` or `../RESOURCES.md`. The site does not
-  serve the markdown.
+- Link to the **generated HTML**, not the raw markdown: `../mission.html`,
+  `../resources.html`, `../glossary.html` — never `../MISSION.md` and friends. The site
+  does not serve the markdown.
 
 When designing a quiz, keep every option the same word count and close in character
 count, and check that the correct option is never the longest or shortest — option
 length must not leak the answer. There is a checker at the bottom of this file.
 
-## 2. Regenerate the mission/resources pages (only if they changed)
+Every lesson must use the terms in `GLOSSARY.md` with exactly their glossary meanings,
+and link to `../glossary.html` on first use of a term a reader might not have. If a
+lesson needs a term the glossary lacks, add it there rather than defining it inline.
+
+Any Python you publish must be **property-tested against brute force before it ships**
+— a few thousand random small inputs, comparing to an obviously-correct O(n³) version.
+This is how lesson 0002's window template got its exact claim ("positive values only");
+untested code in a teaching repo teaches the bug.
+
+## 2. Regenerate the mission/resources/glossary pages (only if they changed)
 
 ```bash
 cd /home/naren/dev/algoprep && ./build.sh
 ```
 
-That wraps `MISSION.md` and `RESOURCES.md` in the site chrome with pandoc. It is
-idempotent; run it whenever either file changes.
+That wraps `MISSION.md`, `RESOURCES.md` and `GLOSSARY.md` in the site chrome with
+pandoc. It is idempotent; run it whenever any of them changes.
 
 ## 3. Update the homepage
 
@@ -87,7 +99,7 @@ repo page.
 ```bash
 cd /home/naren/dev/algoprep
 git add lessons/ reference/ assets/ index.html mission.html resources.html \
-        MISSION.md RESOURCES.md README.md
+        glossary.html MISSION.md RESOURCES.md GLOSSARY.md README.md
 git commit -m "Add lesson NNNN: <title>"
 git push
 ```

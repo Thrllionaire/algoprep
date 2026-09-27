@@ -33,6 +33,7 @@ ${body}
   <div class="pagenav">
     <a href="index.html">Home</a>
     <a href="mission.html">Mission</a>
+    <a href="glossary.html">Glossary</a>
     <a href="resources.html">Resources</a>
   </div>
 </footer>
@@ -47,4 +48,5 @@ HTML
 echo "Generating pages:"
 md2html MISSION.md   "Mission"   mission.html
 md2html RESOURCES.md "Resources" resources.html
+md2html GLOSSARY.md  "Glossary"  glossary.html
 echo "Done."

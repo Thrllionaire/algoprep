@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary</title>
+<link rel="stylesheet" href="assets/lesson.css">
+</head>
+<body>
+<div class="wrap">
+
+<p class="kicker">Algorithm Intuition</p>
+
+<div class="md-page">
+<h1 id="glossary">Glossary</h1>
+<p>Terms are used with exactly these meanings throughout the course.
+Where a term is <em>ours</em> — coined for this course rather than
+standard — it says so, so you don't carry it into an interview expecting
+to be understood.</p>
+<hr />
+<p><strong>Budget</strong> <em>(our term)</em> — the slowest time
+complexity you can afford, read off the input constraints. See <a
+href="./lessons/0001-read-the-constraints-first.html">lesson 0001</a>
+and the <a href="./reference/0001-constraint-ladder.html">constraint
+ladder</a>.</p>
+<p><strong>Contiguous</strong> — occupying consecutive positions, with
+nothing skipped. The single most load-bearing word in a problem
+statement: it separates subarrays from subsequences, and therefore
+separates an O(n²) search space from a 2ⁿ one.</p>
+<p><strong>Dynamic programming (DP)</strong> — solving a problem by
+combining answers to smaller overlapping subproblems, each computed once
+and reused. The defining feature is <em>overlap</em>: if subproblems
+never repeat, you have plain recursion, not DP.</p>
+<p><strong>Invariant</strong> — a statement that is true every time
+control reaches a particular point in the algorithm. "The window always
+contains at most k distinct characters" is an invariant. Getting the
+invariant wrong, rather than the pattern wrong, is the most common way a
+correctly-identified approach still fails.</p>
+<p><strong>Kadane's algorithm</strong> — the O(n) sweep for maximum-sum
+contiguous subarray. Equivalently, a prefix-sum sweep that tracks the
+running <em>minimum</em> prefix seen so far; the best subarray ending at
+<code>r</code> is <code>p[r]</code> minus that minimum. (<a
+href="https://usaco.guide/silver/more-prefix-sums">USACO Guide</a>)</p>
+<p><strong>Monotonic</strong> — moving in one direction only. A
+predicate is monotonic over a window if, once it becomes false as the
+window grows, it stays false. This is the precise condition that
+licenses a sliding window: <em>"movement in one direction should not
+reverse the effects of movement in the other direction."</em> (<a
+href="https://usaco.guide/silver/two-pointers">USACO Guide</a>)</p>
+<p><strong>Prefix sum</strong> — an array <code>p</code> where
+<code>p[k]</code> is the sum of the original array's first
+<code>k</code> elements. Its whole purpose is the identity
+<code>sum(arr[l..r]) = p[r] − p[l−1]</code>, which turns any range-sum
+question into one subtraction. (<a
+href="https://usaco.guide/silver/prefix-sums">USACO Guide</a>)</p>
+<p><strong>Return type</strong> <em>(our term)</em> — what the problem
+asks you to hand back: <em>existence</em> (a yes/no), a <em>count</em>,
+an <em>optimum</em> (a min or max value), the <em>object itself</em>
+(reconstruct the winning subarray, path, or string), or <em>all</em>
+objects. Within a fixed shape, the return type decides the machinery.
+See <a href="./lessons/0002-the-shape-of-the-answer.html">lesson
+0002</a>.</p>
+<p><strong>Search space</strong> — the set of candidate answers implied
+by the shape. Its <em>size</em> is the number that matters: a contiguous
+shape has n(n+1)/2 candidates, a subsequence shape has 2ⁿ.</p>
+<p><strong>Shape</strong> <em>(our term)</em> — the geometry of the
+thing the problem asks you to find: a contiguous run, an
+order-preserving selection, an unordered selection, a pair, or an
+arrangement. See <a
+href="./lessons/0002-the-shape-of-the-answer.html">lesson 0002</a>.</p>
+<p><strong>Sliding window</strong> — a pair of indices
+<code>l ≤ r</code> sweeping left to right over a sequence, where each
+index only ever moves forward. Because both move at most n times in
+total, the sweep is O(n) even though it examines many windows. Valid
+only when the governing predicate is monotonic.</p>
+<p><strong>Subarray</strong> — a contiguous slice of an array. There are
+n(n+1)/2 non-empty subarrays of an n-element array (choose a start and
+an end), which is O(n²) of them.</p>
+<p><strong>Subsequence</strong> — a selection obtained by deleting zero
+or more elements <em>without reordering</em> the rest. Not necessarily
+contiguous. There are 2ⁿ − 1 non-empty subsequences (each element is in
+or out), which is why subsequence problems are DP or bitmask, never
+enumeration, unless n is tiny.</p>
+<p><strong>Subset</strong> — a selection where order carries no meaning
+at all. Same 2ⁿ count as subsequences; the difference is that with a
+subset you are free to sort the input first, and with a subsequence you
+are not.</p>
+<p><strong>Substring</strong> — a subarray, in the context of strings.
+Contiguous. The word "substring" in a problem statement is therefore a
+contiguity signal exactly as "subarray" is.</p>
+<p><strong>Two pointers</strong> — any technique using two indices that
+each traverse the input once. A sliding window is the same-direction
+variant; the opposite-ends variant walks inward from both ends and
+relies on the input being sorted. (<a
+href="https://usaco.guide/silver/two-pointers">USACO Guide</a>)</p>
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="index.html">Home</a>
+    <a href="mission.html">Mission</a>
+    <a href="glossary.html">Glossary</a>
+    <a href="resources.html">Resources</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

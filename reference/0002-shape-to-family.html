@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shape to Family</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<style>
+  body { padding-top: 2.5rem; }
+  .wrap { max-width: 44rem; }
+  table { font-size: 0.8rem; }
+  h2 { margin-top: 2rem; }
+  .matrix td:first-child { font-weight: 600; }
+  .matrix .sub { display: block; font-family: var(--mono); font-size: 0.68rem; color: var(--ink-faint); }
+  .two-col { columns: 2; column-gap: 2rem; font-size: 0.86rem; }
+  .two-col p { break-inside: avoid; }
+  @media (max-width: 680px) { .two-col { columns: 1; } }
+  pre { font-size: 0.74rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Reference card · algoprep</p>
+  <h1>Shape to Family</h1>
+  <p class="standfirst">Count the candidates, divide by the budget, and the machinery is forced.</p>
+</header>
+
+<h2>Step 1 — count the candidates</h2>
+
+<div class="table-scroll">
+<table>
+  <caption>Derive these, don't memorise them; the derivation is the transferable part. Exact
+  definitions in the <a href="../glossary.html">glossary</a>.</caption>
+  <thead>
+    <tr><th>Shape</th><th>Signalled by</th><th>Candidates</th><th>Because</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Contiguous run</td><td>subarray, substring, window, consecutive</td>
+        <td class="num">n(n+1)/2</td><td>choose start and end</td></tr>
+    <tr><td>Order-preserving selection</td><td>subsequence, without reordering</td>
+        <td class="num">2<sup>n</sup></td><td>each element in or out</td></tr>
+    <tr><td>Unordered selection</td><td>subset, choose any, group</td>
+        <td class="num">2<sup>n</sup></td><td>in or out &mdash; but may sort first</td></tr>
+    <tr><td>A pair or triple</td><td>two numbers such that, any pair</td>
+        <td class="num">n(n&minus;1)/2</td><td>choose two of n</td></tr>
+    <tr><td>An arrangement</td><td>permutation, order the, assign each</td>
+        <td class="num">n!</td><td>every ordering distinct</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Step 2 — divide by the budget</h2>
+
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Candidates vs. budget</th><th>Forced machinery</th></tr></thead>
+  <tbody>
+    <tr><td>About equal</td>
+        <td><strong>Just enumerate.</strong> Contiguous at n &le; 7500 against O(n&sup2;): nested loops
+        <em>are</em> the answer.</td></tr>
+    <tr><td>Polynomially larger</td>
+        <td><strong>Sweep a boundary, or use an identity.</strong> Contiguous at n = 10<sup>5</sup>
+        against O(n): sliding window, or prefix sums.</td></tr>
+    <tr><td>Exponential vs. polynomial</td>
+        <td><strong>Dynamic programming.</strong> Index subproblems by position and reuse.</td></tr>
+    <tr><td>Exponential vs. exponential</td>
+        <td><strong>Enumerate deliberately.</strong> n &le; 20 &rarr; bitmask over subsets;
+        n &le; 10 &rarr; backtracking over arrangements.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Step 3 — the return type picks the tool</h2>
+
+<div class="table-scroll">
+<table class="matrix">
+  <thead>
+    <tr><th>Shape</th><th>Existence</th><th>Count</th><th>Optimum</th><th>The object</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Contiguous<span class="sub">n(n+1)/2</span></td>
+      <td>sliding window</td>
+      <td><strong>prefix sums + map</strong></td>
+      <td>window, or Kadane</td>
+      <td>window, record bounds</td>
+    </tr>
+    <tr>
+      <td>Subsequence<span class="sub">2<sup>n</sup></span></td>
+      <td>greedy two-pointer</td>
+      <td>counting DP</td>
+      <td>DP over positions</td>
+      <td>DP + parent pointers</td>
+    </tr>
+    <tr>
+      <td>Subset<span class="sub">2<sup>n</sup></span></td>
+      <td>subset-sum DP</td>
+      <td>counting knapsack</td>
+      <td>knapsack, or sort+greedy</td>
+      <td>backtracking</td>
+    </tr>
+    <tr>
+      <td>Pair<span class="sub">n(n&minus;1)/2</span></td>
+      <td>complement hash set</td>
+      <td>sort + two pointers</td>
+      <td>sort + two pointers</td>
+      <td>hash map to index</td>
+    </tr>
+    <tr>
+      <td>Arrangement<span class="sub">n!</span></td>
+      <td>&mdash;</td>
+      <td>combinatorics, or DP</td>
+      <td>bitmask DP over visited</td>
+      <td>backtracking</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p style="font-size:0.86rem"><strong>Read the rows, not the cells.</strong> Across a row the
+machinery barely changes &mdash; the return type usually alters only bookkeeping. The one cell that
+is genuinely different from its neighbours is <strong>contiguous + count</strong>, which is why it
+gets its own section below.</p>
+
+<h2>The window-vs-prefix-sum rule</h2>
+
+<div class="caveat">
+  <p>A two-pointer sweep is valid only when <em>"movement in one direction should not reverse the
+  effects of movement in the other direction."</em>
+  &mdash; <a href="https://usaco.guide/silver/two-pointers">USACO Guide</a></p>
+</div>
+
+<div class="two-col">
+<p><strong>Use a sliding window</strong> when the predicate only ever tightens as the window grows
+&mdash; "at most k", "no more than two distinct", "contains all of t". Growing can only break it;
+shrinking can only fix it. Values non-negative.</p>
+
+<p><strong>Use prefix sums + a hash map</strong> when you need an <em>exact</em> value, or when
+values may be negative. The identity <code>sum(l..r) = p[r] &minus; p[l&minus;1]</code> is
+sign-agnostic, and nothing ever shrinks, so there is no invariant to break.</p>
+
+<p><strong>The failure is silent.</strong> Choosing a window where prefix sums were needed yields
+wrong answers, not slow ones. Minimum counterexample worth memorising:
+<code>nums = [1, -1, 0]</code>, <code>k = 0</code>. The whole array sums to 0 so the longest run is
+3, but a window shrinks past index 0 when the sum first exceeds k and can never return for it,
+reporting 2.</p>
+
+<p><strong>Kadane is the same sweep.</strong> Maximum subarray sum = for each r, <code>p[r]</code>
+minus the smallest prefix seen before it. Track a running minimum.
+(<a href="https://usaco.guide/silver/more-prefix-sums">USACO Guide</a>)</p>
+</div>
+
+<h2>The two templates</h2>
+
+<pre><code># Contiguous + optimum, monotonic predicate, values positive.  O(n)
+def longest_at_most(nums, k):
+    left = total = best = 0
+    for right, v in enumerate(nums):
+        total += v
+        while total &gt; k:               # safe: every removal lowers total
+            total -= nums[left]
+            left += 1
+        best = max(best, right - left + 1)
+    return best</code></pre>
+
+<pre><code># Contiguous + exact count, negatives allowed.  O(n)
+from collections import defaultdict
+
+def count_exactly(nums, k):
+    seen = defaultdict(int)
+    seen[0] = 1                        # the empty prefix
+    running = count = 0
+    for v in nums:
+        running += v
+        count += seen[running - k]     # earlier prefixes p with running - p == k
+        seen[running] += 1
+    return count</code></pre>
+
+<div class="caveat">
+  <p><strong>Limits of this card.</strong> The shape is not always stated &mdash; "pick some items"
+  needs a clarifying question about whether order matters. Greedy cuts across every cell and is a
+  proof obligation rather than a shape. And these counts assume the shape ranges over the whole
+  input; extra structure (already sorted, bounded values, a tree) can beat them.</p>
+</div>
+
+<div class="colophon">
+  <h3>See also</h3>
+  <ul class="linkrow">
+    <li><a href="../lessons/0002-the-shape-of-the-answer.html">Lesson 0002 &mdash; The Shape of the Answer</a> (where this card comes from)</li>
+    <li><a href="0001-constraint-ladder.html">Reference card: The Constraint Ladder</a> &mdash; step 0, the budget</li>
+    <li><a href="../glossary.html">Glossary</a> &mdash; subarray vs. subsequence vs. subset, monotonic, invariant</li>
+  </ul>
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="../lessons/0002-the-shape-of-the-answer.html">Lesson 0002</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

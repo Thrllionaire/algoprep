@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Shape of the Answer</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0002 · algoprep</p>
+  <h1>The Shape of the Answer</h1>
+  <p class="standfirst">The budget told you what you cannot afford. Now count how many candidates
+  there are &mdash; and the gap between those two numbers names the technique.</p>
+</header>
+
+<div class="lede">
+  <p><a href="0001-read-the-constraints-first.html">Lesson 0001</a> gave you a budget from the
+  input. But a budget eliminates; it does not choose. The second question is asked of the
+  <strong>answer</strong>, not the input: <em>what shape is the thing I am looking for, and
+  therefore how many of them exist?</em> Divide the search space by the budget and the machinery
+  is forced.</p>
+</div>
+
+<h2>Count the candidates</h2>
+
+<p>Five shapes cover almost everything. Each has a candidate count you can derive in your head
+&mdash; and you should derive it, not memorise it, because the derivation is what transfers:</p>
+
+<div class="table-scroll">
+<table>
+  <caption>The counts follow from one-line arguments, which is why this is worth deriving rather
+  than remembering. See the <a href="../glossary.html">glossary</a> for exact definitions of
+  subarray, subsequence and subset &mdash; the distinction is the whole lesson.</caption>
+  <thead>
+    <tr><th>Shape</th><th>Signalled by</th><th>Candidates</th><th>Because</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Contiguous run</strong></td>
+      <td>"subarray", "substring", "window", "consecutive"</td>
+      <td class="num">n(n+1)/2 &asymp; n&sup2;/2</td>
+      <td>Choose a start and an end.</td>
+    </tr>
+    <tr>
+      <td><strong>Order-preserving selection</strong></td>
+      <td>"subsequence", "without reordering"</td>
+      <td class="num">2<sup>n</sup></td>
+      <td>Each element is in or out.</td>
+    </tr>
+    <tr>
+      <td><strong>Unordered selection</strong></td>
+      <td>"subset", "choose any", "group"</td>
+      <td class="num">2<sup>n</sup></td>
+      <td>Each element is in or out &mdash; but you may sort first.</td>
+    </tr>
+    <tr>
+      <td><strong>A pair or triple</strong></td>
+      <td>"two numbers such that", "any pair"</td>
+      <td class="num">n(n&minus;1)/2</td>
+      <td>Choose two of n.</td>
+    </tr>
+    <tr>
+      <td><strong>An arrangement</strong></td>
+      <td>"permutation", "order the tasks", "assign each"</td>
+      <td class="num">n!</td>
+      <td>Every ordering is distinct.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="sidenote">
+  Note that "subarray" and "substring" mean the same thing &mdash; one for arrays, one for
+  strings. Both are contiguous. "Subsequence" is the one that is not, and the two words differ
+  by three letters while their search spaces differ by an exponential.
+</div>
+
+<h2>Divide, and the machinery is forced</h2>
+
+<p>Here is the move. You have a budget from the constraints and a candidate count from the shape.
+Compare them:</p>
+
+<div class="tell">
+  <span class="tell-label">Candidates &asymp; budget</span>
+  <p><strong>Just enumerate.</strong> A contiguous shape with n &le; 7500 gives ~2.8&times;10<sup>7</sup>
+  candidates against an O(n&sup2;) budget. Two nested loops is the intended answer, and reaching
+  for something cleverer is a mistake. <em>Most people never realise brute force was permitted.</em></p>
+</div>
+
+<div class="tell">
+  <span class="tell-label">Candidates &gg; budget, polynomially</span>
+  <p><strong>You cannot visit the candidates, so visit the boundaries instead.</strong> A
+  contiguous shape at n = 10<sup>5</sup> has 5&times;10<sup>9</sup> candidates against an O(n)
+  budget. Only two escapes exist: sweep a boundary pair forward so each index moves n times total
+  (<em>sliding window</em>), or find an identity that collapses a whole range into arithmetic
+  (<em>prefix sums</em>). That is the entire contiguous toolkit, and choosing between those two is
+  the next section.</p>
+</div>
+
+<div class="tell">
+  <span class="tell-label">Candidates exponential, budget polynomial</span>
+  <p><strong>Dynamic programming, necessarily.</strong> A subsequence shape has 2<sup>n</sup>
+  candidates; if n = 2500 and the budget is O(n&sup2;), you are not enumerating anything. You must
+  be indexing subproblems by <em>position</em> and reusing them. This is why "longest increasing
+  subsequence" is DP and "longest increasing subarray" is a one-line scan &mdash; the shape, not
+  the wording, decided it.</p>
+</div>
+
+<div class="tell">
+  <span class="tell-label">Candidates exponential, budget exponential</span>
+  <p><strong>Enumerate deliberately.</strong> If n &le; 20 the bound is <em>inviting</em> you to
+  walk all 2<sup>n</sup> subsets (bitmask), and if n &le; 10, all n! arrangements (backtracking).
+  You met this as the neon-sign tell in lesson 0001; now you know what it is a sign <em>of</em>.</p>
+</div>
+
+<h2>Within a shape, the return type picks the tool</h2>
+
+<p>Shape fixes the search space. What the problem asks you to <em>return</em> &mdash; a yes/no, a
+count, an optimum, or the winning object itself &mdash; fixes how you traverse it. Explore the
+intersections; <strong>do not try to memorise this grid.</strong> It is a lookup surface, and the
+two paragraphs after it are the part worth internalising.</p>
+
+<div id="shape-grid"></div>
+
+<script type="application/json" id="shape-grid-data">
+{
+  "title": "Shape × return type",
+  "rowLabel": "Shape",
+  "colLabel": "Return type",
+  "hint": "Pick any cell. The <strong>row</strong> fixes how many candidates exist; the <strong>column</strong> fixes how you traverse them. The technique is what sits at the intersection — and notice how often one row shares machinery across three columns.",
+  "cols": [
+    { "key": "exist", "name": "Existence" },
+    { "key": "count", "name": "Count" },
+    { "key": "opt",   "name": "Optimum" },
+    { "key": "obj",   "name": "The object" }
+  ],
+  "rows": [
+    { "key": "run",  "name": "Contiguous run",             "note": "n(n+1)/2" },
+    { "key": "subseq", "name": "Order-preserving selection", "note": "2^n" },
+    { "key": "subset", "name": "Unordered selection",        "note": "2^n" },
+    { "key": "pair", "name": "A pair",                      "note": "n(n-1)/2" },
+    { "key": "perm", "name": "An arrangement",              "note": "n!" }
+  ],
+  "cells": {
+    "run|exist": { "family": "Sliding window",
+      "detail": "<p>Does <em>some</em> window satisfy the predicate? Sweep a window forward and stop the moment one does. Valid only if the predicate is monotonic — see the section below.</p>",
+      "example": "Permutation of one string inside another" },
+    "run|count": { "family": "Prefix sums + hash map",
+      "detail": "<p>Counting exact-sum ranges is not a window problem. Use the identity <code>sum(l..r) = p[r] - p[l-1]</code> and a map of prefix values already seen. This is the one contiguous technique that survives negative numbers.</p>",
+      "example": "Number of subarrays summing to exactly k" },
+    "run|opt": { "family": "Window, or Kadane",
+      "detail": "<p>Longest or shortest window under a monotonic constraint → sliding window. Maximum <em>sum</em>, with negatives allowed → Kadane, which is the same prefix-sum sweep while tracking the running minimum prefix.</p>",
+      "example": "Longest substring with k distinct characters; maximum subarray sum" },
+    "run|obj": { "family": "Window, recording bounds",
+      "detail": "<p>Identical machinery to the optimum case. The only difference is bookkeeping: store <code>(left, right)</code> whenever you improve the best, then slice at the end. The return type changed; the family did not.</p>",
+      "example": "Minimum window substring" },
+
+    "subseq|exist": { "family": "Greedy two-pointer scan",
+      "detail": "<p>“Is s a subsequence of t?” needs no DP at all. Walk both with one pointer each, advancing s only on a match. Greedy is optimal here because taking the earliest possible match never hurts.</p>",
+      "example": "Is s a subsequence of t" },
+    "subseq|count": { "family": "Counting DP",
+      "detail": "<p>Counting subsequences means counting without generating — exactly the modulo tell from lesson 0001. <code>dp[i][j]</code> over positions in each sequence.</p>",
+      "example": "Distinct subsequences of s equal to t" },
+    "subseq|opt": { "family": "DP over positions",
+      "detail": "<p>The workhorse. One sequence → <code>dp[i]</code> = best answer ending at i (longest increasing subsequence). Two sequences → <code>dp[i][j]</code> (longest common subsequence). The 2^n search space never gets enumerated.</p>",
+      "example": "Longest increasing subsequence; longest common subsequence" },
+    "subseq|obj": { "family": "DP plus parent pointers",
+      "detail": "<p>Run the same DP, but store which predecessor each cell chose. Then walk backwards from the winning cell to rebuild the sequence. Reconstruction is a bookkeeping layer over an existing DP, never a different algorithm.</p>",
+      "example": "Print the longest common subsequence itself" },
+
+    "subset|exist": { "family": "Subset-sum DP",
+      "detail": "<p>“Can some subset hit exactly T?” is a boolean knapsack: <code>dp[t]</code> = is sum t reachable. O(n·T), which is why these problems always bound the total.</p>",
+      "example": "Partition array into two equal-sum halves" },
+    "subset|count": { "family": "Counting knapsack DP",
+      "detail": "<p>Same table as subset-sum, but the cells hold counts instead of booleans. Watch for the modulo in the problem statement confirming it.</p>",
+      "example": "Number of ways to reach a target sum with +/- signs" },
+    "subset|opt": { "family": "Knapsack DP, or sort then greedy",
+      "detail": "<p>Order does not matter for a subset, which means <strong>you are free to sort</strong> — and sorting is what makes a greedy argument possible. Always ask whether sorting first makes the choice obvious before reaching for a table.</p>",
+      "example": "0/1 knapsack; minimum number of coins" },
+    "subset|obj": { "family": "Backtracking with pruning",
+      "detail": "<p>If the problem wants the subsets themselves, the output is exponential, so the runtime is allowed to be. Check the bound: it will be small. Prune branches that cannot beat the best found so far.</p>",
+      "example": "All subsets; combination sum" },
+
+    "pair|exist": { "family": "Complement hash-set lookup",
+      "detail": "<p>For each value v, ask whether <code>target - v</code> has already been seen. One pass, O(n), no sorting needed — and unlike two-pointers it does not require the input to be sorted.</p>",
+      "example": "Two Sum" },
+    "pair|count": { "family": "Sort, then two pointers",
+      "detail": "<p>Sort, then walk one pointer in from each end. When the sum is too small advance the left pointer; too large, retreat the right. Each moves at most n times, so the sweep is O(n) after the O(n log n) sort.</p>",
+      "example": "Count pairs with sum less than k" },
+    "pair|opt": { "family": "Sort, then two pointers",
+      "detail": "<p>Same sweep. Sortedness is what licenses it: <em>“moving the left pointer to the right will never decrease the sum, and moving the right pointer to the left will never increase the sum”</em> — USACO Guide. That is monotonicity again, in the opposite-ends variant.</p>",
+      "example": "Pair sum closest to target" },
+    "pair|obj": { "family": "Hash map to index",
+      "detail": "<p>Store value → index rather than a bare set, so you can return the positions. Again: the return type changed the bookkeeping, not the family.</p>",
+      "example": "Two Sum, returning indices" },
+
+    "perm|count": { "family": "Combinatorics, or DP",
+      "detail": "<p>Counting arrangements is usually a formula, occasionally a DP over states. If you find yourself about to generate permutations in order to count them, stop — that is the wrong shape.</p>",
+      "example": "Number of distinct arrangements with duplicates" },
+    "perm|opt": { "family": "Bitmask DP over visited",
+      "detail": "<p>The n ≤ 20 tell. <code>dp[mask][i]</code> = best cost having visited exactly the set <code>mask</code> and standing at i. Collapses n! orderings into 2^n · n states by noticing that only the <em>set</em> visited matters, not the order you visited it in.</p>",
+      "example": "Travelling salesman; assign n tasks to n workers" },
+    "perm|obj": { "family": "Backtracking",
+      "detail": "<p>Build the arrangement one position at a time, undoing after each branch. The output is n! large, so n must be tiny — check the bound and you will find it is.</p>",
+      "example": "All permutations; N-Queens" }
+  }
+}
+</script>
+
+<p>Two things to take from the grid rather than the grid itself. First: <strong>the return type
+usually changes only the bookkeeping.</strong> "Find the longest window" and "return the longest
+window" are the same algorithm plus two stored integers. Second: <strong>one cell is genuinely
+different from its neighbours</strong> &mdash; contiguous&nbsp;+&nbsp;count. That one is worth a
+section.</p>
+
+<h2>The one contrast to internalise: window vs. prefix sum</h2>
+
+<p>Both are O(n). Both work on contiguous runs. Choosing wrong does not make your solution slow
+&mdash; it makes it <em>silently incorrect</em>, which is far worse in an interview. The governing
+rule is monotonicity:</p>
+
+<div class="caveat">
+  <p>A two-pointer sweep is valid only when <em>"movement in one direction should not reverse the
+  effects of movement in the other direction."</em>
+  &mdash; <a href="https://usaco.guide/silver/two-pointers">USACO Guide</a></p>
+</div>
+
+<p>With all-positive values that holds: growing the window can only raise the sum, shrinking it
+can only lower the sum. So a window handles <em>"longest run with sum at most k"</em> perfectly:</p>
+
+<pre><code>def longest_at_most(nums, k):          # all values positive
+    left = total = best = 0
+    for right, v in enumerate(nums):
+        total += v
+        while total &gt; k:               # safe: every removal lowers total
+            total -= nums[left]
+            left += 1
+        best = max(best, right - left + 1)
+    return best</code></pre>
+
+<p>Allow a single negative number and the guarantee dies &mdash; removing an element can now
+<em>raise</em> the sum, so shrinking is no longer safe, and <code>left</code> can never move back
+to recover. Here is the smallest counterexample, which is worth keeping in your head:</p>
+
+<pre><code>nums = [1, -1, 0],  k = 0
+
+The whole array sums to 0, so the true answer is 3.
+The window above returns 2: at right = 0 the sum is 1 &gt; 0, so it
+shrinks past index 0 — and can never come back for it.</code></pre>
+
+<p>When monotonicity is absent, or the question is <em>"exactly k"</em> rather than <em>"at most
+k"</em>, you stop sweeping boundaries and start doing arithmetic. The identity
+<code>sum(l..r) = p[r] &minus; p[l&minus;1]</code> holds no matter the signs, so rearranging it
+turns the question into a lookup:</p>
+
+<pre><code>from collections import defaultdict
+
+def count_exactly(nums, k):            # negatives are fine
+    seen = defaultdict(int)
+    seen[0] = 1                        # the empty prefix
+    running = count = 0
+    for v in nums:
+        running += v
+        count += seen[running - k]     # every earlier prefix p with running - p == k
+        seen[running] += 1
+    return count</code></pre>
+
+<div class="sidenote">
+  Both functions above were property-tested against brute force on thousands of random inputs
+  before being published here &mdash; <code>longest_at_most</code> on positive values only, which
+  is precisely the limit of its claim, and <code>count_exactly</code> on inputs including
+  negatives.
+</div>
+
+<p>Nothing shrinks; nothing needs to. That is why this technique is immune to sign. The
+counting-with-a-map idea is exactly how the USACO Guide solves
+<a href="https://usaco.guide/problems/cses-1661-subarray-sums-ii/solution">CSES Subarray Sums II</a>:
+<em>"at each index i, we can count the number of prefixes with sum equal to prefixSum[i]&minus;x"</em>.
+And the maximum-subarray case is the same sweep tracking a running <em>minimum</em> prefix
+(<a href="https://usaco.guide/silver/more-prefix-sums">USACO Guide</a>), which is Kadane's
+algorithm wearing different clothes.</p>
+
+<div class="tell">
+  <span class="tell-label">The decision, in one line</span>
+  <p>Contiguous and the predicate only ever tightens as the window grows &rarr; <strong>window</strong>.
+  Contiguous and you need an <em>exact</em> value, or values can be negative &rarr;
+  <strong>prefix sums plus a hash map</strong>.</p>
+</div>
+
+<h2>Practice</h2>
+
+<p>Six problems. Two of them need the constraint ladder from
+<a href="0001-read-the-constraints-first.html">lesson 0001</a> as well as today's shape reading
+&mdash; the mixing is deliberate, because interviews do not tell you which lesson a problem is
+from.</p>
+
+<div id="shape-quiz"></div>
+
+<script type="application/json" id="shape-quiz-data">
+{
+  "title": "Shape triage",
+  "commit": "Name the <em>shape</em>, then the <em>return type</em>, then the family — out loud, in that order. <em>Then</em> reveal the options.",
+  "perfect": "Six from six. The grid is a lookup surface, so treat a clean sweep as evidence you can <em>derive</em> the mapping, not that you have it memorised. Run it again in two days; the options reshuffle.",
+  "questions": [
+    {
+      "tag": "contiguous + count",
+      "stem": "Count the subarrays whose sum is exactly k. Values may be negative.",
+      "given": "1 <= n <= 20000\n-1000 <= nums[i] <= 1000",
+      "options": [
+        { "text": "Prefix-sum hash counting", "correct": true },
+        { "text": "Monotonic sliding window" },
+        { "text": "Counting dynamic programming" },
+        { "text": "Sorting plus two-pointers" }
+      ],
+      "why": "<p>Two independent reasons to reject the window. The return type is an <em>exact</em> count, not a longest-or-shortest optimum; and negatives are explicitly permitted, so shrinking the window can raise the sum and monotonicity is gone.</p><p>Remember <code>[1, -1, 0]</code> with k = 0: a window returns 2 where the truth is 3. The prefix-sum identity <code>sum(l..r) = p[r] - p[l-1]</code> does not care about signs, so it survives.</p>"
+    },
+    {
+      "tag": "contiguous + optimum",
+      "stem": "Longest substring containing at most two distinct characters.",
+      "given": "1 <= s.length <= 100000",
+      "options": [
+        { "text": "Monotonic sliding window", "correct": true },
+        { "text": "Prefix-sum hash counting" },
+        { "text": "Counting dynamic programming" },
+        { "text": "Backtracking with pruning" }
+      ],
+      "why": "<p>“Substring” is the contiguity signal, and 10^5 means O(n) or O(n log n), so you cannot enumerate the ~5×10^9 substrings. The predicate is the giveaway: once a window holds three distinct characters, <em>growing it further can never fix that</em>. The condition only tightens, so it is monotonic and a window is licensed.</p><p>Contrast it with the previous question: same shape, different return type, different tool.</p>"
+    },
+    {
+      "tag": "subsequence + optimum",
+      "stem": "Length of the longest strictly increasing subsequence.",
+      "given": "1 <= n <= 2500",
+      "options": [
+        { "text": "Dynamic programming table", "correct": true },
+        { "text": "Monotonic sliding window" },
+        { "text": "Prefix-sum hash counting" },
+        { "text": "Exhaustive subset enumeration" }
+      ],
+      "why": "<p>“Subsequence” means 2^2500 candidates, so enumeration is not merely slow, it is absurd. But 2500 permits O(n²) = 6.25×10^6, which is the budget for a <code>dp[i]</code> table over positions.</p><p>Change one word to <em>subarray</em> and this becomes a trivial one-line scan. That single word moves the search space from 2^n to n²/2 and the answer from DP to a for-loop — which is the whole reason this lesson exists.</p>"
+    },
+    {
+      "tag": "pair + existence",
+      "stem": "Does any pair of elements sum to the target? The array is not sorted.",
+      "given": "1 <= n <= 100000",
+      "options": [
+        { "text": "Complement hash-set lookup", "correct": true },
+        { "text": "Monotonic sliding window" },
+        { "text": "Backtracking with pruning" },
+        { "text": "Counting dynamic programming" }
+      ],
+      "why": "<p>The shape is a pair, so there are ~5×10^9 candidates at n = 10^5 — well past an O(n log n) budget. The return type is bare existence, which is the cheapest thing to ask for, and it admits a single pass: for each v, has <code>target - v</code> been seen?</p><p>Sorting and walking two pointers inward also works and is O(n log n). Both are defensible; say so out loud, then pick the hash set because it is O(n) and does not disturb the input.</p>"
+    },
+    {
+      "tag": "arrangement + optimum",
+      "stem": "Assign n tasks to n workers, each worker taking exactly one task, minimising total cost.",
+      "given": "1 <= n <= 16",
+      "options": [
+        { "text": "Bitmask dynamic programming", "correct": true },
+        { "text": "Monotonic sliding window" },
+        { "text": "Greedy sorted assignment" },
+        { "text": "Counting dynamic programming" }
+      ],
+      "why": "<p>The bound of 16 is lesson 0001's neon sign, and “assign each” is the arrangement shape: 16! ≈ 2×10^13 orderings, too many. But 2^16 = 65,536 <em>subsets</em>, which is nothing.</p><p>The insight that collapses one into the other: to decide the next assignment, you only need to know <em>which</em> tasks are already taken, never the order they were taken in. So <code>dp[mask]</code> over the set of assigned tasks, which is 2^n · n work instead of n!.</p><p>Greedy is the tempting wrong answer — picking each worker's cheapest task locally does not give a minimal total.</p>"
+    },
+    {
+      "tag": "contiguous + the object",
+      "stem": "Return the shortest substring of s that contains every character of t.",
+      "given": "1 <= s.length, t.length <= 100000",
+      "options": [
+        { "text": "Shrinking sliding window", "correct": true },
+        { "text": "Counting dynamic programming" },
+        { "text": "Complement hash-set lookup" },
+        { "text": "Prefix-sum hash counting" }
+      ],
+      "why": "<p>Same family as question 2 — do not be fooled by the different label. It is a contiguous shape with a monotonic predicate (once a window covers all of t, growing it keeps covering it), so it is a window.</p><p>The return type asks for the object rather than its length, which changes only the bookkeeping: record <code>(left, right)</code> each time you improve on the best, then slice <code>s[left:right+1]</code> at the end. <strong>Return type changes what you store, not which family you are in.</strong></p>"
+    }
+  ]
+}
+</script>
+
+<h2>Saying it out loud</h2>
+
+<p>Stack this on top of lesson 0001's opening. Two sentences, before any code:</p>
+
+<pre><code>"n is 10^5, so I need n log n or better — no enumerating pairs.
+ And the answer is a contiguous run, of which there are about
+ 5×10^9, so I can't visit candidates at all; I need either a
+ forward sweep or a prefix-sum identity. The predicate here only
+ tightens as the window grows, so a sliding window is valid.
+ If negatives were allowed I'd switch to prefix sums, because
+ shrinking would stop being safe."</code></pre>
+
+<p>That last sentence is the one that reads as senior. You are not just choosing a technique; you
+are naming the <em>condition under which your choice stops being correct</em>. Very few candidates
+volunteer that, and it is the difference between having memorised a pattern and understanding it.</p>
+
+<div class="caveat">
+  <p><strong>Where this fails.</strong> The shape is not always stated. "Pick some of the items"
+  could be a subset or a subsequence, and you have to ask whether order matters &mdash; which is
+  itself a good clarifying question. Greedy also cuts across the whole grid: it is less a shape
+  than a proof obligation, and it belongs in its own lesson rather than a cell. And the counts
+  here assume the shape is over the whole input; problems with extra structure (already sorted,
+  bounded values, a tree instead of an array) can beat them.</p>
+</div>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/silver/two-pointers">USACO Guide &mdash; Two Pointers</a>. It
+  states the validity condition precisely rather than showing you a template to copy, and its
+  "opposite ends" and "same direction" split is the cleanest treatment of why sortedness matters.
+  Skim the worked <em>Books</em> example; ignore the C++/Java blocks. Then
+  <a href="https://usaco.guide/silver/more-prefix-sums">More on Prefix Sums</a> for the
+  maximum-subarray sweep.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../reference/0002-shape-to-family.html">Reference card: Shape &rarr; Family</a>
+      &mdash; the candidate counts, the full grid, and the window-vs-prefix-sum rule on one
+      printable page.</li>
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson. Subarray, subsequence,
+      subset, monotonic, invariant, prefix sum, defined precisely and used consistently from here on.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0001-read-the-constraints-first.html">Lesson 0001</a> &mdash; the budget half of
+      the triage. Today was the search-space half; they multiply.</li>
+    <li><a href="../reference/0001-constraint-ladder.html">Constraint ladder</a> &mdash; still the
+      first thing you read on any problem.</li>
+    <li><strong>Next lesson:</strong> the sliding-window <em>invariant</em> in depth. You can now
+      identify a window problem; next you stop getting the shrink condition wrong, which is the
+      second failure mode you named.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    tell me which quiz answers you got by <em>deriving</em> versus by <em>recognising</em>, because
+    those need different follow-ups. Or hand me a problem you have seen and we will name its shape,
+    its candidate count, and its return type together.</p>
+  </div>
+
+</div>
+
+<script src="../assets/grid.js"></script>
+<script src="../assets/quiz.js"></script>
+<script>
+  DecisionGrid.mount('shape-grid', 'shape-grid-data');
+  AlgoQuiz.mount('shape-quiz', 'shape-quiz-data');
+</script>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0001-read-the-constraints-first.html">&larr; Lesson 0001</a>
+    <a href="../reference/0002-shape-to-family.html">Reference card</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

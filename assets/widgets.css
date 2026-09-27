@@ -207,3 +207,113 @@
   .q-options.is-locked { filter: none; opacity: 1; }
   .ladder-table tr.dead td { opacity: 1; }
 }
+
+/* ---------- decision grid (assets/grid.js) ------------------------------- */
+
+.grid-scroll { overflow-x: auto; margin: 0 0 1.1rem; }
+.grid-table { border-collapse: collapse; width: 100%; font-size: 0.78rem; }
+.grid-table th, .grid-table td {
+  border: 1px solid var(--rule-soft);
+  padding: 0.3rem;
+  vertical-align: middle;
+  text-align: center;
+}
+.grid-table thead th {
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 600;
+  background: var(--code-bg);
+  padding: 0.45rem 0.35rem;
+}
+.grid-corner {
+  text-align: left !important;
+  font-size: 0.6rem !important;
+  line-height: 1.35;
+  color: var(--ink-faint) !important;
+  white-space: nowrap;
+}
+.grid-corner span { color: var(--ink-soft); }
+.grid-rowhead {
+  text-align: left !important;
+  background: var(--code-bg);
+  min-width: 9.5rem;
+  padding: 0.45rem 0.5rem !important;
+}
+.grid-rowname {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.grid-rownote {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+  margin-top: 0.15rem;
+}
+.grid-cell {
+  display: block;
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  line-height: 1.3;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  padding: 0.45rem 0.3rem;
+  cursor: pointer;
+}
+.grid-cell:hover { background: var(--accent-bg); color: var(--accent); }
+.grid-cell.is-on {
+  background: var(--accent);
+  color: var(--paper);
+  font-weight: 600;
+}
+.grid-empty { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; }
+
+.grid-panel {
+  font-family: var(--serif);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-bg);
+  padding: 0.85rem 1rem;
+  min-height: 4.5rem;
+}
+.grid-crumb {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 0.6rem;
+}
+.grid-crumb span { color: var(--ink-faint); }
+.grid-crumb strong { color: var(--accent); font-weight: 600; }
+.grid-detail p { margin: 0 0 0.6rem; }
+.grid-detail p:last-child { margin-bottom: 0; }
+.grid-detail code { font-size: 0.82em; }
+.grid-example {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin: 0.7rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rule);
+}
+.grid-example span {
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-right: 0.4rem;
+}
+
+@media print {
+  .grid-cell { color: var(--ink) !important; background: none !important; }
+  .grid-panel { min-height: 0; }
+}

@@ -15,6 +15,10 @@ apply is far easier than naming the one that does — and it does most of the wo
    — the input bound gives you a time budget, and the budget eliminates whole families of
    technique before you understand the problem. Interactive constraint ladder plus a
    six-question triage drill.
+2. [The Shape of the Answer](https://thrllionaire.github.io/algoprep/lessons/0002-the-shape-of-the-answer.html)
+   — count the candidates the answer's shape implies, divide by the budget, and the machinery is
+   forced. Includes the one contrast that fails *silently* when you get it wrong: sliding window
+   versus prefix sums.
 
 ## Reference cards
 
@@ -22,10 +26,15 @@ Printable, revisit-often distillations. These are the durable artefacts; lessons
 
 1. [The Constraint Ladder](https://thrllionaire.github.io/algoprep/reference/0001-constraint-ladder.html)
    — bound → budget → surviving families, plus the eight tells, on one page.
+2. [Shape to Family](https://thrllionaire.github.io/algoprep/reference/0002-shape-to-family.html)
+   — candidate counts per shape, the shape × return-type matrix, the window-vs-prefix-sum rule,
+   and both Python templates.
 
 ## Course materials
 
 - [MISSION.md](./MISSION.md) — what this course is for, and what it is not.
+- [GLOSSARY.md](./GLOSSARY.md) — every term used with exactly one meaning, and marked where it is
+  ours rather than standard.
 - [RESOURCES.md](./RESOURCES.md) — the trusted sources behind every claim, communities worth
   joining, and the gaps still open.
 - [PUBLISHING.md](./PUBLISHING.md) — how to add a lesson and ship it.
@@ -36,6 +45,7 @@ Printable, revisit-often distillations. These are the durable artefacts; lessons
 index.html            homepage
 mission.html          generated from MISSION.md by ./build.sh
 resources.html        generated from RESOURCES.md by ./build.sh
+glossary.html         generated from GLOSSARY.md by ./build.sh
 lessons/              NNNN-slug.html, committed as-is and served directly
 reference/            NNNN-slug.html, numbered to match its lesson
 assets/               shared components — reuse before authoring anything new
@@ -49,6 +59,8 @@ Shared components in `assets/`:
 - `quiz.js` — `AlgoQuiz`: retrieval-practice quiz with shuffled options, a commit-first gate,
   immediate explanations, and a reshuffled replay.
 - `ladder.js` — `ConstraintLadder`: type an `n`, see your budget and the surviving families.
+- `grid.js` — `DecisionGrid`: a generic two-axis lookup table with a detail panel. Used for
+  shape × return type; reuse it for any future taxonomy.
 
 Learning records and working notes live in a separate private repo; see
 [PUBLISHING.md](./PUBLISHING.md).
