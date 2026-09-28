@@ -35,6 +35,10 @@ apply is far easier than naming the one that does — and it does most of the wo
    — binary search on the answer. There's no array this time; you build the search space from a
    range of candidates and the licence is a monotonic feasibility check instead of a sorted
    structure.
+7. [Recursion, Memo, Table](https://thrllionaire.github.io/algoprep/lessons/0007-recursion-memo-table.html)
+   — the same coin-problem function written three ways, so the recursion, the memoization and the
+   bottom-up table stop looking like three separate topics and start looking like one idea with
+   different bookkeeping.
 
 ## Reference cards
 

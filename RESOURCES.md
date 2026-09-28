@@ -93,6 +93,23 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   [LeetCode 704, Binary Search](https://leetcode.com/problems/binary-search/) as the plain
   sorted-array contrast the lesson opens with.
 
+- [Competitive Programmer's Handbook — ch. 7, *Dynamic Programming*](https://cses.fi/book/book.pdf)
+  Pages 65–68 (read via `pdftotext`; the PDF's text is otherwise compressed and not directly
+  fetchable). Introduces DP through the coin problem — fewest coins summing to x — stated first as
+  a plain recurrence, then memoized, then rewritten as a bottom-up loop: *"the idea in dynamic
+  programming is to formulate the problem recursively so that the solution to the problem can be
+  calculated from solutions to smaller subproblems,"* and on preferring the iterative form,
+  *"most competitive programmers prefer this implementation, because it is shorter and has lower
+  constant factors ... still, it is often easier to think about dynamic programming solutions in
+  terms of recursive functions."* Primary source for
+  [lesson 0007](./lessons/0007-recursion-memo-table.html).
+
+- [CSES Problem Set — Coin Combinations I (1633)](https://cses.fi/problemset/task/1633) and
+  [Coin Combinations II (1634)](https://cses.fi/problemset/task/1634)
+  The minimum-coins and count-the-ways versions of the same coin problem — same state, two
+  different recurrences. Practice pair for
+  [lesson 0007](./lessons/0007-recursion-memo-table.html).
+
 - [Competitive Programmer's Handbook — Antti Laaksonen (free PDF)](https://cses.fi/book/book.pdf)
   Rigorous, free, and short on hand-waving. Chapters 1–2 cover complexity; 6 is greedy; 7 is
   DP; 11–14 graphs. Use for: when a pattern's *why* is unclear and blog posts are being vague.

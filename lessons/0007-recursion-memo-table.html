@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recursion, Memo, Table</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0007 · algoprep</p>
+  <h1>Recursion, Memo, Table</h1>
+  <p class="standfirst">Three things that look like separate topics on a syllabus &mdash; recursion,
+  memoization, dynamic programming &mdash; are one idea, written three ways. This lesson writes the
+  same function all three ways and watches the runtime change by six orders of magnitude while the
+  answer never does.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The coin problem.</strong> <em>Given coin denominations you can reuse as many times as
+  you like, and a target sum x, find the minimum number of coins that sum to x.</em> With
+  <code>coins = [1, 3, 4]</code> and <code>x = 10</code>, the answer is 3: <code>3 + 3 + 4</code>.</p>
+</div>
+
+<h2>The recursive idea, first</h2>
+
+<p>Whatever coin you spend first, the rest of the problem is the same problem, smaller. Call
+<code>solve(x)</code> the fewest coins needed for sum <code>x</code>. Picking coin <code>c</code>
+first leaves <code>solve(x - c)</code> to solve, plus the one coin you just spent &mdash; and you
+want the best choice of <code>c</code>, so:</p>
+
+<div class="tell">
+  <span class="tell-label">The recurrence</span>
+  <p><code>solve(x) = min over every coin c of ( solve(x &minus; c) + 1 )</code>, with base case
+  <code>solve(0) = 0</code> and <code>solve(x) = &infin;</code> for <code>x &lt; 0</code>.</p>
+</div>
+
+<p>That sentence translates line for line into code &mdash; this is what "formulate the problem
+recursively" means in practice, and it's worth doing before writing anything that runs fast.</p>
+
+<pre><code>def solve_naive(coins, x):
+    if x &lt; 0:
+        return float('inf')
+    if x == 0:
+        return 0
+    return min(solve_naive(coins, x - c) + 1 for c in coins)</code></pre>
+
+<div class="sidenote">
+  <a href="https://cses.fi/book/book.pdf">Competitive Programmer's Handbook</a>, ch. 7, uses this
+  exact problem to introduce dynamic programming, and states the general principle behind it
+  plainly: <em>"the idea in dynamic programming is to formulate the problem recursively so that
+  the solution to the problem can be calculated from solutions to smaller subproblems."</em>
+</div>
+
+<h2 id="overlap">The one thing wrong with it</h2>
+
+<p><code>solve_naive</code> is correct on every input. It is also catastrophically slow, and the
+reason has a name already in the <a href="../glossary.html">glossary</a>: <em>dynamic programming
+solves problems by combining answers to smaller overlapping subproblems &mdash; the defining
+feature is overlap</em>. <code>solve(6)</code> gets asked for by the branch that spent a 1 first
+<em>and</em> the branch that spent a 4 first. Plain recursion answers it twice, from scratch, both
+times &mdash; and every subproblem below it twice again, and so on down.</p>
+
+<div class="caveat">
+  <p><strong>Measured, not estimated:</strong> instrumenting <code>solve_naive</code> with a call
+  counter, for <code>coins = [1, 3, 4]</code>: <code>solve_naive(10)</code> makes
+  <strong>313</strong> recursive calls. <code>solve_naive(20)</code> makes
+  <strong>38,446</strong>. <code>solve_naive(30)</code> makes <strong>4,728,718</strong> &mdash;
+  for a function that only ever returns one of about thirty distinct answers. The overlap is being
+  paid for again at every single visit.</p>
+</div>
+
+<h2>Memoization: pay for each answer once</h2>
+
+<p>The fix does not touch the recurrence at all. It only changes what happens the second time
+<code>solve</code> is asked the same question: check a cache first, and only do the work if the
+answer isn't already sitting there.</p>
+
+<pre><code>def solve_memo(coins, x, memo=None):
+    if memo is None:
+        memo = {}
+    if x &lt; 0:
+        return float('inf')
+    if x == 0:
+        return 0
+    if x in memo:
+        return memo[x]
+    memo[x] = min(solve_memo(coins, x - c, memo) + 1 for c in coins)
+    return memo[x]</code></pre>
+
+<div class="caveat">
+  <p><strong>Same measurement, memoized:</strong> <code>solve_memo(30)</code> makes
+  <strong>91</strong> recursive calls, not 4,728,718 &mdash; because each of the 31 distinct sums
+  from 0 to 30 is now computed exactly once. The recurrence, the base cases and the answer are
+  all identical to <code>solve_naive</code>; only the number of times each subproblem gets solved
+  changed.</p>
+</div>
+
+<div class="tell">
+  <span class="tell-label">The invariant</span>
+  <p>Before <code>solve_memo(x)</code> returns, <code>memo[x]</code> holds the correct answer for
+  <code>x</code> &mdash; and every future call with that same <code>x</code> returns it without
+  recursing again. Memoization is this one promise, nothing more: <em>never solve the same state
+  twice.</em></p>
+</div>
+
+<h2>Tabulation: the same promise, built bottom-up</h2>
+
+<p><code>solve_memo</code> discovers which states it needs on the way down and fills them in on the
+way back up, in whatever order recursion happens to visit them. Nothing stops you filling the same
+table in a plain loop, smallest state first, since <code>solve(x)</code> only ever needs sums
+smaller than <code>x</code>:</p>
+
+<pre><code>def solve_table(coins, x):
+    value = [float('inf')] * (x + 1)
+    value[0] = 0
+    for i in range(1, x + 1):
+        for c in coins:
+            if i - c &gt;= 0:
+                value[i] = min(value[i], value[i - c] + 1)
+    return value[x]</code></pre>
+
+<p>Same recurrence, same base case, same answer &mdash; now with no recursion, no call stack, and no
+function-call overhead per state. <a href="https://cses.fi/book/book.pdf">CPH</a> is direct about
+the trade: <em>"most competitive programmers prefer this implementation, because it is shorter and
+has lower constant factors. &hellip; Still, it is often easier to think about dynamic programming
+solutions in terms of recursive functions."</em> Think in recursion, ship the table.</p>
+
+<div class="caveat">
+  <p><strong>Property-tested against each other</strong> &mdash; <code>solve_memo</code> and
+  <code>solve_table</code> compared on 2,000 random small coin sets and target sums:
+  <strong>0 disagreements</strong>. They're the same function; only the order of evaluation
+  differs.</p>
+</div>
+
+<h2>Recursion, memo, table: one idea, three costumes</h2>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th></th><th>Naive recursion</th><th>Memoization (top-down)</th><th>Tabulation (bottom-up)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Recurrence</td><td colspan="3" class="num">identical in all three</td></tr>
+    <tr><td>Evaluation order</td><td>Whatever the calls do</td><td>Whatever the calls do, once each</td><td>Smallest state first, explicit loop</td></tr>
+    <tr><td>Each state solved</td><td>As many times as it's asked for</td><td>Exactly once</td><td>Exactly once</td></tr>
+    <tr><td>Calls for x = 30</td><td class="num">4,728,718</td><td class="num">91</td><td class="num">&mdash; no recursion</td></tr>
+    <tr><td>Overhead</td><td class="num">n/a &mdash; too slow to matter</td><td>Call stack + dict lookups</td><td class="num">Array indexing only</td></tr>
+  </tbody>
+  <caption>Nothing about the <em>algorithm</em> changes across the row. What changes is bookkeeping
+  &mdash; whether a solved state is remembered at all, and in what order states get visited.</caption>
+</table>
+</div>
+
+<h2>Naming the state</h2>
+
+<p>Every one of the three functions above takes the same one piece of information:
+<code>x</code>, the sum still left to form. That's <strong>the state</strong> &mdash; the smallest
+description of "where you are" from which the rest of the problem is determined. Get the state
+right and the recurrence, the memo key, and the table's index are all the same thing, decided once.
+Miss part of the state &mdash; forget that a later problem might also need to know, say, how many
+coins have been used so far &mdash; and the same input gets treated as two different states that
+happen to look identical, which is a silent correctness bug rather than a slow program.</p>
+
+<h2>Practice</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="dp-quiz"></div>
+
+<script type="application/json" id="dp-quiz-data">
+{
+  "title": "Retrieval practice — recursion, memo, table",
+  "commit": "Say the recurrence and the state out loud before you look. If you can write the recurrence but not name the state, you don't have the problem yet, just the shape of an answer.",
+  "perfect": "Six from six. Now implement solve_table yourself from scratch for a coin set of your choosing, then look up CSES 1633, Coin Combinations I, which is exactly this problem.",
+  "questions": [
+    {
+      "tag": "the recurrence",
+      "stem": "coins = [1, 3, 4]. What is the correct recurrence for solve(x), the fewest coins summing to x?",
+      "given": "solve(0) = 0, solve(x) = infinity for x < 0",
+      "options": [
+        { "text": "min over every coin of solve(x minus c) plus one", "correct": true },
+        { "text": "max over every coin of solve(x minus c) plus one" },
+        { "text": "sum over every coin of solve(x minus c) times one" },
+        { "text": "min over every coin of solve(x plus c) minus one" }
+      ],
+      "why": "<p>You want the fewest coins, so you take the minimum over which coin you spend first, and spending one coin costs one plus whatever the smaller remaining sum costs. Max would find the most coins; sum would count paths, not minimize; x + c moves away from the base case instead of toward it.</p>"
+    },
+    {
+      "tag": "overlap",
+      "stem": "Why does memoizing solve(x) help at all?",
+      "given": "solve_naive(30) makes 4,728,718 calls; solve_memo(30) makes 91",
+      "options": [
+        { "text": "The same subproblem gets asked for more than once", "correct": true },
+        { "text": "The coin values happen to be sorted in order" },
+        { "text": "The target sum stays under about one thousand total" },
+        { "text": "Every coin denomination appears here at most one time" }
+      ],
+      "why": "<p>Memoization only pays off when the same state gets requested repeatedly — that's the overlap in \"overlapping subproblems\" from the <a href='../glossary.html'>glossary</a>'s DP entry. Sortedness of the coins, the size of the target, and how many denominations there are don't determine whether overlap exists at all.</p>"
+    },
+    {
+      "tag": "top-down vs bottom-up",
+      "stem": "solve_memo and solve_table compute the exact same values. What's the actual, practical reason to prefer the table version once you're confident it's correct?",
+      "given": "0 disagreements across 2,000 random trials",
+      "options": [
+        { "text": "Shorter code, with a lower constant factor", "correct": true },
+        { "text": "It visits fewer distinct states in total" },
+        { "text": "It skips the base case, ever, somehow" },
+        { "text": "It avoids the coin recurrence, somehow, entirely" }
+      ],
+      "why": "<p>Both visit exactly the same set of distinct states and use exactly the same recurrence and base case — that's what the 0-disagreement test confirms. The table version's advantage is purely mechanical: no call stack, no per-call overhead, just array writes in a fixed order.</p>"
+    },
+    {
+      "tag": "the state",
+      "stem": "In the coin problem as written above, what is \"the state\" — the one piece of information solve needs?",
+      "given": "solve(x) for coins = [1, 3, 4]",
+      "options": [
+        { "text": "The remaining sum still left to form here", "correct": true },
+        { "text": "The exact list of coins spent so far" },
+        { "text": "The count of coins picked up to now" },
+        { "text": "The largest coin denomination seen so far here" }
+      ],
+      "why": "<p>Everything solve(x) needs to answer correctly is contained in x itself — which coins got you there and how many you've used don't change the fewest-coins answer for the sum that's left. That's exactly why x alone can be the memo key and the table index.</p>"
+    },
+    {
+      "tag": "budget check (interleave: lesson 0001)",
+      "stem": "Target sum x up to 10^6, up to 100 coin denominations. Read the bound: does the tabulated O(x times k) solution fit?",
+      "given": "1 <= x <= 10^6, 1 <= number of coins <= 100",
+      "options": [
+        { "text": "O(n times k), which fits comfortably in budget", "correct": true },
+        { "text": "O(2 to the n), safely inside the budget" },
+        { "text": "O(n squared times k), inside the stated budget" },
+        { "text": "O(n times k), well outside the stated budget" }
+      ],
+      "why": "<p>10^6 times 100 is about 10^8, right at the edge of what a single test case affords per the <a href='../reference/0001-constraint-ladder.html'>constraint ladder</a> — exactly what the table's double loop costs, nothing more. The naive recursive version, unmemoized, is the exponential option, and it's the one that wouldn't fit at any bound this large.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0006",
+      "stem": "Lesson 0006 built a search space to binary search over. What does this lesson's dynamic programming table actually hold, by contrast?",
+      "given": "value[i] for i from 0 to x, in solve_table",
+      "options": [
+        { "text": "A table keyed by remaining sum, no candidates", "correct": true },
+        { "text": "A range of candidate speeds, ready to halve" },
+        { "text": "An array whose values are already fully sorted" },
+        { "text": "One feasibility check run over a single number" }
+      ],
+      "why": "<p>There's no candidate answer being tested for feasibility here, and nothing to halve — value[i] is the answer for state i, filled in once and reused, which is the overlap this whole lesson is about. Lesson 0006's binary search and this lesson's DP table are both about reuse, but reuse of entirely different things: a proof that lets you discard half a range, versus a cache that lets you avoid resolving a state twice.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('dp-quiz', 'dp-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"This wants an optimum built from smaller versions of the same
+ problem, so I'll formulate it recursively first: solve(x) is the
+ best answer for state x, defined in terms of solve at smaller states.
+
+ Before I worry about speed, I check for overlap - do multiple paths
+ through the recursion ask for the same state? Here, yes: spending a 1
+ first and a 4 first both eventually ask for solve(6). That overlap is
+ the whole justification for memoizing rather than just recursing.
+
+ I'll think it through recursively, then ship it as a bottom-up table
+ over states 0 to x, since that's the same computation with lower
+ overhead and no recursion depth to worry about.
+
+ The state is just x, the sum left to form - that's what has to be the
+ memo key and the table index, nothing more and nothing less."</code></pre>
+
+<p>The sentence worth saying to an interviewer is "here's the recurrence and here's why the
+subproblems overlap" &mdash; not "I'll use DP." Naming the overlap is what proves memoization will
+help before you've spent time coding a naive version that would run for a very long time on any
+real input.</p>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://cses.fi/book/book.pdf">Competitive Programmer's Handbook</a>, ch. 7,
+  "Dynamic Programming" &mdash; the coin problem worked exactly as above, in the source that
+  coined the phrasing this lesson borrows. Then do
+  <a href="https://cses.fi/problemset/task/1633">CSES 1633, Coin Combinations I</a> (this exact
+  problem) and <a href="https://cses.fi/problemset/task/1634">CSES 1634, Coin Combinations II</a>
+  (count the ways, not the minimum &mdash; same state, different recurrence).</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; no new term this lesson; the existing
+      <em>dynamic programming</em> entry is exactly what
+      <a href="#overlap">the overlap section</a> above puts into practice.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0006-choosing-the-search-space.html">Lesson 0006</a> &mdash; another technique
+      built on reusing work, licensed by a completely different fact about the problem.</li>
+    <li><strong>Next lesson:</strong> trees and DFS, taught as recursion where the recursion
+      itself is the data structure.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: give
+    me a DP-shaped problem and say the recurrence and the state out loud before I tell you whether
+    they're right. Or ask me to work through Coin Combinations II end to end &mdash; same state,
+    a sum instead of a min, and a good check for whether "the state" generalised or you just
+    memorised the minimum-coins version.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0006-choosing-the-search-space.html">&larr; Lesson 0006</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
