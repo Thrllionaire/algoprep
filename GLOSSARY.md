@@ -43,6 +43,12 @@ same place, so those must be valid too. See [lesson 0003](./lessons/0003-the-win
 subproblems, each computed once and reused. The defining feature is *overlap*: if subproblems
 never repeat, you have plain recursion, not DP.
 
+**Feasibility check** *(our term)* — a function that answers "does this candidate answer work?"
+for a single candidate, used to binary search over a range of possible answers rather than over a
+sorted array. It only licenses a binary search when it is *monotonic* (below) in the candidate —
+see the [licence check](./lessons/0006-choosing-the-search-space.html#licence) in
+[lesson 0006](./lessons/0006-choosing-the-search-space.html).
+
 **Invariant** — a statement that is true every time control reaches a particular point in the
 algorithm. "The window always contains at most k distinct characters" is an invariant. Getting
 the invariant wrong, rather than the pattern wrong, is the most common way a correctly-identified
@@ -67,6 +73,14 @@ which is why CSES 1660 is a window and CSES 1661 is not
 sliding window: *"movement in one direction should not reverse the effects of movement in the
 other direction."* ([USACO Guide](https://usaco.guide/silver/two-pointers))
 
+The same word applies one axis over: a **feasibility check** (above) is monotonic if, once it
+turns true as the candidate answer grows (or shrinks), it stays true. *"Similarly to how binary
+search on an array only works on a sorted array, binary search on the answer only works if the
+answer function is monotonic."* ([USACO Guide](https://usaco.guide/silver/binary-search)) See
+[lesson 0006](./lessons/0006-choosing-the-search-space.html#licence) for a feasibility check that
+fails this — true, false, true, false, true as the candidate grows — and what happens if you
+binary search over it anyway.
+
 **Predicate** — the yes/no test a window must satisfy: "holds at most k distinct characters",
 "sums to at least target". Not the same thing as an *invariant*: the invariant is a claim about
 where the pointers have come to rest, and the predicate is the test that claim refers to. Whether
@@ -86,8 +100,11 @@ a *count*, an *optimum* (a min or max value), the *object itself* (reconstruct t
 subarray, path, or string), or *all* objects. Within a fixed shape, the return type decides the
 machinery. See [lesson 0002](./lessons/0002-the-shape-of-the-answer.html).
 
-**Search space** — the set of candidate answers implied by the shape. Its *size* is the number
-that matters: a contiguous shape has n(n+1)/2 candidates, a subsequence shape has 2ⁿ.
+**Search space** — the set of candidate answers. Usually implied by the shape and handed to you —
+its *size* is the number that matters: a contiguous shape has n(n+1)/2 candidates, a subsequence
+shape has 2ⁿ. It can also be one you *construct*, as a bounded range of integers, when the problem
+asks you to minimize or maximize a quantity rather than find an object — see
+[lesson 0006](./lessons/0006-choosing-the-search-space.html).
 
 **Shape** *(our term)* — the geometry of the thing the problem asks you to find: a contiguous
 run, an order-preserving selection, an unordered selection, a pair, or an arrangement. See

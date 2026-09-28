@@ -31,6 +31,10 @@ apply is far easier than naming the one that does — and it does most of the wo
    — Two Sum, sorted or not, one word apart again. Walking in from both ends is licensed by
    sortedness rather than a monotonic predicate, and the proof is what tells you which pointer is
    safe to move.
+6. [Choosing the Search Space](https://thrllionaire.github.io/algoprep/lessons/0006-choosing-the-search-space.html)
+   — binary search on the answer. There's no array this time; you build the search space from a
+   range of candidates and the licence is a monotonic feasibility check instead of a sorted
+   structure.
 
 ## Reference cards
 

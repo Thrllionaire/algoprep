@@ -78,6 +78,21 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   *"A sliding window is a constant-size subarray that moves from left to right through the array."*
   Use for: the variants deliberately deferred out of lesson 0003.
 
+- [USACO Guide — Binary Search](https://usaco.guide/silver/binary-search)
+  Covers binary search over an array, then generalises: *"binary search on the answer only works
+  if the answer function is monotonic."* Gives the `last_true`/`first_true` templates for
+  minimize/maximize-the-answer problems. Use for: everything about binary searching a constructed
+  range of candidate answers rather than a sorted array. Primary source for
+  [lesson 0006](./lessons/0006-choosing-the-search-space.html).
+
+- [LeetCode 875, Koko Eating Bananas](https://leetcode.com/problems/koko-eating-bananas/) and
+  [LeetCode 1011, Capacity To Ship Packages Within D Days](https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/)
+  Two "minimize the answer under a constraint" problems with the same binary-search-on-the-answer
+  shape and two different feasibility checks. Practice pair for
+  [lesson 0006](./lessons/0006-choosing-the-search-space.html), alongside
+  [LeetCode 704, Binary Search](https://leetcode.com/problems/binary-search/) as the plain
+  sorted-array contrast the lesson opens with.
+
 - [Competitive Programmer's Handbook — Antti Laaksonen (free PDF)](https://cses.fi/book/book.pdf)
   Rigorous, free, and short on hand-waving. Chapters 1–2 cover complexity; 6 is greedy; 7 is
   DP; 11–14 graphs. Use for: when a pattern's *why* is unclear and blog posts are being vague.

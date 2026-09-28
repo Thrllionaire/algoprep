@@ -63,6 +63,15 @@ href="./lessons/0003-the-window-invariant.html">lesson 0003</a>.</p>
 combining answers to smaller overlapping subproblems, each computed once
 and reused. The defining feature is <em>overlap</em>: if subproblems
 never repeat, you have plain recursion, not DP.</p>
+<p><strong>Feasibility check</strong> <em>(our term)</em> — a function
+that answers "does this candidate answer work?" for a single candidate,
+used to binary search over a range of possible answers rather than over
+a sorted array. It only licenses a binary search when it is
+<em>monotonic</em> (below) in the candidate — see the <a
+href="./lessons/0006-choosing-the-search-space.html#licence">licence
+check</a> in <a
+href="./lessons/0006-choosing-the-search-space.html">lesson
+0006</a>.</p>
 <p><strong>Invariant</strong> — a statement that is true every time
 control reaches a particular point in the algorithm. "The window always
 contains at most k distinct characters" is an invariant. Getting the
@@ -94,6 +103,17 @@ This is the precise condition that licenses a sliding window:
 <em>"movement in one direction should not reverse the effects of
 movement in the other direction."</em> (<a
 href="https://usaco.guide/silver/two-pointers">USACO Guide</a>)</p>
+<p>The same word applies one axis over: a <strong>feasibility
+check</strong> (above) is monotonic if, once it turns true as the
+candidate answer grows (or shrinks), it stays true. <em>"Similarly to
+how binary search on an array only works on a sorted array, binary
+search on the answer only works if the answer function is
+monotonic."</em> (<a
+href="https://usaco.guide/silver/binary-search">USACO Guide</a>) See <a
+href="./lessons/0006-choosing-the-search-space.html#licence">lesson
+0006</a> for a feasibility check that fails this — true, false, true,
+false, true as the candidate grows — and what happens if you binary
+search over it anyway.</p>
 <p><strong>Predicate</strong> — the yes/no test a window must satisfy:
 "holds at most k distinct characters", "sums to at least target". Not
 the same thing as an <em>invariant</em>: the invariant is a claim about
@@ -120,9 +140,14 @@ an <em>optimum</em> (a min or max value), the <em>object itself</em>
 objects. Within a fixed shape, the return type decides the machinery.
 See <a href="./lessons/0002-the-shape-of-the-answer.html">lesson
 0002</a>.</p>
-<p><strong>Search space</strong> — the set of candidate answers implied
-by the shape. Its <em>size</em> is the number that matters: a contiguous
-shape has n(n+1)/2 candidates, a subsequence shape has 2ⁿ.</p>
+<p><strong>Search space</strong> — the set of candidate answers. Usually
+implied by the shape and handed to you — its <em>size</em> is the number
+that matters: a contiguous shape has n(n+1)/2 candidates, a subsequence
+shape has 2ⁿ. It can also be one you <em>construct</em>, as a bounded
+range of integers, when the problem asks you to minimize or maximize a
+quantity rather than find an object — see <a
+href="./lessons/0006-choosing-the-search-space.html">lesson
+0006</a>.</p>
 <p><strong>Shape</strong> <em>(our term)</em> — the geometry of the
 thing the problem asks you to find: a contiguous run, an
 order-preserving selection, an unordered selection, a pair, or an

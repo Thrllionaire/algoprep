@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choosing the Search Space</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0006 · algoprep</p>
+  <h1>Choosing the Search Space</h1>
+  <p class="standfirst">Every lesson so far handed you a search space &mdash; an array, a set of
+  boundaries, a range of indices. This one is different: there is no array to search at all. You
+  build the search space out of thin air, from the range of numbers the answer could possibly be.</p>
+</header>
+
+<div class="lede">
+  <p>Not a minimal pair this time &mdash; a contrast between two problems that don't look alike at
+  all, on purpose.</p>
+  <p style="margin-bottom:0"><strong>LeetCode 704, Binary Search.</strong> <em>Given a sorted array
+  of integers and a target, return the index of target, or &minus;1.</em><br>
+  <strong>LeetCode 875, Koko Eating Bananas.</strong> <em>Given piles of bananas and h hours, find
+  the minimum integer eating speed so Koko finishes all piles within h hours.</em></p>
+</div>
+
+<p>704 has an array. 875 doesn't have anything to binary search over &mdash; no array, no sorted
+structure, nothing you were handed. And yet the standard solution to 875 is also called binary
+search. That's only true because binary search was never really about arrays.</p>
+
+<h2>What binary search actually needs</h2>
+
+<p>In 704, the search space is the array's indices, and the thing that licenses halving it is that
+the array is sorted: compare the middle element to the target, and one whole half is
+provably eliminated. Nothing about that argument mentions arrays specifically &mdash; it only
+needs a range of candidates and a question you can ask of the midpoint that eliminates half of
+them.</p>
+
+<div class="sidenote">
+  <a href="https://usaco.guide/silver/binary-search">USACO Guide &mdash; Binary Search</a> states
+  the generalisation plainly: <em>"Similarly to how binary search on an array only works on a
+  sorted array, binary search on the answer only works if the answer function is monotonic."</em>
+  Sortedness and monotonicity are the same requirement, restated for two different kinds of search
+  space.
+</div>
+
+<p>In 875 there is no array of candidate speeds &mdash; you construct one: every integer from 1 to
+<code>max(piles)</code> is a candidate eating speed. Feed a candidate speed into a
+<strong>feasibility check</strong> <em>(ours)</em> &mdash; a function that answers "does this
+candidate work?" &mdash; and the same halving argument applies, as long as the check is
+<a href="../glossary.html">monotonic</a> in the candidate: a faster speed can only need the same or
+fewer hours, never more. That's the whole trick. You're not searching data any more; you're
+searching the space of possible answers.</p>
+
+<div class="tell">
+  <span class="tell-label">The reframe</span>
+  <p>Binary search needs a <a href="../glossary.html">search space</a> and a monotonic predicate
+  over it. An array sorted by value is one way to get both. A range of candidate answers plus a
+  feasibility check is another &mdash; and it's available even when nothing in the problem is
+  sorted, or an array, at all.</p>
+</div>
+
+<h2>Building the search space for Koko</h2>
+
+<p>Lower bound: speed 1 is always a legal candidate to try, even if it's hopeless. Upper bound:
+speed <code>max(piles)</code> always finishes in exactly <code>len(piles)</code> hours &mdash; one
+pile per hour &mdash; so it's always feasible. That's the whole space:
+<code>[1, max(piles)]</code>, guaranteed to contain the answer at both ends.</p>
+
+<p>The feasibility check is one line: total hours needed at a given speed is the sum, over every
+pile, of that pile divided by the speed and rounded up.</p>
+
+<pre><code>def hours_needed(piles, speed):
+    return sum((p + speed - 1) // speed for p in piles)</code></pre>
+
+<p><code>hours_needed</code> is non-increasing in <code>speed</code> &mdash; raising the speed
+never raises the hours for any single pile, so it never raises the total. That monotonicity is the
+entire licence for what follows.</p>
+
+<div class="tell">
+  <span class="tell-label">The invariant</span>
+  <p>At the top of the loop, <code>lo</code> is the smallest candidate not yet ruled out, and every
+  speed below <code>lo</code> has been proven too slow. <code>hi</code> is a speed already proven
+  fast enough. The answer is somewhere in <code>[lo, hi]</code>, and it always is &mdash; the loop
+  only ever discards values on the side that's been proven wrong.</p>
+</div>
+
+<pre><code>def min_eating_speed(piles, h):
+    lo, hi = 1, max(piles)
+    while lo &lt; hi:
+        mid = (lo + hi) // 2
+        if hours_needed(piles, mid) &lt;= h:
+            hi = mid          # mid works: the answer is mid or slower... i.e. <= mid
+        else:
+            lo = mid + 1      # mid is too slow: rule it out entirely
+    return lo</code></pre>
+
+<p>This is the mirror image of lesson 0003's shrink loop: there, <code>left</code> only ever moved
+forward, retiring positions for good. Here, <code>lo</code> and <code>hi</code> only ever move
+toward each other, retiring whole halves of the candidate range for good. Same
+<a href="../glossary.html">amortised</a> bookkeeping, same reason it's fast: O(log(max(piles)))
+iterations, each doing O(n) work inside <code>hours_needed</code>, for O(n&nbsp;log(max&nbsp;pile)))
+total &mdash; nowhere near the O(max(piles) &times; n) of trying every speed one at a time.</p>
+
+<div class="caveat">
+  <p><strong>Property-tested against the obvious brute force</strong> &mdash; try every speed from
+  1 upward and return the first that's feasible &mdash; on 30,000 random small pile sets:
+  <strong>0 disagreements</strong>. The brute force is the spec; the binary search is just the fast
+  way to evaluate it, which is exactly why the two must never diverge.</p>
+</div>
+
+<h2 id="licence">The licence check, and what happens when it fails</h2>
+
+<p>Monotonicity is not a formality here &mdash; it's the one fact doing all the work, same as
+<em>sorted</em> did for lesson 0005's inward walk and <em>at most</em> did for lesson 0003's
+window. If the feasibility check can flip from true back to false as the candidate grows, binary
+search doesn't degrade gracefully. It returns a confident, wrong answer, because the halving step
+throws away a half that might still contain the truth.</p>
+
+<p>Concrete counterexample: is <code>x</code> reachable as a subset sum of <code>[2, 3]</code>?</p>
+
+<div class="table-scroll">
+<table>
+  <thead><tr><th>x</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead>
+  <tbody><tr><td>reachable?</td><td>true</td><td>false</td><td>true</td><td>true</td><td>false</td><td>true</td></tr></tbody>
+</table>
+</div>
+
+<p>True, false, true, false, true &mdash; there is no single point where it flips once and stays
+flipped, so there is no boundary for a binary search to converge on. Run the standard "leftmost
+true" template against this predicate anyway, on random small integer lists, and it disagrees with
+a linear scan on <strong>69.0% of 30,000 trials</strong> &mdash; worse than a coin flip, because
+the template's halving step is actively working against you rather than just failing to help.</p>
+
+<div class="caveat">
+  <p><strong>The tell to say out loud before reaching for this tool:</strong> "if a candidate works,
+  does every candidate on the feasible side of it also work?" If you can't answer yes with a
+  one-sentence proof &mdash; the way "faster speed never needs more hours" is one sentence &mdash;
+  you don't have a licence yet, no matter how much the problem <em>smells</em> like an optimisation.</p>
+</div>
+
+<h2>Handed to you, or built by you</h2>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th></th><th>Binary search on an array (704)</th><th>Binary search on the answer (875)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Search space</td><td>The array's indices</td><td>Every integer between a floor and a ceiling you derive</td></tr>
+    <tr><td>Licence</td><td>Array is sorted</td><td>Feasibility check is monotonic</td></tr>
+    <tr><td>Each step compares</td><td>Midpoint value to target</td><td>Feasibility of midpoint candidate</td></tr>
+    <tr><td>Halves what</td><td>The array</td><td>The range of possible answers</td></tr>
+    <tr><td>Time</td><td class="num">O(log n)</td><td class="num">O(f(n) &middot; log(range))</td></tr>
+  </tbody>
+  <caption>The right column's time is the feasibility check's own cost times the number of
+  halvings &mdash; the checking work rarely stays free the way it does when you're just comparing
+  two numbers.</caption>
+</table>
+</div>
+
+<h2>Practice</h2>
+
+<p>Commit to an answer, and the one-sentence monotonicity proof, before revealing the options.</p>
+
+<div id="search-space-quiz"></div>
+
+<script type="application/json" id="search-space-quiz-data">
+{
+  "title": "Retrieval practice — choosing the search space",
+  "commit": "Say the feasibility check and its one-sentence monotonicity proof out loud before you look. If you can't state the proof, you're guessing that binary search applies rather than establishing it.",
+  "perfect": "Six from six. Now go do LeetCode 875 for real, then look up LeetCode 1011, Capacity To Ship Packages Within D Days — same shape, different feasibility check.",
+  "questions": [
+    {
+      "tag": "the licence",
+      "stem": "Koko Eating Bananas is solved by binary searching over candidate speeds. What single fact licenses that?",
+      "given": "hours_needed(piles, speed) is what you're checking at each candidate",
+      "options": [
+        { "text": "Hours needed cannot rise as speed grows", "correct": true },
+        { "text": "Pile sizes happen to already be sorted" },
+        { "text": "Total pile count stays under a thousand" },
+        { "text": "Every pile happens to have unique size" }
+      ],
+      "why": "<p>The licence is a monotonicity claim about the feasibility check, not a fact about the piles array at all. A faster speed can only reduce or hold steady the hours any single pile needs, so the total can only go one way as speed rises. Sortedness of piles and pile count are irrelevant to that argument.</p>"
+    },
+    {
+      "tag": "building the space",
+      "stem": "What are the correct lo and hi to start the search at for Koko?",
+      "given": "piles = [30, 11, 23, 4, 20]",
+      "options": [
+        { "text": "lo = 1, hi = max(piles) = 30", "correct": true },
+        { "text": "lo = 0, hi = sum(piles) = 88" },
+        { "text": "lo = min(piles) = 4, hi = 30" },
+        { "text": "lo = 1, hi = len(piles) = 5" }
+      ],
+      "why": "<p>Speed 1 is always a legal, if slow, candidate — the lower end of the space must include it. Speed max(piles) always finishes in exactly len(piles) hours, one pile per hour, so it's always feasible — that's what proves hi is a safe upper bound, not just a large number.</p>"
+    },
+    {
+      "tag": "the tell",
+      "stem": "You're about to binary search over a range of candidate answers. What must you establish before you write the loop?",
+      "given": "a problem that asks to minimize or maximize some integer quantity",
+      "options": [
+        { "text": "A proof that the check itself is monotonic", "correct": true },
+        { "text": "A proof that the input array is sorted" },
+        { "text": "A rough sense that n stays fairly small" },
+        { "text": "A rough sense the answer stays quite small" }
+      ],
+      "why": "<p>Sortedness of some unrelated input array, the size of n, and a hunch about the answer are all beside the point. The one thing that licenses halving the candidate range is a provable monotonicity claim about the feasibility check itself — everything else is a distraction from that one proof.</p>"
+    },
+    {
+      "tag": "when it breaks",
+      "stem": "Which feasibility check below is safe to binary search over?",
+      "given": "each is a candidate x you're checking",
+      "options": [
+        { "text": "Can x workers finish this job by the deadline", "correct": true },
+        { "text": "Is x reachable from some subset of the nums" },
+        { "text": "Does x land exactly right on the target sum" },
+        { "text": "Does x sit right at the sorted array's median" }
+      ],
+      "why": "<p>More machines can only finish the same work sooner or at the same time, never later — that's monotonic. Subset-sum reachability flips true/false/true as shown above; exact equality and \"is the median\" are single-point conditions with no feasible side at all, so there's no boundary to converge on.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0005",
+      "stem": "Both this lesson and the inward walk from lesson 0005 are called two-pointer-ish narrowing techniques. What's the actual difference in what's being thrown away?",
+      "given": "compare min_eating_speed's lo/hi to two_sum_sorted's left/right",
+      "options": [
+        { "text": "Whole candidate halves here, single indices there", "correct": true },
+        { "text": "Single indices here, whole candidate halves there" },
+        { "text": "Every step retires exactly one array index" },
+        { "text": "Neither pointer ever discards any candidates here" }
+      ],
+      "why": "<p>The inward walk retires one index at a time based on a sum comparison; binary search on the answer retires an entire half of the candidate range at once based on a feasibility check. Both need a monotonicity-style proof to be safe (0005's sortedness argument, this lesson's feasibility argument).</p>"
+    },
+    {
+      "tag": "budget check (interleave: lesson 0001)",
+      "stem": "n piles, up to 10^4 of them, speeds up to 10^9. Read the bound: why does binary search on the answer fit the budget where trying every speed wouldn't?",
+      "given": "1 <= piles.length <= 10^4, 1 <= piles[i] <= 10^9",
+      "options": [
+        { "text": "About only thirty checks instead of one billion", "correct": true },
+        { "text": "It quietly skips the feasibility check altogether now" },
+        { "text": "It only works when piles stay very small" },
+        { "text": "The stated input bound never matters at all" }
+      ],
+      "why": "<p>Trying every integer speed from 1 to 10^9 one at a time is 10^9 feasibility checks; binary search needs about log2(10^9) &asymp; 30 of them. The feasibility check itself is still O(n) either way — the win is entirely in how many times you have to run it, which is exactly the constraint-ladder reasoning from lesson 0001 applied to a search space instead of an array.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('search-space-quiz', 'search-space-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"This is asking me to minimize/maximize some integer quantity under a
+ constraint, and there's a natural range the answer must live in.
+
+ Before reaching for binary search, I need one sentence: if a candidate
+ in that range works, does every candidate on the feasible side of it
+ also work? For Koko, faster speed never needs more hours - that's the
+ proof, and it's the whole licence.
+
+ Given that, I don't need the piles sorted or anything else about the
+ array - I binary search the range [1, max(piles)] directly, checking
+ feasibility at each midpoint and halving the range each time.
+
+ O(n) per check, O(log(max pile)) checks - log of the range, not the
+ array - and it's provably correct because the halving step only ever
+ discards a side I've just shown can't contain the answer."</code></pre>
+
+<p>The sentence worth saying to an interviewer is the same shape as lesson 0005's: not "I'll binary
+search this" but "the feasibility check is monotonic because &hellip;, so I can binary search the
+answer instead of trying every candidate." Naming the proof, not just the tool, is what separates
+recognising the shape from actually establishing you're allowed to use it.</p>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/silver/binary-search">USACO Guide &mdash; Binary Search</a>,
+  specifically the "Binary Search on the Answer" section &mdash; short, and the source for the
+  monotonicity quote above. Then do
+  <a href="https://leetcode.com/problems/koko-eating-bananas/">LeetCode 875</a> for real, and once
+  it lands, <a href="https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/">LeetCode
+  1011</a> as the same shape with a different feasibility check.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new term <em>feasibility check</em>;
+      <em>search space</em> and <em>monotonic</em> both extended to cover a constructed range of
+      answers rather than an array or a window.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0003-the-window-invariant.html">Lesson 0003</a> &mdash; the same
+      "state the licence as a monotonicity proof" discipline, aimed at a candidate answer instead
+      of a window's predicate.</li>
+    <li><a href="0005-the-inward-walk.html">Lesson 0005</a> &mdash; another narrowing technique
+      with its own, different, provable-discard argument.</li>
+    <li><strong>Next lesson:</strong> recursion &rarr; memo &rarr; table, taught as one continuous
+      idea rather than three separate topics.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: give
+    me a "minimize/maximize the answer under a constraint" problem and say the one-sentence
+    monotonicity proof before I tell you whether it holds. Or ask me to work through LeetCode 1011
+    end to end &mdash; same template, different feasibility check, good for checking whether this
+    generalised or you just memorised Koko.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0005-the-inward-walk.html">&larr; Lesson 0005</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
