@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which End You Sort By</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0010 &middot; algoprep</p>
+  <h1>Which End You Sort By</h1>
+  <p class="standfirst">Two interval problems look almost identical &mdash; a list of
+  <code>[start, end]</code> pairs, sorted once, then swept left to right. They ask different
+  questions, and the entire difference between a correct answer and a wrong one is which of the
+  two numbers in each pair you sort by.</p>
+</header>
+
+<div class="lede">
+  <p><strong>An <a href="../glossary.html">interval</a> problem you're handed a full list for,
+  up front, never needs a heap.</strong> Lesson 0009's tell was whether the collection kept
+  changing while you were being asked questions about it. Here it never does &mdash; every
+  interval exists before you write a line of code &mdash; so you get to commit to one global
+  order and sweep once, left to right, never revisiting a decision. The only choice left is
+  <em>which</em> order.</p>
+</div>
+
+<h2 id="trade">Why sorting is (almost) the whole algorithm</h2>
+
+<p>A greedy algorithm picks the locally-best option at each step and never looks back. That is
+only safe when there is a proof that the local choice cannot cost you anything later &mdash; and
+for intervals, sorting is usually what makes that proof possible in the first place. <em>"A
+greedy algorithm chooses the best move at each individual step,"</em> and interval problems are
+exactly where <em>"greedy problems typically involve sorting"</em> as their setup step
+(<a href="https://usaco.guide/silver/greedy-sorting">USACO Guide</a>). Once the list is sorted,
+one pass is enough: no data structure has to support removing something out of order, because the
+order was decided in advance.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before touching an interval problem</span>
+  <p>Is the whole list handed to me now, or does it keep arriving? If it's handed to me now
+  &mdash; which every problem in this lesson is &mdash; then I sort once, by whichever end the
+  question is actually about, and sweep. No heap, no re-sorting, no going back to an earlier
+  decision.</p>
+</div>
+
+<h2 id="select">Keep as many as you can &mdash; sort by end</h2>
+
+<p><a href="https://leetcode.com/problems/non-overlapping-intervals/">LeetCode 435, Non-overlapping
+Intervals</a> asks: given a list of intervals, what is the fewest you must remove so none of the
+rest overlap? Equivalently &mdash; and this is the easier way to think about it &mdash; how many
+can you <em>keep</em>, at most, with no two overlapping?</p>
+
+<p>The instinct is to sort by <em>start</em> time, taking whichever interval begins soonest. That
+is wrong, and the USACO Guide's proof is worth reading in full, because it is a real exchange
+argument rather than an assertion: sort by <strong>end</strong> time instead, and always keep the
+next interval whose start is no earlier than the end you're currently holding.</p>
+
+<pre><code># LC 435 — greedy, sorted by END time
+def erase_overlap_intervals(intervals):
+    if not intervals:
+        return 0
+    intervals = sorted(intervals, key=lambda iv: iv[1])
+    keep = 0
+    last_end = float('-inf')
+    for start, end in intervals:
+        if start >= last_end:
+            keep += 1
+            last_end = end
+    return len(intervals) - keep   # removals = total - kept</code></pre>
+
+<p>The proof for sorting by end, quoted directly rather than paraphrased: <em>"If we have two
+events E&#8321; and E&#8322;, with E&#8322; ending later than E&#8321;, then it is always optimal
+to select E&#8321;. This is because selecting E&#8321; gives us more choices for future events...
+the set of events that can go after E&#8322; is a subset of the events that can go after
+E&#8321;."</em> (<a href="https://usaco.guide/silver/greedy-sorting">USACO Guide</a>) Whatever you
+could still fit after the later-ending interval, you could also still fit after the
+earlier-ending one &mdash; so the earlier end is never a worse choice, and picking it first can
+only leave you more room, never less.</p>
+
+<h2 id="merge">Union them into their coverage &mdash; sort by start</h2>
+
+<p><a href="https://leetcode.com/problems/merge-intervals/">LeetCode 56, Merge Intervals</a> asks
+a different question entirely: not how many to keep, but what is the minimal set of intervals
+that covers the exact same ground as the original list. Two intervals overlap once the
+later-starting one begins no later than the earlier one's end &mdash; so once the list is sorted
+by <strong>start</strong>, an overlap with the interval you're currently building can only be
+checked against that one running interval, never anything further back.</p>
+
+<pre><code># LC 56 — sorted by START time
+def merge(intervals):
+    if not intervals:
+        return []
+    intervals = sorted(intervals)          # sorts by start, then end
+    merged = [list(intervals[0])]
+    for start, end in intervals[1:]:
+        if start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return [tuple(m) for m in merged]</code></pre>
+
+<div class="caveat">
+  <p><strong>No single high-trust source states that overlap condition outright</strong> &mdash;
+  it's derived here from the definition of overlap, the same call as lesson 0003's
+  <code>exactly(k)</code> identity and lesson 0009's heap inversion. It is property-tested against
+  a brute-force pairwise-overlap check (union-find over every pair) on 5,000 random small interval
+  lists, <strong>0 disagreements</strong>. Logged in <a href="../resources.html">Resources</a>.</p>
+</div>
+
+<h2 id="which-end">The two mistakes are mirror images of each other</h2>
+
+<table>
+  <thead>
+    <tr><th></th><th>Keep the most (LC 435)</th><th>Merge into coverage (LC 56)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Question</td><td>How many, at most, with none overlapping?</td><td>What's the union, as few intervals as possible?</td></tr>
+    <tr><td>Sort by</td><td class="num">end</td><td class="num">start</td></tr>
+    <tr><td>Return type</td><td>A count</td><td>The object itself</td></tr>
+    <tr><td>Why that end</td><td>The earliest-ending option leaves the most room for what's left</td><td>Only the running interval's <em>end</em> can still grow; its start is fixed once merged</td></tr>
+  </tbody>
+  <caption>Same input shape, same "sort once, sweep once" skeleton, opposite sort key &mdash; because
+  the two questions are asking about different endpoints of the same pairs.</caption>
+</table>
+
+<div class="caveat">
+  <p><strong>Swap the key on either one and it breaks &mdash; measured, not asserted.</strong>
+  Solve LC 435 by sorting on <em>start</em> instead of <em>end</em>: it disagrees with a
+  brute-force search over every subset on <strong>16.0%</strong> of 2,000 random small interval
+  sets, keeping on average about one fewer interval than the true optimum whenever it's wrong.
+  Solve LC 56 by sorting on <em>end</em> instead of <em>start</em>: it disagrees with the
+  union-find brute force on <strong>15.3%</strong> of 5,000 random trials. Two different
+  problems, two different failure shapes, strikingly similar wrongness rates &mdash; because both
+  mistakes come from the same root cause: sorting by the endpoint the question isn't actually
+  about.</p>
+</div>
+
+<h2 id="reading">What the constraint bound does <em>not</em> tell you here</h2>
+
+<p>Lesson 0001's <a href="../reference/0001-constraint-ladder.html">constraint ladder</a> reads
+<code>n</code> for a time budget, and an interval problem's <code>n ≤ 10^5</code> just confirms
+O(n&nbsp;log&nbsp;n) is fine &mdash; it doesn't distinguish these two problems at all, because both
+are the same complexity. The distinguishing read is entirely in the <em>return type</em>: a count
+or a yes/no pulls toward the sort-by-end greedy-selection family; the object itself &mdash; the
+merged list, or something built from surviving intervals &mdash; pulls toward sort-by-start and a
+running merge. That's <a href="0002-the-shape-of-the-answer.html">lesson 0002</a>'s return-type
+axis, doing real work again on a shape it wasn't originally built for.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="interval-quiz"></div>
+
+<script type="application/json" id="interval-quiz-data">
+{
+  "title": "Retrieval practice — which end you sort by",
+  "commit": "For each one, ask the same two questions first: is the whole list handed to me now, and which endpoint does the question actually turn on?",
+  "perfect": "Six from six. Now write both erase_overlap_intervals and merge from scratch with no code in front of you, then read LeetCode 452, Minimum Number of Arrows to Burst Balloons — same sort-by-end greedy, dressed as a different story.",
+  "questions": [
+    {
+      "tag": "static, not a stream",
+      "stem": "Lesson 0009 asked whether a collection keeps changing while you're queried about it. For LeetCode 435 and 56, is it worth checking for a heap-based approach at all?",
+      "given": "the full list of intervals is given as a function argument, once",
+      "options": [
+        { "text": "No, since the full list is already complete", "correct": true },
+        { "text": "Yes, since a heap answers both queries quicker" },
+        { "text": "Only for 56, because it returns full intervals" },
+        { "text": "Only for 435, because it returns a count" }
+      ],
+      "why": "<p>Lesson 0009's tell was about a collection that keeps <em>changing</em> while being queried. Neither problem here has that shape — the full list is handed over before any work starts — so there's nothing a heap would buy you that one sort plus one linear sweep doesn't already give for less.</p>"
+    },
+    {
+      "tag": "which end, LC 435",
+      "stem": "You need the maximum number of intervals you can keep with none overlapping. Which field do you sort by?",
+      "given": "intervals = [(1,10),(2,3),(4,5)]",
+      "options": [
+        { "text": "Start, then greedily take the earliest start time" },
+        { "text": "End, then greedily take the earliest end time", "correct": true },
+        { "text": "Length, then greedily take the shortest interval here" },
+        { "text": "Neither; sort by how many others it overlaps" }
+      ],
+      "why": "<p>Sort by end: (2,3) first, then (4,5) — both kept, (1,10) skipped as it overlaps both. Keeps 2, which is optimal here. Sort by start instead: (1,10) is greedily taken first because it starts earliest, and its enormous end then blocks both (2,3) and (4,5) — keeping only 1. The earliest-<em>starting</em> interval is exactly the trap; see <a href='#select'>the exchange argument above</a> for why end is the safe field.</p>"
+    },
+    {
+      "tag": "which end, LC 56",
+      "stem": "You need to merge a list of intervals into the minimal set that covers the same ground. Which field do you sort by?",
+      "given": "intervals = [(1,4),(2,6),(8,10)]",
+      "options": [
+        { "text": "End, then extend the running interval's start point" },
+        { "text": "Start, then extend the running interval's end point", "correct": true },
+        { "text": "Either field; the merge check works both ways" },
+        { "text": "Length, so the longest one swallows the rest" }
+      ],
+      "why": "<p>Sorting by start means every interval you haven't looked at yet begins no earlier than the one you're currently merging — so the only thing that can still grow is the running interval's <em>end</em>, and checking the next start against it is enough. Sort by end instead and an interval with an early end but a late start can slip in before one that actually needed to merge first — that's the 15.3% failure measured above.</p>"
+    },
+    {
+      "tag": "the mirror failure",
+      "stem": "Sorting LC 56's merge by end instead of start, and sorting LC 435's selection by start instead of end, are both wrong. What do the two mistakes have in common?",
+      "given": "one swap breaks a union; the other swap breaks a count",
+      "options": [
+        { "text": "Nothing; the two bugs are actually unrelated here" },
+        { "text": "Both sort by the endpoint nobody asked about", "correct": true },
+        { "text": "Both fail when two intervals share an endpoint" },
+        { "text": "Both are off by one interval, every time" }
+      ],
+      "why": "<p>Selecting the most non-overlapping intervals is fundamentally a question about <em>when things end</em> — end time is what determines how much room is left for the future. Merging into coverage is fundamentally a question about <em>where the covered region starts</em> relative to what's already been swept. Sorting by the other field answers a question nobody asked, which is why both mistakes land in the same 15–16% range despite looking like different bugs.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0001",
+      "stem": "n up to 10^5 intervals, one pass required. Reading the bound the way lesson 0001 taught, what does it tell you here that it didn't tell you for lesson 0009's streamed queries?",
+      "given": "1 <= n <= 10^5, whole list given up front",
+      "options": [
+        { "text": "O(n log n) is fine; the sort still dominates", "correct": true },
+        { "text": "It rules out sorting; only a heap fits here" },
+        { "text": "It signals recursion, since n now sits under it" },
+        { "text": "Nothing changes at all; the bound reads the same" }
+      ],
+      "why": "<p>n = 10^5 comfortably fits an O(n log n) sort followed by an O(n) sweep — the same budget reading as always, just confirming rather than eliminating here, since both correct solutions in this lesson are already that shape. The bound doesn't distinguish the two problems from each other; only the return type does, per the section above.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0002",
+      "stem": "Using lesson 0002's return-type vocabulary, what changes between LC 435 and LC 56 that actually decides which end you sort by?",
+      "given": "435 returns an int; 56 returns a list of intervals",
+      "options": [
+        { "text": "Nothing; the return type is only bookkeeping right here" },
+        { "text": "A count needs end order; the object needs start", "correct": true },
+        { "text": "Existence questions always sort by start, optimums by end" },
+        { "text": "Return type only matters once n gets very large" }
+      ],
+      "why": "<p>Most of this course has treated return type as changing only the bookkeeping around an unchanged family (lesson 0002's own claim, about windows). Here it's doing more: <em>count</em> (435) is a question about how much room survives, which is an end-time fact, while <em>the object itself</em> (56) is a question about which start still needs merging into the interval already open. This is the return-type axis picking the family, not just the output format.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('interval-quiz', 'interval-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"I've got a list of intervals, handed to me complete - so no heap,
+ no live structure. I get to sort once and sweep.
+
+ The question is which end to sort by. If I'm counting how many
+ I can keep without overlap, that's about how much room survives -
+ sort by END, always keep the interval that starts no earlier than
+ my last kept end.
+
+ If I'm merging into coverage - the object itself, not a count -
+ that's about what still needs folding into what's already open -
+ sort by START, and only the running interval's end can still grow.
+
+ Sorting by the other field doesn't crash. It just answers a
+ question nobody asked, and it's wrong on roughly one interval set
+ in six."</code></pre>
+
+<p>The sentence worth having ready is "which end does the question actually turn on" &mdash; it is
+the one-line version of the whole lesson, and it is a question a sorted-array problem never has to
+ask, because there's only one end to sort by.</p>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/silver/greedy-sorting">USACO Guide &mdash; Greedy Algorithms with
+  Sorting</a> for the sort-by-end exchange argument in full, worked through on the exact
+  "maximize the number of non-overlapping events" problem. The merge-by-start direction has no
+  single citable primary source &mdash; see the <a href="../resources.html">Resources</a> gap note
+  &mdash; and is derived and property-tested in the lesson above instead.</p>
+  <p>Practice pair: <a href="https://leetcode.com/problems/non-overlapping-intervals/">LC 435, Non-overlapping
+  Intervals</a> (sort by end) and <a href="https://leetcode.com/problems/merge-intervals/">LC 56,
+  Merge Intervals</a> (sort by start). Then
+  <a href="https://leetcode.com/problems/minimum-number-of-arrows-to-burst-balloons/">LC 452,
+  Minimum Number of Arrows to Burst Balloons</a> &mdash; the same sort-by-end greedy as 435, one
+  layer of story removed.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>interval</em> and
+      <em>greedy</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0009-the-root-knows-one-thing.html">Lesson 0009</a> &mdash; the same "is it
+      static or changing" question this lesson opened with, this time used to rule a heap
+      <em>out</em> rather than in.</li>
+    <li><strong>Next lesson:</strong> counting maximum overlap (Meeting Rooms II) &mdash; the point
+      where a changing collection and a sorted sweep meet, and a heap earns its place back.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    give me an interval problem and say the one sentence before writing code &mdash; which end
+    does the question actually turn on. Or ask me to walk LC 452 the same way this lesson walked
+    435, since it's the identical exchange argument under a different name.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0009-the-root-knows-one-thing.html">&larr; Lesson 0009</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

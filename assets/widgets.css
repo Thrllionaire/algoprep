@@ -527,3 +527,54 @@
   .pt-cell.is-ahead { border-style: solid; }
   .pt-el.is-ahead { opacity: 1; }
 }
+
+/* ---------- tree tracer (assets/tree.js) --------------------------------- */
+
+.tr-wrap { margin: 0 0 1rem; }
+.tr-svg {
+  display: block;
+  width: 100%;
+  max-width: 24rem;
+  height: auto;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.tr-edge { stroke: var(--rule); stroke-width: 0.5; }
+
+.tr-node circle {
+  fill: var(--paper);
+  stroke: var(--ink-faint);
+  stroke-width: 0.6;
+}
+.tr-label {
+  fill: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 7px;
+  text-anchor: middle;
+}
+.tr-value {
+  fill: var(--accent);
+  font-family: var(--mono);
+  font-size: 6px;
+  font-weight: 600;
+  text-anchor: start;
+}
+
+.tr-node.is-live { cursor: pointer; }
+.tr-node.is-live circle { stroke: var(--ink); stroke-dasharray: 1.6 1.2; }
+.tr-node.is-live:hover circle { fill: var(--accent-bg); stroke: var(--accent); }
+.tr-node.is-live:focus-visible { outline: none; }
+.tr-node.is-live:focus-visible circle { stroke: var(--accent); stroke-width: 1.4; }
+
+.tr-node.is-done circle { fill: var(--code-bg); stroke: var(--ink-faint); stroke-dasharray: none; }
+.tr-node.is-done .tr-label { fill: var(--ink); }
+
+.tr-node.is-answer circle { fill: var(--good-bg); stroke: var(--good); stroke-width: 1.1; }
+.tr-node.is-answer .tr-label { fill: var(--ink); font-weight: 600; }
+.tr-node.is-wrong circle { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 1.1; }
+
+@media print {
+  .tr-node.is-live circle { stroke-dasharray: none; }
+  .tr-svg { max-width: 20rem; }
+}

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tree Recursion</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<style>
+  body { padding-top: 2.5rem; }
+  .wrap { max-width: 44rem; }
+  table { font-size: 0.8rem; }
+  h2 { margin-top: 2rem; }
+  pre { font-size: 0.74rem; }
+  .side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .side-by-side h3 { margin-top: 0; }
+  .side-by-side pre { margin-bottom: 0.4rem; }
+  @media (max-width: 680px) { .side-by-side { grid-template-columns: 1fr; } }
+  .bugs td:first-child { font-family: var(--mono); font-size: 0.76rem; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Reference card · algoprep</p>
+  <h1>Tree Recursion</h1>
+  <p class="standfirst">The recursion is the data structure, so the pattern is free. Two questions
+  cost you the problem instead: which direction the information moves, and whether what you
+  return is what you were asked for.</p>
+</header>
+
+<h2>The two questions, before any code</h2>
+
+<div class="tell">
+  <span class="tell-label">Ask in this order</span>
+  <p><strong>1. Above or below?</strong> If the answer at a node depends on what is above it, pass
+  it <em>down as a parameter</em> and do the work before the loop (pre-order). If it depends on
+  what is below it, <em>return it up</em> and do the work after the loop (post-order).</p>
+  <p><strong>2. Is what I return what I was asked for?</strong> Often not. Then return what the
+  parent can use and <em>record</em> the asked-for answer in a variable off to the side.</p>
+</div>
+
+<h2>The three skeletons</h2>
+
+<pre><code># adjacency list, undirected: carry the parent and skip it.
+# a tree has no cycles, so this is all the visited-tracking needed.
+
+# 1. POST-ORDER — the answer comes from below, in return values
+def f(node, parent):
+    acc = base
+    for kid in adj[node]:
+        if kid != parent:
+            acc = combine(acc, f(kid, node))
+    return acc                       # work AFTER the loop
+
+# 2. PRE-ORDER — the answer comes from above, in parameters
+def g(node, parent, carried):
+    out[node] = carried              # work BEFORE the loop
+    for kid in adj[node]:
+        if kid != parent:
+            g(kid, node, extend(carried))
+
+# 3. RETURN ONE, RECORD THE OTHER — the answer turns around at a node
+def h(root):
+    best = base
+    def walk(node, parent):
+        nonlocal best
+        kids = [walk(kid, node) for kid in adj[node] if kid != parent]
+        best = max(best, joins(kids))    # record: turns around here
+        return extend_best(kids)         # return: what a parent can extend
+    walk(root, None)
+    return best</code></pre>
+
+<h2>Which skeleton, by problem</h2>
+
+<div class="table-scroll">
+<table>
+  <caption>The third column is the only one worth memorising: it is where the bug lives. Note that
+  none of these needs memoization &mdash; each node is reached once, so there is no overlap, so
+  this is recursion and not DP.</caption>
+  <thead><tr><th>Problem</th><th>Skeleton</th><th>Return &ne; record?</th></tr></thead>
+  <tbody>
+    <tr><td>Height / max depth</td><td class="num">post-order</td><td>same</td></tr>
+    <tr><td>Subtree size, subtree sum</td><td class="num">post-order</td><td>same</td></tr>
+    <tr><td>Depth of every node</td><td class="num">pre-order</td><td>n/a &mdash; nothing returns</td></tr>
+    <tr><td>Path from root to each node</td><td class="num">pre-order</td><td>n/a &mdash; nothing returns</td></tr>
+    <tr><td>Is it a valid BST?</td><td class="num">pre-order bounds</td><td>bounds go down, verdict up</td></tr>
+    <tr><td><strong>Diameter / longest path</strong></td><td class="num">return one, record one</td><td><strong>different</strong></td></tr>
+    <tr><td><strong>Max path sum</strong> (LC 124)</td><td class="num">return one, record one</td><td><strong>different</strong></td></tr>
+    <tr><td>Lowest common ancestor</td><td class="num">post-order</td><td>found-marker up</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Diameter, the two named quantities</h2>
+
+<p>Root the tree arbitrarily. <em>"Every path in a rooted tree has a highest point: the highest
+node that belongs to the path"</em>
+(<a href="https://cses.fi/book/book.pdf">CPH</a>, ch. 14), so it is enough to find the best path
+at each possible highest point.</p>
+
+<div class="side-by-side">
+  <div>
+    <h3>Return this</h3>
+<pre><code>toLeaf(x)
+# longest path from x
+# DOWN to some leaf
+max(tops, default=0)</code></pre>
+    <p style="font-size:0.8rem">The only thing a parent can extend by one edge.</p>
+  </div>
+  <div>
+    <h3>Record this</h3>
+<pre><code>maxLength(x)
+# longest path whose
+# HIGHEST POINT is x
+sum(two largest tops)</code></pre>
+    <p style="font-size:0.8rem">The answer. It cannot go upward &mdash; it already turned around.</p>
+  </div>
+</div>
+
+<pre><code>def diameter(root):
+    best = 0
+    def to_leaf(node, parent):
+        nonlocal best
+        tops = sorted((1 + to_leaf(k, node) for k in adj[node] if k != parent),
+                      reverse=True)
+        best = max(best, sum(tops[:2]))    # record
+        return max(tops[:1], default=0)    # return
+    to_leaf(root, None)
+    return best</code></pre>
+
+<div class="caveat">
+  <p>Returning <code>sum(tops[:2])</code> instead &mdash; the asked-for number rather than the
+  parent's number &mdash; runs, terminates, stays O(n), and is wrong on <strong>81.2%</strong> of
+  random trees, always too large. It is wrong on <strong>0%</strong> of paths and
+  <strong>0%</strong> of stars, which is why hand-testing misses it: with one child, the two
+  quantities coincide.</p>
+</div>
+
+<h2>The four silent bugs</h2>
+
+<div class="table-scroll">
+<table class="bugs">
+  <caption>The first two are wrong answers with no error message. The third crashes. The fourth is
+  a wrong answer that looks right on small trees.</caption>
+  <thead><tr><th>Wrote</th><th>Meant</th><th>Symptom</th></tr></thead>
+  <tbody>
+    <tr><td>return through</td><td>return deepest branch</td><td>Overestimates; correct on paths and stars</td></tr>
+    <tr><td>sum(children)</td><td>max(children)</td><td>Height becomes the subtree's edge count</td></tr>
+    <tr><td>no parent guard</td><td>if kid != parent</td><td>Infinite recursion on an adjacency list</td></tr>
+    <tr><td>tops[0] + tops[1]</td><td>sum(tops[:2])</td><td>IndexError on any node with under two children</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>The depth tell</h2>
+
+<p>Python's stack limit is <strong>1000</strong> by default: <em>"the maximum depth of the Python
+interpreter stack &hellip; this limit prevents infinite recursion from causing an overflow of the C
+stack and crashing Python."</em>
+(<a href="https://docs.python.org/3/library/sys.html#sys.setrecursionlimit">Python docs</a>)
+A tree of <code>n</code> nodes is allowed to be one path of <code>n</code> nodes.</p>
+
+<pre><code>import sys
+sys.setrecursionlimit(300_000)   # measured: a 200,000-node path then works
+                                 # measured: 999-node path is fine at the
+                                 # default, 1000 raises RecursionError</code></pre>
+
+<p>The docs' own warning applies: <em>"the highest possible limit is platform-dependent &hellip;
+this should be done with care, because a too-high limit can lead to a crash."</em> On a hostile
+bound, or when asked, convert to an explicit stack instead. Say the tell out loud either way
+&mdash; on a tree problem, <code>n &le; 2&middot;10<sup>5</sup></code> is a statement about
+<em>depth</em>, not only about <a href="0001-constraint-ladder.html">time</a>.</p>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"It's a tree, so the recursion is handed to me and the state is
+ just the node. The information I need comes from below, so it
+ travels in return values and the work goes after the loop.
+
+ What I return isn't what I was asked for: the parent can only
+ extend one downward branch, so that's the return value, and the
+ answer that turns around here goes into a running best.
+
+ Adjacency list, so I pass the parent down and skip it. And n is
+ 2e5 with no balance promise, so a path input is 200k frames deep
+ against a limit of 1000 - I'd raise the limit or go iterative."</code></pre>
+
+<div class="colophon">
+  <h3>See also</h3>
+  <ul class="linkrow">
+    <li><a href="../lessons/0008-what-the-children-return.html">Lesson 0008 &mdash; What the Children Return</a> (where this card comes from)</li>
+    <li><a href="../lessons/0007-recursion-memo-table.html">Lesson 0007 &mdash; Recursion, Memo, Table</a> &mdash; the same recursion over a number, where overlap <em>does</em> exist</li>
+    <li><a href="0001-constraint-ladder.html">Reference card: The Constraint Ladder</a> &mdash; the time half of reading a bound</li>
+    <li><a href="../glossary.html">Glossary</a> &mdash; rooted tree, pre-order, post-order, parent guard, return-versus-record</li>
+    <li><a href="https://cses.fi/book/book.pdf">CPH ch. 14</a> &middot;
+      <a href="https://usaco.guide/silver/intro-tree">USACO Guide &mdash; Intro to Tree Algorithms</a> &middot;
+      <a href="https://cses.fi/problemset/task/1674">CSES 1674</a> &middot;
+      <a href="https://cses.fi/problemset/task/1132">CSES 1132</a></li>
+  </ul>
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="../lessons/0008-what-the-children-return.html">Lesson 0008</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

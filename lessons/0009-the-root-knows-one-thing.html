@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Root Knows One Thing</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0009 &middot; algoprep</p>
+  <h1>The Root Knows One Thing</h1>
+  <p class="standfirst">Every earlier lesson's licence was about the whole input &mdash;
+  monotonic, sorted, overlapping. A heap's licence is smaller than any of those, and that is
+  the whole point of it: you give up knowing the order of everything, in exchange for never
+  having to pay for it.</p>
+</header>
+
+<div class="lede">
+  <p><strong>A heap answers exactly one question fast: what is the smallest (or largest) thing
+  in here right now?</strong> <em>"A priority queue (or heap) supports the following
+  operations: insertion of elements, deletion of the element considered highest priority, and
+  retrieval of the highest priority element, all in O(log N) time."</em>
+  (<a href="https://usaco.guide/silver/priority-queues">USACO Guide</a>) It does not answer "what
+  is the second-smallest" or "is 7 in here" without more work. That narrowness is the licence,
+  and it is why a heap is faster than a sorted structure at the one thing it does.</p>
+</div>
+
+<h2 id="trade">The trade</h2>
+
+<p>Python's <code>heapq</code> keeps a list satisfying one rule: <em>"Min-heaps are binary trees
+for which every parent node has a value less than or equal to any of its children,"</em> so
+<em>"the smallest element is always the root, <code>heap[0]</code>."</em>
+(<a href="https://docs.python.org/3/library/heapq.html">Python docs</a>) Nothing is promised
+about the order of anything else &mdash; the second-smallest element could be anywhere in the
+list. That is a weaker guarantee than a sorted array's, and giving up the extra structure is
+exactly what makes push and pop O(log n) instead of the O(n) a sorted list would need to stay
+sorted after every insertion.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before "heap"</span>
+  <p>A <a href="../glossary.html">partial order</a>: you know how the root compares
+  to everything else, and nothing about how the rest compare to each other. Every earlier
+  <a href="../glossary.html">licence</a> in this course was a promise about the whole
+  input in advance. This one is a promise about exactly one element, refreshed after every
+  change &mdash; which is why it is the tool for a collection that keeps changing.</p>
+</div>
+
+<h2 id="tell">The tell: static, or growing one at a time</h2>
+
+<p>Same question, two problem statements one word apart. <a
+href="https://leetcode.com/problems/kth-largest-element-in-an-array/">LeetCode 215</a> hands you
+the whole array once and asks for the k-th largest element. <a
+href="https://leetcode.com/problems/kth-largest-element-in-a-stream/">LeetCode 703</a> asks for
+the same number, but the array does not exist yet: values arrive one at a time, and every
+arrival needs an answer.</p>
+
+<pre><code># LC 215 — one shot, the array is handed to you complete
+import heapq
+def kth_largest_static(nums, k):
+    return heapq.nlargest(k, nums)[-1]
+
+# LC 703 — the array does not exist yet; it grows one call at a time
+class KthLargest:
+    def __init__(self, k, nums):
+        self.k = k
+        self.heap = []
+        for v in nums:
+            self.add(v)
+
+    def add(self, val):
+        heapq.heappush(self.heap, val)
+        if len(self.heap) > self.k:
+            heapq.heappop(self.heap)
+        return self.heap[0]</code></pre>
+
+<p>Nothing about the <em>value</em> being asked for changed. What changed is the shape of the
+input: one array versus a stream of calls, each expecting an answer before the next arrives.
+The <a href="0002-the-shape-of-the-answer.html">shape</a> lesson (0002) taught you to read this off the
+output; this is the same reading applied to when the input itself is finished. A one-shot array
+can be sorted once and forgotten. A stream cannot be sorted once, because it is not done
+arriving.</p>
+
+<h2 id="inversion">The inversion</h2>
+
+<p>The instinct for "k-th <em>largest</em>" is to reach for a max-heap. That instinct is backwards,
+and seeing why is the actual content of this lesson. A max-heap of everything seen so far tells
+you the largest value in O(1) &mdash; but the k-th largest is buried k&minus;1 pops deep inside
+it, and popping loses elements you still need for the next query. What you actually want is a
+<strong>min-heap capped at size k</strong>, holding only the k largest values seen. Its root is
+the <em>smallest</em> of those k &mdash; which is precisely the k-th largest overall:</p>
+
+<pre><code>self.heap = []          # min-heap, capped at size k
+def add(val):
+    heapq.heappush(self.heap, val)
+    if len(self.heap) > self.k:
+        heapq.heappop(self.heap)   # discard the one member that ISN'T top-k
+    return self.heap[0]            # smallest-of-the-largest-k == k-th largest</code></pre>
+
+<p>The cap is doing two jobs at once: it keeps the heap small (O(log k) per insertion instead of
+O(log n)), and it is <em>what makes the root correct</em> &mdash; not a performance nicety layered
+on top. Drop the cap and the root stops meaning "k-th largest" at all.</p>
+
+<div class="caveat">
+  <p><strong>Measured, not asserted.</strong> Delete the three-line cap &mdash; push every value,
+  never pop &mdash; and the code still runs, still returns <code>heap[0]</code>, and still looks
+  like a reasonable heap-based solution. On the very first query of every stream it is correct:
+  the heap happens to hold exactly k elements at that point, same as the capped version.
+  <strong>0%</strong> disagreement across 20,000 random streams, first query only.</p>
+  <p>From the second query on, the uncapped heap keeps growing, and its root drifts toward the
+  running <em>minimum</em> of the whole stream instead of the k-th largest. Disagreement with a
+  brute-force re-sort after every insertion: <strong>99.0%</strong> of 80,575 later queries across
+  the same 20,000 streams. The bug is invisible on the one case you'd sanity-check by hand and
+  wrong on almost everything after it.</p>
+</div>
+
+<h2 id="speed">Why bother</h2>
+
+<p>The alternative to any of this is honest and simple: keep a plain list, re-sort it after every
+insertion, read off index <code>k-1</code>. It is also correct. The only reason not to do it is
+speed, so the claim should be measured rather than taken on faith:</p>
+
+<div class="caveat">
+  <p><strong>Measured on CPython 3.12,</strong> a stream of 6,000 random insertions,
+  <code>k = 10</code>: the capped min-heap answers every query in <strong>1.7&thinsp;ms</strong>
+  total. Re-sorting the growing list after each insertion and reading index 9 takes
+  <strong>105&thinsp;ms</strong> &mdash; about <strong>60&times;</strong> slower, and the gap
+  widens with every additional insertion, because re-sorting pays O(n&nbsp;log&nbsp;n) on a list
+  that is already almost sorted, once per arrival, while the heap pays O(log&nbsp;k) &mdash; and k
+  never grows.</p>
+</div>
+
+<h2 id="reading">Reading it before you write it</h2>
+
+<p>Lesson 0001's <a href="../reference/0001-constraint-ladder.html">constraint ladder</a> reads
+<code>n</code> for a time budget. A heap problem needs one more reading, and it is not about
+<code>n</code> at all: does the collection keep changing while you're being asked questions about
+it, or is it handed to you complete? <em>"Priority queues are simpler and faster than sets, so
+you should use them instead whenever possible"</em>
+(<a href="https://usaco.guide/silver/priority-queues">USACO Guide</a>) &mdash; whenever, that is,
+you only ever need the current extreme, not an arbitrary lookup. The moment a problem also needs
+"is x still in here" or "what is the median", a heap alone stops being enough, and a sorted
+structure earns its extra cost back.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="heap-quiz"></div>
+
+<script type="application/json" id="heap-quiz-data">
+{
+  "title": "Retrieval practice — the root knows one thing",
+  "commit": "For each one, ask the same two questions first: is the collection still changing, and is the thing I keep the thing I was actually asked for?",
+  "perfect": "Six from six. Now write KthLargest from scratch with no code in front of you, then do LeetCode 347, Top K Frequent Elements — same cap-at-k idea, over counts instead of values.",
+  "questions": [
+    {
+      "tag": "static or stream",
+      "stem": "LeetCode 215 hands you the whole array once. LeetCode 703 asks the same question, but values keep arriving one at a time and each needs an answer immediately. What changes between the two?",
+      "given": "same question, k-th largest, asked once vs. asked repeatedly",
+      "options": [
+        { "text": "Either works; sort once, or keep a heap" },
+        { "text": "Sort once, since the array never changes again" },
+        { "text": "A size-k heap, since new values keep arriving", "correct": true },
+        { "text": "Neither; every query fully rescans the whole array" }
+      ],
+      "why": "<p>A one-shot array can be sorted once, in O(n log n), and then forgotten — that is LC 215. A stream is never finished, so there is no single moment to sort; a capped min-heap answers each new arrival in O(log k) instead of re-sorting from scratch. The array itself did not change shape — only whether it is <em>done arriving</em> did, and that is the whole tell.</p>"
+    },
+    {
+      "tag": "the inversion",
+      "stem": "You need the k-th largest value seen so far, refreshed after every insertion. Which structure actually gives you that at the root?",
+      "given": "k = 3, values arrive one at a time",
+      "options": [
+        { "text": "A min-heap holding only the k largest values seen", "correct": true },
+        { "text": "A max-heap holding only the k largest values seen" },
+        { "text": "A min-heap holding every value seen so far, capped" },
+        { "text": "A max-heap holding every value seen so far, capped" }
+      ],
+      "why": "<p>Cap a min-heap at size k and its root is the <em>smallest</em> of the k largest values — which is exactly the k-th largest. A max-heap of the same k values would put the <em>largest</em> at the root, which is the 1st largest, not the k-th. The instinct to reach for \"largest, so max-heap\" is exactly backwards here — see <a href='#inversion'>the inversion</a>.</p>"
+    },
+    {
+      "tag": "the cap",
+      "stem": "You write the heap version of LeetCode 703 but forget the three-line cap — you push every value and never pop. After several insertions, what does heap[0] actually give you?",
+      "given": "heap = []; heap.push(val); return heap[0]  # no cap",
+      "options": [
+        { "text": "The k-th largest value across the whole stream so far" },
+        { "text": "The smallest value across the entire stream so far", "correct": true },
+        { "text": "The largest value seen since the heap last emptied" },
+        { "text": "An arbitrary value, since the heap order is undefined" }
+      ],
+      "why": "<p>An uncapped min-heap just keeps shrinking toward the global minimum, root over root, as more values arrive — it has stopped meaning anything about \"k-th largest\" at all. It happens to agree with the correct answer on the very first query, because the heap has exactly k elements at that one moment — 0% disagreement there — and diverges on 99.0% of every query after, per <a href='#inversion'>the measurement above</a>.</p>"
+    },
+    {
+      "tag": "budget check (interleave: lesson 0001)",
+      "stem": "n up to 10^5 insertions, and you must answer the k-th-largest query after every one of them. Reading that the way lesson 0001 taught — via the total work, not just n — what does it rule out?",
+      "given": "1 <= n <= 10^5, one query per insertion",
+      "options": [
+        { "text": "Nothing changes; n alone still fixes that same budget" },
+        { "text": "Sorting is cheap once, but not once per insertion", "correct": true },
+        { "text": "The heap stops mattering once n passes ten thousand" },
+        { "text": "It signals recursion, not a heap, is needed here" }
+      ],
+      "why": "<p>Sorting once is O(n log n) and well within budget for n = 10^5. Sorting <em>again after every single insertion</em> is O(n log n) done n times — roughly 10^5 times more work — which is exactly the 60x measured above, just restated as a constraint reading instead of a stopwatch. The tell isn't in n by itself; it's in how many times the expensive step has to repeat.</p>"
+    },
+    {
+      "tag": "partial order",
+      "stem": "A min-heap of 7 values has its smallest element at the root. What do you know about the other 6?",
+      "given": "heap satisfies: heap[k] <= heap[2k+1] and heap[k] <= heap[2k+2]",
+      "options": [
+        { "text": "Only that the root is the smallest value present", "correct": true },
+        { "text": "That every level below the root is fully sorted" },
+        { "text": "That the whole heap is sorted except the root" },
+        { "text": "That siblings are ordered but cousins are not sorted" }
+      ],
+      "why": "<p>The heap property only constrains each parent against its own children — it says nothing about the order between two children of the same parent, or between nodes in different branches entirely. That is the <a href='../glossary.html'>partial order</a>: one guaranteed fact about the root, and no guarantee about the shape of anything beneath it.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0002",
+      "stem": "Using lesson 0002's vocabulary — shape and return type — what is LeetCode 703 actually asking for?",
+      "given": "KthLargest.add(val) -> int, called repeatedly",
+      "options": [
+        { "text": "An optimum, maintained live, across a growing set", "correct": true },
+        { "text": "An optimum, computed once, over a fixed collection" },
+        { "text": "A count, updated online, over a growing collection" },
+        { "text": "The object itself, rebuilt from a fixed array" }
+      ],
+      "why": "<p>The return type is an <a href='0002-the-shape-of-the-answer.html'>optimum</a> — a single value, the k-th largest — but unlike lesson 0002's examples it is not asked for once at the end; it is asked for after every insertion, over a collection that is still growing. That second fact is new vocabulary this lesson needed: the shape × return-type grid tells you <em>what</em> you're computing, and \"is the input still changing\" tells you <em>how often</em>.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('heap-quiz', 'heap-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"This is asking for the k-th largest, and it's asked repeatedly
+ as values arrive - so I'm not going to sort on every call, I'll
+ keep a heap instead.
+
+ The instinct is 'largest, so max-heap' - that's backwards. I want
+ a MIN-heap, capped at size k, holding the k largest values I've
+ seen. Its root is the smallest of those k, which is exactly the
+ k-th largest overall.
+
+ The cap isn't just for speed - it's what makes the root mean the
+ right thing. Without it the root just drifts toward the global
+ minimum as more values come in.
+
+ If this were a one-shot array instead of a stream, I'd just sort
+ once and index in - no heap needed. The heap earns its cost only
+ because the collection keeps changing under me."</code></pre>
+
+<p>The sentence worth having ready is "the cap isn't for speed, it's what makes the root correct"
+&mdash; it is the difference between a heap that happens to run fast and a heap that answers the
+right question.</p>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/silver/priority-queues">USACO Guide &mdash; Priority
+  Queues</a> for the O(log N) guarantee and when a heap beats a sorted set outright, then the
+  <a href="https://docs.python.org/3/library/heapq.html">Python <code>heapq</code> docs</a> for
+  the min-heap invariant itself and the <code>nlargest</code>/<code>nsmallest</code> guidance
+  &mdash; including the docs' own warning that for a one-shot top-k on a large collection,
+  <code>sorted()</code> can beat repeated heap operations, which is the static side of the tell
+  above stated by the source itself.</p>
+  <p>Practice pair: <a href="https://leetcode.com/problems/kth-largest-element-in-an-array/">LC
+  215, Kth Largest Element in an Array</a> (static) and
+  <a href="https://leetcode.com/problems/kth-largest-element-in-a-stream/">LC 703, Kth Largest
+  Element in a Stream</a> (the cap-at-k pattern above). Then
+  <a href="https://leetcode.com/problems/top-k-frequent-elements/">LC 347, Top K Frequent
+  Elements</a> &mdash; the same cap-at-k idea, over counts instead of raw values.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>heap</em> and
+      <em>partial order</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0008-what-the-children-return.html">Lesson 0008</a> &mdash; a different kind of
+      partial information: a tree's recursion only knows its own subtree. A heap's root only
+      knows itself against its children. Both are "know less, pay less" trades.</li>
+    <li><strong>Next lesson:</strong> intervals &mdash; sort once by one endpoint, then sweep,
+      the pattern that looks like a heap problem until you notice nothing is ever removed early.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    give me a problem and say the two sentences before writing code &mdash; is the collection
+    still changing, and is the thing at the root the thing you were actually asked for. Or ask
+    me to walk LC 347 the same way this lesson walked 703, since the cap-at-k idea is identical
+    over a different kind of value.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0008-what-the-children-return.html">&larr; Lesson 0008</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

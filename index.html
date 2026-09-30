@@ -67,10 +67,35 @@
     dropping from 4.7 million to 91 between the naive and memoized versions &mdash; recursion,
     memoization and tabulation as one continuous idea rather than three topics.</span>
   </li>
+  <li>
+    <a href="lessons/0008-what-the-children-return.html">What the Children Return</a>
+    <span class="blurb">Trees and DFS, where the recursion is the data structure &mdash; so the
+    pattern is free and the <em>return value</em> is the whole decision. Includes the diameter bug
+    that is wrong on 81% of random trees and right on every tree you would sketch by hand.</span>
+  </li>
+  <li>
+    <a href="lessons/0009-the-root-knows-one-thing.html">The Root Knows One Thing</a>
+    <span class="blurb">Heaps: the first licence in this course that's a partial order rather than
+    a full one. A min-heap capped at k is the classic inversion for &ldquo;k-th largest,&rdquo; and
+    forgetting the cap is wrong on 99% of queries after the first.</span>
+  </li>
+  <li>
+    <a href="lessons/0010-which-end-you-sort-by.html">Which End You Sort By</a>
+    <span class="blurb">Two interval problems, same input shape, opposite sort key: keep the most
+    (sort by end) versus merge into coverage (sort by start). Swap the key on either one and it's
+    wrong on about one interval set in six.</span>
+  </li>
+  <li>
+    <a href="lessons/0011-counting-maximum-overlap.html">Counting Maximum Overlap</a>
+    <span class="blurb">Meeting Rooms II, solved two ways: a heap of end times, and a sweep-line
+    counter over arrival/departure events. Getting the tie-break wrong &mdash; arrivals before
+    departures &mdash; is wrong on 36% of trials and invisible on every input with no touching
+    endpoints.</span>
+  </li>
   <li class="upcoming">
-    <a href="#">Trees as Recursion</a>
-    <span class="blurb">Coming next. Trees and DFS, taught as recursion where the recursion itself
-    is the data structure.</span>
+    <a href="#">Bitmask and Backtracking</a>
+    <span class="blurb">Coming next. The family lesson 0001's n &le; 20 tell has been pointing at
+    since the first lesson.</span>
   </li>
 </ol>
 
@@ -95,6 +120,12 @@
     <a href="reference/0004-prefix-pair.html">The Prefix Pair</a>
     <span class="blurb">The identity, the four templates, the key-selection table, the four silent
     bugs, and the window-versus-prefix decision on one printable page.</span>
+  </li>
+  <li>
+    <a href="reference/0008-tree-recursion.html">Tree Recursion</a>
+    <span class="blurb">The two questions to ask before writing a tree function, the three
+    skeletons, which one each classic problem needs, the four silent bugs, and the recursion-depth
+    fix.</span>
   </li>
 </ol>
 

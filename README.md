@@ -39,6 +39,27 @@ apply is far easier than naming the one that does — and it does most of the wo
    — the same coin-problem function written three ways, so the recursion, the memoization and the
    bottom-up table stop looking like three separate topics and start looking like one idea with
    different bookkeeping.
+8. [What the Children Return](https://thrllionaire.github.io/algoprep/lessons/0008-what-the-children-return.html)
+   — trees and DFS, where the recursion *is* the data structure, so naming the pattern is free and
+   the only real decision is what the function returns. Includes the diameter bug that is wrong on
+   81% of random trees and right on every tree you would sketch by hand, and a click-the-nodes
+   trace of a post-order walk.
+9. [The Root Knows One Thing](https://thrllionaire.github.io/algoprep/lessons/0009-the-root-knows-one-thing.html)
+   — heaps, the first pattern in this course whose licence is a partial order rather than a full
+   one. The classic inversion — a min-heap capped at k for a k-th-*largest* query — and the bug
+   that agrees with the correct answer on the first query and disagrees on 99% of every query
+   after.
+10. [Which End You Sort By](https://thrllionaire.github.io/algoprep/lessons/0010-which-end-you-sort-by.html)
+    — two interval problems, same `[start, end]` input shape, opposite sort key: keep the most
+    non-overlapping (sort by end) versus merge into coverage (sort by start). Swapping the key on
+    either one breaks it on about one interval set in six — the two mistakes are mirror images of
+    the same root cause.
+11. [Counting Maximum Overlap](https://thrllionaire.github.io/algoprep/lessons/0011-counting-maximum-overlap.html)
+    — Meeting Rooms II, solved two ways: a heap of end times (lesson 0009's licence, reapplied)
+    and a sweep-line counter over arrival/departure events (lesson 0010's sort-once-sweep-once
+    skeleton, with a counter in place of a pairwise comparison). The one new hazard is a tie-break
+    the sweep needs and the heap doesn't — sort arrivals before departures and a meeting ending
+    the instant another starts is wrongly counted as overlapping, on 36% of random trials.
 
 ## Reference cards
 
@@ -55,6 +76,9 @@ Printable, revisit-often distillations. These are the durable artefacts; lessons
 4. [The Prefix Pair](https://thrllionaire.github.io/algoprep/reference/0004-prefix-pair.html)
    — the identity, the four templates, the key-selection table, the four silent bugs, and the
    window-versus-prefix decision on one page.
+5. [Tree Recursion](https://thrllionaire.github.io/algoprep/reference/0008-tree-recursion.html)
+   — the two questions to ask before writing a tree function, the three skeletons, which one each
+   classic tree problem needs, the four silent bugs, and the recursion-depth fix.
 
 ## Course materials
 
@@ -93,6 +117,10 @@ Shared components in `assets/`:
 - `prefix.js` — `PrefixTracer`: a step-through trace of any complement-lookup sweep over a prefix
   array. The learner multi-selects *every* earlier boundary that closes a qualifying subarray.
   Generic over the prefix statistic, so reuse it for sums, sums mod k, ±1 balance, or parity masks.
+- `tree.js` — `TreeTracer`: a step-through trace of a recursive walk over a rooted tree. The
+  learner clicks the node the recursion settles next, with no options shown, and settled nodes keep
+  the value they returned. Generic over tree shape, traversal order and the returned value, so
+  reuse it for pre-order, in-order, BFS by level, or DFS over a graph.
 
 Learning records and working notes live in a separate private repo; see
 [PUBLISHING.md](./PUBLISHING.md).

@@ -158,6 +158,124 @@ coin problem — same state, two different recurrences. Practice pair for
 <a href="./lessons/0007-recursion-memo-table.html">lesson
 0007</a>.</p></li>
 <li><p><a href="https://cses.fi/book/book.pdf">Competitive Programmer's
+Handbook — ch. 14, <em>Tree algorithms</em></a> Pages 133–136 (read via
+<code>pdftotext</code>). The best short statement of why trees are a
+recursion problem rather than a graph problem: <em>"the structure of a
+rooted tree is recursive: each node of the tree acts as the root of a
+subtree that contains the node itself and all nodes that are in the
+subtrees of its children."</em> Gives the DFS with the parent parameter
+(<em>"the purpose of the parameter e is to make sure that the search
+only moves to nodes that have not been visited yet"</em>), subtree sizes
+by DP, and — the reason this chapter matters more than its length
+suggests — the diameter with its two quantities <em>named apart</em>:
+<code>toLeaf(x)</code>, <em>"the maximum length of a path from x to any
+leaf"</em>, versus <code>maxLength(x)</code>, <em>"the maximum length of
+a path whose highest point is x"</em>. Confusing those two is the
+standard tree bug, and almost no other source names them separately.
+Primary source for <a
+href="./lessons/0008-what-the-children-return.html">lesson
+0008</a>.</p></li>
+<li><p><a href="https://usaco.guide/silver/intro-tree">USACO Guide —
+Introduction to Tree Algorithms</a> The traversal-order vocabulary,
+stated as definitions rather than templates: <em>"Preorder: process the
+current node before recursively visiting its children"</em>,
+<em>"Postorder: recursively visit all children before processing the
+current node"</em>, and the subtree-size recurrence, <em>"a subtree is
+composed of a root node and the subtrees of the root's children. Thus,
+the size of a subtree is one plus the size of the root's childrens'
+subtrees."</em> Use for: naming pre-order versus post-order correctly,
+which is the same decision as "does this information come from above or
+below".</p></li>
+<li><p><a
+href="https://docs.python.org/3/library/sys.html#sys.setrecursionlimit">Python
+docs — <code>sys.setrecursionlimit</code></a> The authority for the
+limit that turns a correct recursive tree DFS into a
+<code>RecursionError</code> on a path-shaped input: <em>"this limit
+prevents infinite recursion from causing an overflow of the C stack and
+crashing Python"</em>, and the warning that goes with raising it —
+<em>"the highest possible limit is platform-dependent … this should be
+done with care, because a too-high limit can lead to a crash."</em> Use
+for: the depth half of reading a tree problem's bound.</p></li>
+<li><p><a href="https://cses.fi/problemset/task/1674">CSES Problem Set —
+Subordinates (1674)</a> and <a
+href="https://cses.fi/problemset/task/1132">Tree Diameter (1132)</a>
+Subtree sizes and the diameter, both at n ≤ 2·10⁵ — large enough that a
+path-shaped input meets Python's recursion limit, so they exercise the
+depth tell as well as the technique. Practice pair for <a
+href="./lessons/0008-what-the-children-return.html">lesson 0008</a>. The
+<code>.left</code>/<code>.right</code> versions of the same two problems
+are <a
+href="https://leetcode.com/problems/maximum-depth-of-binary-tree/">LeetCode
+104</a> and <a
+href="https://leetcode.com/problems/diameter-of-binary-tree/">LeetCode
+543</a>.</p></li>
+<li><p><a href="https://usaco.guide/silver/priority-queues">USACO Guide
+— Priority Queues</a> States the O(log N) guarantee plainly —
+<em>"insertion of elements, deletion of the element considered highest
+priority, and retrieval of the highest priority element, all in O(log N)
+time"</em> — and the direct recommendation, <em>"priority queues are
+simpler and faster than sets, so you should use them instead whenever
+possible."</em> Use for: the general case for a heap over a sorted
+structure. Primary source for <a
+href="./lessons/0009-the-root-knows-one-thing.html">lesson
+0009</a>.</p></li>
+<li><p><a href="https://docs.python.org/3/library/heapq.html">Python
+docs — <code>heapq</code></a> The min-heap invariant itself — <em>"the
+smallest element is always the root, <code>heap[0]</code>"</em> — plus
+the module's own honest warning that
+<code>nlargest</code>/<code>nsmallest</code> "perform best for smaller
+values of n," and that a one-shot top-k over a large collection is
+better served by <code>sorted()</code>. That warning is the static side
+of <a href="./lessons/0009-the-root-knows-one-thing.html">lesson
+0009</a>'s static-versus-stream tell, stated by the source itself rather
+than derived.</p></li>
+<li><p><a
+href="https://leetcode.com/problems/kth-largest-element-in-an-array/">LeetCode
+215, Kth Largest Element in an Array</a>, <a
+href="https://leetcode.com/problems/kth-largest-element-in-a-stream/">LeetCode
+703, Kth Largest Element in a Stream</a>, and <a
+href="https://leetcode.com/problems/top-k-frequent-elements/">LeetCode
+347, Top K Frequent Elements</a> 215/703 are the minimal pair for <a
+href="./lessons/0009-the-root-knows-one-thing.html">lesson 0009</a>:
+same question, static array versus a growing stream. 347 is the
+follow-up practice problem — the same cap-at-k min-heap, over counts
+instead of raw values.</p></li>
+<li><p><a href="https://usaco.guide/silver/greedy-sorting">USACO Guide —
+Greedy Algorithms with Sorting</a> Works the "maximize the number of
+non-overlapping events" problem directly, and states the exchange
+argument for why sorting by <em>end</em> time (not start) is what makes
+the greedy choice provably optimal: <em>"If we have two events E₁ and
+E₂, with E₂ ending later than E₁, then it is always optimal to select
+E₁... the set of events that can go after E₂ is a subset of the events
+that can go after E₁."</em> Use for: the proof behind the sort-by-end
+half of <a href="./lessons/0010-which-end-you-sort-by.html">lesson
+0010</a>. Practice pair: <a
+href="https://leetcode.com/problems/non-overlapping-intervals/">LeetCode
+435, Non-overlapping Intervals</a>.</p></li>
+<li><p><a href="https://usaco.guide/plat/sweep-line">USACO Guide — Sweep
+Line</a> Platinum, and more than either interval lesson strictly needs,
+but its restaurant-customers example states the whole technique
+directly, including the one detail most treatments skip: <em>"Each
+interval is converted into two events: (aᵢ, +1) for an arrival and (bᵢ,
+−1) for a departure. All events are sorted by time; if two events
+coincide, departures are processed before arrivals."</em> That tie-break
+is the primary source for <a
+href="./lessons/0011-counting-maximum-overlap.html#tie">lesson
+0011</a>'s correctness bug — get it backwards and a meeting ending the
+instant another starts is counted as briefly overlapping it. Counting
+maximum overlap (Meeting Rooms II) is the point where heaps (<a
+href="./lessons/0009-the-root-knows-one-thing.html">lesson 0009</a>) and
+sort-and-sweep intervals (<a
+href="./lessons/0010-which-end-you-sort-by.html">lesson 0010</a>) meet,
+and this page is the rare case in this course of a technique stated
+outright rather than derived in place.</p></li>
+<li><p><a href="https://cses.fi/problemset/task/1164">CSES Problem Set —
+Room Allocation (1164)</a> The free practice problem for <a
+href="./lessons/0011-counting-maximum-overlap.html">lesson 0011</a>:
+identical to LeetCode 253 (Meeting Rooms II, premium-locked) in
+substance, and asks for the room assignment itself, not just the count —
+which only the heap solution in that lesson gives you directly.</p></li>
+<li><p><a href="https://cses.fi/book/book.pdf">Competitive Programmer's
 Handbook — Antti Laaksonen (free PDF)</a> Rigorous, free, and short on
 hand-waving. Chapters 1–2 cover complexity; 6 is greedy; 7 is DP; 11–14
 graphs. Use for: when a pattern's <em>why</em> is unclear and blog posts
@@ -188,12 +306,32 @@ compensation doom-scrolling.</p></li>
 </ul>
 <h2 id="gaps">Gaps</h2>
 <ul>
+<li><p><strong>No high-trust source for the "min-heap capped at size k
+gives the k-th largest" trick itself.</strong> The USACO Guide and
+Python docs above establish the heap primitive and the
+static-versus-stream distinction, but neither states the specific
+inversion (min-heap, not max-heap, for a <em>largest</em>-k query). It
+is one line of reasoning from the heap property, so <a
+href="./lessons/0009-the-root-knows-one-thing.html">lesson 0009</a>
+derives it in place, the same call as the <code>exactly(k)</code>
+identity in lesson 0003.</p></li>
 <li><p><strong>Resolved this session:</strong> the prefix-sum
 <em>counting</em> technique did have a trusted source after all — the
 USACO Guide's CSES 1661 solution page, already listed above. Lesson 0004
 cites it directly and derives nothing in place. This is unlike the
 <code>exactly(k) = atMost(k) − atMost(k−1)</code> identity below, which
 genuinely has none.</p></li>
+<li><p><strong>No high-trust source states the
+merge-overlapping-intervals overlap condition itself</strong> (sort by
+start; two intervals overlap once the next one's start is ≤ the running
+merged end). USACO Guide's greedy-sorting page proves the
+<em>sort-by-end</em> half (max non-overlapping count) with a real
+exchange argument, but the union/merge direction is common
+competitive-programming knowledge with no single citable primary source
+— <a href="./lessons/0010-which-end-you-sort-by.html">lesson 0010</a>
+derives it in place and property-tests it, the same call as the
+<code>exactly(k)</code> identity in lesson 0003 and the heap inversion
+in lesson 0009.</p></li>
 <li><p><strong>No trusted source yet for reservoir sampling / randomised
 algorithms in an interview context.</strong> Naren named it explicitly;
 needs a search before that lesson.</p></li>

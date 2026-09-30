@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What the Children Return</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0008 · algoprep</p>
+  <h1>What the Children Return</h1>
+  <p class="standfirst">Almost every tree problem is one recursive function on one node. So the
+  pattern is never the hard part &mdash; naming it takes two seconds. The decision that actually
+  decides whether your code is right is what that function <em>returns</em>, and there is one
+  classic way to get it wrong that no hand-drawn test case will catch.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tree is the recursion.</strong> Lesson 0007 built recursion over a number
+  &mdash; <code>solve(x)</code> calling <code>solve(x - c)</code>. A tree hands you the recursion
+  ready-made: <em>"the structure of a rooted tree is recursive: each node of the tree acts as the
+  root of a subtree that contains the node itself and all nodes that are in the subtrees of its
+  children."</em>
+  (<a href="https://cses.fi/book/book.pdf">Competitive Programmer's Handbook</a>, ch. 14)</p>
+</div>
+
+<p>So the shape of the solution is decided before you read the question:
+<code>def f(node)</code>, which asks its children and combines their answers. The
+<a href="0007-recursion-memo-table.html#overlap">state</a> from lesson 0007 is just the node.
+What is left to decide is the thing this lesson is about &mdash; <strong>what
+<code>f</code> hands back</strong>.</p>
+
+<h2 id="tree">One tree, three questions</h2>
+
+<p>Everything below uses the same 7-node tree, rooted at node 1. Trees in interview problems
+arrive either as objects with <code>.left</code>/<code>.right</code>, or &mdash; in the general
+case, and in every competitive-programming problem set &mdash; as an <em>adjacency list</em>: a
+map from each node to its neighbours, with no direction marked.</p>
+
+<pre><code>adj = {1: [2, 3], 2: [1, 4, 5], 3: [1, 6],
+       4: [2], 5: [2, 7], 6: [3], 7: [5]}
+
+#          1
+#        /   \
+#       2     3
+#      / \     \
+#     4   5     6
+#          \
+#           7</code></pre>
+
+<div class="tell">
+  <span class="tell-label">The detail that bites first</span>
+  <p>An adjacency list has no direction: node 2's neighbours are <code>[1, 4, 5]</code>, and 1 is
+  its <em>parent</em>. Recursing into every neighbour walks straight back up and then straight
+  back down, forever. Every tree DFS over an adjacency list therefore carries the node it came
+  from and skips it &mdash; <em>"the purpose of the parameter <code>e</code> is to make sure that
+  the search only moves to nodes that have not been visited yet."</em>
+  (<a href="https://cses.fi/book/book.pdf">CPH</a>, ch. 14) A tree has no cycles, so this one
+  test is all the visited-tracking you need.</p>
+</div>
+
+<h2 id="up">Up: return values</h2>
+
+<p>First question: <strong>how tall is the tree?</strong> The height of a node is the number of
+edges on the longest downward path from it to a leaf. A node cannot answer that until its children
+have, and then it takes the best of them and adds its own edge:</p>
+
+<pre><code>def height(node, parent):
+    best = 0
+    for kid in adj[node]:
+        if kid != parent:
+            best = max(best, 1 + height(kid, node))
+    return best
+
+height(1, None)   # 3</code></pre>
+
+<p>Nothing here knows about the tree as a whole. Node 5 knows only that its one child returned 0,
+so it returns 1. The answer for the whole tree assembles itself out of seven local returns. This
+is <strong>post-order</strong>: <em>"recursively visit all children before processing the current
+node"</em> (<a href="https://usaco.guide/silver/intro-tree">USACO Guide</a>), and it is forced
+here rather than chosen &mdash; a node physically cannot compute its height first.</p>
+
+<h2 id="down">Down: parameters</h2>
+
+<p>Second question: <strong>how deep is each node below the root?</strong> Depth is not built from
+children; it is handed down from the parent. So it does not travel in a return value at all &mdash;
+it travels as an argument, and the node writes its answer down on the way <em>in</em>:</p>
+
+<pre><code>def depths(node, parent, d):
+    depth[node] = d
+    for kid in adj[node]:
+        if kid != parent:
+            depths(kid, node, d + 1)
+
+depths(1, None, 0)</code></pre>
+
+<p>That is <strong>pre-order</strong>: <em>"process the current node before recursively visiting
+its children"</em> (<a href="https://usaco.guide/silver/intro-tree">USACO Guide</a>). Same walk,
+same parent guard, same O(n) &mdash; only the line where the work happens moved above the loop
+instead of below it.</p>
+
+<div class="tell">
+  <span class="tell-label">The whole lesson in one line</span>
+  <p><strong>Information flows down through parameters and up through return values.</strong>
+  Before writing a tree function, say which one you need. If the answer at a node depends on what
+  is <em>above</em> it, pass it in. If it depends on what is <em>below</em> it, return it. Pre-order
+  and post-order are not two techniques to memorise &mdash; they are just where the work line sits
+  relative to the loop, and that is decided by which direction the information came from.</p>
+</div>
+
+<h2 id="both">Both at once &mdash; and the bug that lives here</h2>
+
+<p>Third question: <strong>what is the diameter</strong> &mdash; the longest path between any two
+nodes? CPH's move is to root the tree and notice that <em>"every path in a rooted tree has a
+highest point: the highest node that belongs to the path"</em>, so it is enough to compute, for each
+node, the longest path whose highest point is that node. It names two quantities, and the naming is
+the point:</p>
+
+<ul>
+  <li><code>toLeaf(x)</code> &mdash; <em>"the maximum length of a path from x to any leaf"</em></li>
+  <li><code>maxLength(x)</code> &mdash; <em>"the maximum length of a path whose highest point is x"</em></li>
+</ul>
+
+<p>For our tree, the answer is 5: the path <code>7 &rarr; 5 &rarr; 2 &rarr; 1 &rarr; 3 &rarr; 6</code>,
+whose highest point is the root. At the root, <code>toLeaf</code> of the two children are 2 and 1,
+so the path through the root is <code>(1 + 2) + (1 + 1) = 5</code>. And here is the trap. The
+question asks for <code>maxLength</code>. The parent needs <code>toLeaf</code>. Those are
+different numbers, and the recursion must <strong>return one and record the other</strong>:</p>
+
+<pre><code>def diameter(root):
+    best = 0
+
+    def to_leaf(node, parent):
+        nonlocal best
+        tops = sorted((1 + to_leaf(kid, node) for kid in adj[node] if kid != parent),
+                      reverse=True)
+        best = max(best, sum(tops[:2]))    # record: the path THROUGH node
+        return max(tops[:1], default=0)    # return: the deepest path FROM node
+
+    to_leaf(root, None)
+    return best</code></pre>
+
+<p><code>tops</code> holds, for each child, the depth of the deepest path from <code>node</code>
+down through that child. The two largest of them joined at <code>node</code> form the best path
+with <code>node</code> at the top &mdash; that gets recorded in <code>best</code>, and then thrown
+away. What goes back to the parent is only the single deepest branch, because that is the only
+thing the parent can extend.</p>
+
+<div class="caveat">
+  <p><strong>Measured, not asserted.</strong> Change the last line to
+  <code>return sum(tops[:2])</code> &mdash; return the number you were asked for instead of the
+  number the parent needs &mdash; and everything still runs, still terminates, and is still O(n).
+  On our 7-node tree above it answers <strong>6</strong> instead of 5, which is a path longer than
+  any path the tree even contains. Across 20,000 random trees it disagrees with a brute-force
+  all-pairs BFS on <strong>81.2%</strong> of them, always an overestimate.</p>
+  <p>The reason this ships is in the next two numbers. On path-shaped trees it is wrong
+  <strong>0%</strong> of the time, and on star-shaped trees <strong>0%</strong> of the time
+  &mdash; because with only one child, "the deepest branch" and "the path through me" are the same
+  number. Those are exactly the two trees you sketch on paper to check your work.</p>
+</div>
+
+<h2 id="depth">The tell you have to read from the constraints</h2>
+
+<p>A recursive DFS is the right shape and can still be the wrong code, for a reason that has
+nothing to do with trees. Python's stack is bounded: <em>"the maximum depth of the Python
+interpreter stack &hellip; This limit prevents infinite recursion from causing an overflow of the
+C stack and crashing Python."</em>
+(<a href="https://docs.python.org/3/library/sys.html#sys.setrecursionlimit">Python docs</a>) The
+default is 1000, and a tree with <code>n = 2&middot;10<sup>5</sup></code> nodes is allowed to be
+one long path.</p>
+
+<div class="caveat">
+  <p><strong>Measured on CPython 3.12:</strong> <code>height</code> on a path of
+  <strong>999</strong> nodes returns fine; on <strong>1000</strong> it raises
+  <code>RecursionError</code>. With <code>sys.setrecursionlimit(300_000)</code> the same function
+  handled a path of 200,000 nodes. That fix is standard for judges but not free &mdash; the docs
+  warn that <em>"the highest possible limit is platform-dependent &hellip; this should be done
+  with care, because a too-high limit can lead to a crash."</em> The alternative is an explicit
+  stack, which is why interviewers ask for the iterative version.</p>
+</div>
+
+<p>So the bound <code>n &le; 2&middot;10<sup>5</sup></code> on a tree problem carries a second
+message beyond the <a href="../reference/0001-constraint-ladder.html">time budget</a> from
+lesson 0001: <em>say out loud that a path-shaped input would blow the default recursion limit, and
+what you would do about it.</em> It costs one sentence and it is the kind of thing that separates
+"knows the pattern" from "has shipped this".</p>
+
+<h2>Practice &mdash; run the recursion yourself</h2>
+
+<p>No options here. Click the nodes in the order <code>height</code> actually returns from them,
+and watch the heights accumulate upward.</p>
+
+<div id="tree-trace"></div>
+
+<script type="application/json" id="tree-trace-data">
+{
+  "title": "Trace the returns — height(node)",
+  "returnLabel": "height",
+  "prompt": "<strong>The rule:</strong> a node cannot return until every one of its children has returned. Children are visited in the order they appear in <code>adj</code>, so node 2 before node 3, and node 4 before node 5.",
+  "nodes": [
+    { "id": "1", "label": "1", "x": 50, "y": 0, "parent": null },
+    { "id": "2", "label": "2", "x": 27, "y": 1, "parent": "1" },
+    { "id": "3", "label": "3", "x": 73, "y": 1, "parent": "1" },
+    { "id": "4", "label": "4", "x": 12, "y": 2, "parent": "2" },
+    { "id": "5", "label": "5", "x": 42, "y": 2, "parent": "2" },
+    { "id": "6", "label": "6", "x": 73, "y": 2, "parent": "3" },
+    { "id": "7", "label": "7", "x": 42, "y": 3, "parent": "5" }
+  ],
+  "sequence": [
+    { "id": "4", "value": "0",
+      "why": "<p>A leaf is the only node that can return without waiting for anyone: the <code>for</code> loop finds no children, <code>best</code> is still 0, and it returns. Every post-order trace starts at a leaf. Node 4 is the first leaf the walk reaches, because node 1 descends into node 2 first, and node 2 into node 4 first.</p>" },
+    { "id": "7", "value": "0",
+      "why": "<p>Node 2's loop moves on to its next child, node 5 — which is <em>entered</em>, but cannot return yet, so it descends to its own child. Node 7 is a leaf, so it returns 0. Being entered and being settled are different events, and post-order is about the second.</p>" },
+    { "id": "5", "value": "1",
+      "why": "<p>Now node 5 can finish: its one child returned 0, so it returns <code>1 + 0 = 1</code>.</p>" },
+    { "id": "2", "value": "2",
+      "why": "<p>Node 2's children have returned 0 (node 4) and 1 (node 5). It takes the <em>maximum</em> and adds one: <code>1 + 1 = 2</code>. Not the sum — height is one downward path, not a shape. Summing the two deepest is what <a href='#both'>the diameter</a> does, at the one node where that path turns around.</p>" },
+    { "id": "6", "value": "0",
+      "why": "<p>Node 2 is settled, so control returns to the root, which moves to its next child, node 3 — and straight down to the leaf 6, which returns 0.</p>" },
+    { "id": "3", "value": "1",
+      "why": "<p>Node 3's only child returned 0, so it returns <code>1 + 0 = 1</code>.</p>" },
+    { "id": "1", "value": "3",
+      "why": "<p>The root settles last, always. Its children returned 2 and 1, so it returns <code>1 + 2 = 3</code>: the height of the whole tree, assembled out of seven returns that each knew only about their own subtree.</p>" }
+  ],
+  "closing": "<p>That order — leaves first, root last — is the only order post-order can produce, and you just generated it from the rule rather than recalling it.</p>"
+}
+</script>
+
+<script src="../assets/tree.js"></script>
+<script>TreeTracer.mount('tree-trace', 'tree-trace-data');</script>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="tree-quiz"></div>
+
+<script type="application/json" id="tree-quiz-data">
+{
+  "title": "Retrieval practice — what the children return",
+  "commit": "For each one, answer the same two questions first: does this fact come from above or below, and is the thing I return the same as the thing I was asked for?",
+  "perfect": "Six from six. Now write the subtree-size DFS from scratch, then do CSES 1132, Tree Diameter — and get it right first time by naming toLeaf and maxLength separately before you write the return statement.",
+  "questions": [
+    {
+      "tag": "up or down",
+      "stem": "You need to label every node with its depth below the root. Which direction does that fact travel, and how?",
+      "given": "depth[root] = 0",
+      "options": [
+        { "text": "Downward, handed in as an extra parameter", "correct": true },
+        { "text": "Upward, handed back as the return value" },
+        { "text": "Sideways, shared between siblings as a global" },
+        { "text": "Nowhere, since every node already knows it" }
+      ],
+      "why": "<p>A node's depth is determined entirely by what is above it — its parent's depth plus one — so the parent can just hand it over on the way down. Nothing below the node is consulted at all, which is why the assignment sits <em>above</em> the loop and there is no return value to combine. Compare <a href='#up'>height</a>, where every child must be heard from first.</p>"
+    },
+    {
+      "tag": "return versus record",
+      "stem": "In the diameter walk, the best path with node x at its highest point is toLeaf(a) + toLeaf(b) + 2. What must the recursive call hand back to x's parent?",
+      "given": "best = max(best, sum(tops[:2]))",
+      "options": [
+        { "text": "Only the deepest single downward path from here", "correct": true },
+        { "text": "The best path passing right through this node" },
+        { "text": "The largest diameter seen anywhere below this node" },
+        { "text": "The total number of edges within this subtree" }
+      ],
+      "why": "<p>The parent can only <em>extend</em> what it is given by one edge, and a path that already turns around inside this subtree cannot be extended upward at all — so handing back the through-path lets the parent build a path that does not exist. Return <code>toLeaf</code>, record <code>maxLength</code> in a variable off to the side. This is the 81.2%-wrong version from <a href='#both'>the measurement above</a>, and it is the single most common tree bug there is.</p>"
+    },
+    {
+      "tag": "the parent guard",
+      "stem": "The tree arrives as an adjacency list rather than as nodes with .left and .right, and you leave out the `if kid != parent` test. What happens?",
+      "given": "adj = {1: [2, 3], 2: [1, 4, 5], ...}",
+      "options": [
+        { "text": "It walks straight back up and recurses forever", "correct": true },
+        { "text": "It visits each node exactly twice, then finishes" },
+        { "text": "It reports a subtree height one too large" },
+        { "text": "It works fine, since trees contain no cycles" }
+      ],
+      "why": "<p>The edge between 1 and 2 appears in both lists, so 1 recurses into 2, which recurses into 1, and so on until the stack runs out. Trees having no cycles is what makes the single parent check <em>sufficient</em> — you never need a full visited set — but it is not what makes it unnecessary. The undirected edge is the cycle.</p>"
+    },
+    {
+      "tag": "budget check (interleave: lesson 0001)",
+      "stem": "n up to 2 times 10^5, and the statement does not promise the tree is balanced. Reading that bound the way lesson 0001 taught, what breaks in the plain recursive DFS?",
+      "given": "1 <= n <= 2 * 10^5, Python",
+      "options": [
+        { "text": "The call depth exceeds the interpreter's stack limit", "correct": true },
+        { "text": "The adjacency list stops fitting in available memory" },
+        { "text": "The traversal turns quadratic in the input length" },
+        { "text": "The repeated maximum comparisons dominate the whole cost" }
+      ],
+      "why": "<p>A DFS over a tree is O(n) whatever the shape, so the <a href='../reference/0001-constraint-ladder.html'>time budget</a> is never the problem here — 2·10^5 is nothing. The <em>shape</em> is the problem: nothing rules out one long path, which means a recursion 200,000 frames deep against a default limit of 1000. This is a constraint tell that is not about time at all, which is why it gets missed.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0007",
+      "stem": "Lesson 0007 made you name the state before writing anything. For a DFS that computes every node's subtree size, what is playing the part of the state?",
+      "given": "size[node] = 1 + sum of children's sizes",
+      "options": [
+        { "text": "The node, which fixes its whole subtree below", "correct": true },
+        { "text": "The depth, which fixes the distance from root" },
+        { "text": "The parent, which fixes the direction of travel" },
+        { "text": "The count, which fixes the answer so far" }
+      ],
+      "why": "<p>Everything the function needs in order to answer is determined by which node it is standing on, exactly as everything <code>solve(x)</code> needed in <a href='0007-recursion-memo-table.html'>lesson 0007</a> was determined by x. The parent is carried as an argument, but only to avoid walking backwards — it does not change the answer, which is precisely why it is not part of the state. And note what follows: the state is the node, each node is reached once, so there is no overlap and therefore no memoization to add. This is recursion, not DP.</p>"
+    },
+    {
+      "tag": "post-order or pre-order",
+      "stem": "Two problems on the same tree. (i) Label each node with its distance from the root. (ii) Label each node with the size of its subtree. Which one needs post-order?",
+      "given": "one walk each, both O(n)",
+      "options": [
+        { "text": "Only the second, since sizes come from children", "correct": true },
+        { "text": "Only the first, since depths come from children" },
+        { "text": "Both of them, since every tree walk recurses" },
+        { "text": "Neither, since both can be read off directly" }
+      ],
+      "why": "<p>Distance from the root comes from above, so it is written on the way in — pre-order. Subtree size comes from below (<em>\"the size of a subtree is one plus the size of the root's childrens' subtrees\"</em>, <a href='https://usaco.guide/silver/intro-tree'>USACO Guide</a>), so the node has to wait — post-order. Same walk, same guard, same complexity; the only difference is which side of the loop the work sits on, and the direction of the information decides it for you.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('tree-quiz', 'tree-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"It's a tree, so the recursion is already given to me: one
+ function on a node, combining what its children hand back.
+ The state is just the node.
+
+ First question - which direction does the information move?
+ What I'm asked for here depends on the subtree below each node,
+ so it comes up in return values, and the work goes after the
+ loop. Post-order.
+
+ Second question, and this is the one I actually get wrong -
+ is what I return the same as what I'm asked for? Here it isn't.
+ The parent can only extend a single downward branch, so that's
+ what I return; the answer that turns around at this node gets
+ recorded in a running best and then dropped.
+
+ It's an adjacency list, so I pass the parent down and skip it -
+ that's all the visited-tracking a tree needs.
+
+ One more thing on the bound: n is 2 times ten to the fifth and
+ nothing says the tree is balanced, so a path-shaped input is
+ 200,000 frames deep against Python's default limit of 1000.
+ I'd raise the recursion limit, or go iterative if you'd prefer."</code></pre>
+
+<p>The two sentences worth having ready are "the information comes from below, so it returns" and
+"what I return isn't what I was asked for". The second one is the Staff+ signal: it says you have
+met this bug before.</p>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://cses.fi/book/book.pdf">Competitive Programmer's Handbook</a>, ch. 14,
+  "Tree algorithms" &mdash; nine pages, and pages 133&ndash;136 are this whole lesson: the
+  recursive structure of a rooted tree, the DFS with the parent parameter, subtree sizes by
+  dynamic programming, and the diameter with <code>toLeaf</code> and <code>maxLength</code> named
+  apart. Then the <a href="https://usaco.guide/silver/intro-tree">USACO Guide's Introduction to
+  Tree Algorithms</a> for the traversal-order vocabulary.</p>
+  <p>Practice pair: <a href="https://cses.fi/problemset/task/1674">CSES 1674, Subordinates</a>
+  (subtree sizes &mdash; one post-order walk) and
+  <a href="https://cses.fi/problemset/task/1132">CSES 1132, Tree Diameter</a> (the trap above, at
+  <code>n = 2&middot;10<sup>5</sup></code>, where the recursion limit bites too). The
+  <code>.left</code>/<code>.right</code> versions of the same two are
+  <a href="https://leetcode.com/problems/maximum-depth-of-binary-tree/">LC 104</a> and
+  <a href="https://leetcode.com/problems/diameter-of-binary-tree/">LC 543</a>.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../reference/0008-tree-recursion.html">Tree Recursion</a> &mdash; the three
+      skeletons, the down/up table, the four silent bugs and the recursion-depth fix, on one
+      printable page.</li>
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson:
+      <em>rooted tree</em>, <em>pre-order / post-order</em>, <em>parent guard</em> and
+      <em>return-versus-record</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0007-recursion-memo-table.html">Lesson 0007</a> &mdash; the same recursion, over
+      a number instead of a structure. Worth noticing what is <em>missing</em> here: each node is
+      reached once, so there is no overlap, so there is nothing to memoize.</li>
+    <li><strong>Next lesson:</strong> heaps and top-K &mdash; the first pattern in this course
+      whose licence is a partial order rather than a full one.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    give me any tree problem and say the two sentences before writing code &mdash; which direction
+    the information moves, and whether what you return is what you were asked for. Or ask me to
+    turn <code>height</code> into its iterative form, which is the follow-up question an
+    interviewer reaches for the moment you mention the recursion limit.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0007-recursion-memo-table.html">&larr; Lesson 0007</a>
+    <a href="../reference/0008-tree-recursion.html">Reference card</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Counting Maximum Overlap</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0011 &middot; algoprep</p>
+  <h1>Counting Maximum Overlap</h1>
+  <p class="standfirst">How many meetings are happening at once, at the busiest instant? The
+  whole schedule is handed to you up front, exactly like <a
+  href="0010-which-end-you-sort-by.html">lesson 0010</a>'s intervals &mdash; but this time the
+  quantity you're tracking really does rise and fall as you sweep through it, which is exactly
+  what <a href="0009-the-root-knows-one-thing.html">lesson 0009</a>'s heap is for. Two correct
+  solutions, from two different lessons, meet on the same problem.</p>
+</header>
+
+<div class="lede">
+  <p><strong>Static input, dynamic count.</strong> Lesson 0009's tell for a heap was whether the
+  collection kept <em>changing</em> while you were being asked about it &mdash; a growing stream.
+  Lesson 0010's tell for skipping a heap was that the whole list of intervals was handed over
+  before any work started. Both are still true here: nothing new arrives mid-algorithm. What's
+  new is that the question &mdash; <em>how many meetings are open right now</em> &mdash; is itself
+  a moving target as you walk through time, even though the input describing it never moves. A
+  heap can track that. So can a running counter, if you're willing to give up knowing
+  <em>which</em> meeting is open and keep only <em>how many</em>.</p>
+</div>
+
+<h2 id="question">The question</h2>
+
+<p>Given a list of meeting <a href="../glossary.html">intervals</a> <code>[start, end)</code>,
+what is the fewest rooms you need so that no two meetings sharing a room ever overlap? That is
+exactly the same number as: at the single busiest instant, how many meetings are open at once?
+Two meetings that touch &mdash; one ending the exact instant another begins &mdash; do
+<strong>not</strong> count as overlapping; the room is free again the moment it's vacated. This is
+the named interview problem <a href="https://leetcode.com/problems/meeting-rooms-ii/">LeetCode
+253, Meeting Rooms II</a> (locked behind LeetCode premium); the identical problem is free to
+practice as <a href="https://cses.fi/problemset/task/1164">CSES 1164, Room Allocation</a>.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before touching an overlap-counting problem</span>
+  <p>The whole list is handed to me now &mdash; so no live structure is forced on me the way
+  lesson 0009's stream forced one. But the thing I'm counting still changes as I sweep through
+  time, so I get to <em>choose</em> between a heap that tracks which rooms are open, or a plain
+  counter that only tracks how many are.</p>
+</div>
+
+<h2 id="heap">Solution one: a heap of end times</h2>
+
+<p>This is lesson 0009's licence, reapplied. Sort meetings by start time, then walk through them
+one at a time, keeping a min-heap of the end times of every room currently allocated. Before
+opening a new meeting, check the room ending <em>soonest</em>: if it has already ended, reuse
+it &mdash; pop it, push the new end time, room count unchanged. If it hasn't, no room is free;
+push a new end time, room count grows by one.</p>
+
+<pre><code>import heapq
+
+def min_meeting_rooms_heap(intervals):
+    if not intervals:
+        return 0
+    intervals = sorted(intervals)          # sort by start
+    heap = []                              # end times of allocated rooms
+    for start, end in intervals:
+        if heap and heap[0] <= start:      # earliest-ending room is free
+            heapq.heappop(heap)
+        heapq.heappush(heap, end)
+    return len(heap)</code></pre>
+
+<p>Checking only <code>heap[0]</code> is enough to know whether <em>any</em> room is free &mdash;
+not just the earliest-ending one. This is lesson 0009's <a
+href="../glossary.html">partial order</a> doing real work: a min-heap only guarantees one fact,
+that the root is no greater than anything else in it. So if the root's end time hasn't passed yet,
+nothing else's has either, and there is no point checking further.</p>
+
+<h2 id="sweep">Solution two: a running counter over events</h2>
+
+<p>Lesson 0010's skeleton &mdash; sort once, sweep once &mdash; still applies, but this time the
+sweep doesn't compare each interval to its predecessor; it turns every interval into two point
+events and lets a single counter do the work. Each start becomes an <em>arrival</em>
+(<code>+1</code>), each end becomes a <em>departure</em> (<code>&minus;1</code>). Sort all of
+those events by time and sweep left to right, tracking a running total and its maximum.</p>
+
+<pre><code>def min_meeting_rooms_sweep(intervals):
+    events = []
+    for start, end in intervals:
+        events.append((start, 1))
+        events.append((end, -1))
+    events.sort(key=lambda e: (e[0], e[1]))   # -1 sorts before +1 at equal time
+    rooms = best = 0
+    for _time, delta in events:
+        rooms += delta
+        best = max(best, rooms)
+    return best</code></pre>
+
+<p>Nothing here ever asks <em>which</em> meeting is open &mdash; only how many. That's the trade:
+the heap solution could tell you which physical room a meeting is assigned to (it's the one whose
+end time you just popped and replaced); the sweep only ever answers the count. It's the same
+existence/count/object distinction from <a href="0002-the-shape-of-the-answer.html">lesson
+0002</a>'s <a href="../glossary.html">return type</a> axis, this time separating two solutions to
+one problem rather than two problems.</p>
+
+<h2 id="tie">The one place this needs a tie-break &mdash; and it's the whole bug</h2>
+
+<p>Lesson 0010 sorted intervals by a single field and never needed a second one, because ties
+between two full intervals never had to be broken &mdash; the comparison happened after sorting,
+inside the loop. Here, sorting produces a flat list of point <em>events</em>, and two events can
+land on the exact same time: one meeting's end and another's start. Get the tie-break wrong and a
+meeting ending at 10 and one starting at 10 read as briefly overlapping, when they should read as
+back-to-back.</p>
+
+<pre><code># WRONG: arrivals sorted before departures on a tie
+events.sort(key=lambda e: (e[0], -e[1]))</code></pre>
+
+<div class="caveat">
+  <p><strong>Worked example.</strong> <code>[(0, 10), (10, 20)]</code> &mdash; one meeting ends
+  exactly as the next begins. The correct sweep returns <strong>1</strong> room: they never
+  overlap. Sort arrivals before departures on the tie instead, and it returns <strong>2</strong>:
+  the meeting starting at 10 is counted as open before the one ending at 10 is counted as closed.
+  Quantified over 20,000 random small interval sets, that wrong tie-break disagrees with a
+  brute-force per-instant count on <strong>36.0%</strong> of trials &mdash; and on
+  <strong>0%</strong> of trials built with no touching endpoints at all, which is exactly the kind
+  of input you'd sketch by hand to sanity-check the code and never catch the bug. The
+  <a href="https://usaco.guide/plat/sweep-line">USACO Guide</a> states the rule directly: <em>"All
+  events are sorted by time; if two events coincide, departures are processed before
+  arrivals."</em></p>
+</div>
+
+<h2 id="compare">Two solutions, one problem</h2>
+
+<table>
+  <thead>
+    <tr><th></th><th>Heap</th><th>Sweep</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Tracks</td><td>Which rooms are open, and when each frees up</td><td>Only how many are open, at any instant</td></tr>
+    <tr><td>Time</td><td class="num">O(n log n)</td><td class="num">O(n log n)</td></tr>
+    <tr><td>Would also answer</td><td>"Which room does meeting i use?"</td><td>Nothing beyond the count</td></tr>
+    <tr><td>Correctness hazard</td><td>None &mdash; the min-heap's partial order handles ties for free</td><td>Explicit tie-break required, or ties overcount</td></tr>
+  </tbody>
+  <caption>Same answer, same complexity &mdash; the heap pays for a stronger guarantee (room
+  identity) with nothing extra, because comparing <code>heap[0]</code> to <code>start</code>
+  already resolves a tie correctly (a room ending exactly at <code>start</code> counts as free).
+  The sweep is leaner but has to state the tie-break out loud, because a flat list of events has
+  no structure protecting it the way a heap does.</caption>
+</table>
+
+<p>Both were property-tested against a brute-force per-instant count on 20,000 random small
+interval sets: <strong>0 disagreements</strong> for the heap, <strong>0 disagreements</strong> for
+the correctly tie-broken sweep. Logged in <a href="../resources.html">Resources</a>.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="overlap-quiz"></div>
+
+<script type="application/json" id="overlap-quiz-data">
+{
+  "title": "Retrieval practice — counting maximum overlap",
+  "commit": "For each one, ask which changes as you sweep: which meeting is open, or just how many.",
+  "perfect": "Six from six. Now write both solutions from scratch with no code in front of you, then solve CSES 1164, Room Allocation, which also wants the room assignments — not just the count.",
+  "questions": [
+    {
+      "tag": "static, not a stream",
+      "stem": "Lesson 0010 concluded a heap was never worth it because the whole interval list is handed over up front. This lesson gives a heap solution anyway. What's actually different here?",
+      "given": "meetings = [(0,30),(5,10),(15,20)]",
+      "options": [
+        { "text": "The list secretly arrives meeting by meeting, not all at once", "correct": false },
+        { "text": "The open room count keeps changing though the input stays put", "correct": true },
+        { "text": "A heap here is strictly required; no other method will work", "correct": false },
+        { "text": "Meetings must be sorted by both their start and end fields", "correct": false }
+      ],
+      "why": "<p>Lesson 0009's static-versus-stream tell was about <em>when you learn the input</em>. Here the whole schedule is known before any code runs — same as lesson 0010. What changes is the quantity you're tracking: room occupancy rises and falls as you sweep through a known timeline. A heap is one valid way to track that changing quantity; the sweep-line counter, shown in this lesson too, is another, and needs no heap at all.</p>"
+    },
+    {
+      "tag": "heap mechanics",
+      "stem": "The heap solution only ever inspects heap[0], never any other room's end time. Why is checking just the minimum enough to know whether any room is free?",
+      "given": "heap holds the end times of every room currently allocated",
+      "options": [
+        { "text": "If the smallest end hasn't passed, none of the remaining have", "correct": true },
+        { "text": "Because every meeting was already sorted by its start time first", "correct": false },
+        { "text": "It isn't enough in general; some ties can slip past unnoticed", "correct": false },
+        { "text": "Because heapq in Python only ever exposes index zero to read", "correct": false }
+      ],
+      "why": "<p>This is lesson 0009's partial order again: a min-heap guarantees exactly one fact, that the root is no greater than anything else in it. Every other end time is at least heap[0]'s, so if heap[0] is still in the future, everything else is too — checking further would only confirm what the root already told you.</p>"
+    },
+    {
+      "tag": "count vs object",
+      "stem": "Which solution could also answer \"which physical room does meeting i use\", if that were asked, and which gives that up?",
+      "given": "same two solutions, one extra question added",
+      "options": [
+        { "text": "The heap could; the running counter never kept that information at all", "correct": true },
+        { "text": "The sweep could; the heap itself never tracked which room was used", "correct": false },
+        { "text": "Neither could; that kind of assignment needs a wholly different algorithm here", "correct": false },
+        { "text": "Both could; the sort order alone decides which exact room number applies", "correct": false }
+      ],
+      "why": "<p>The heap's popped-and-replaced end time <em>is</em> a specific room slot being reused — that identity is sitting right there in the heap. The sweep-line counter only ever adds and subtracts 1; once an event is processed there is no way to recover which interval it came from. This is lesson 0002's return-type axis again — count versus the object itself — this time splitting two solutions to one problem rather than two problems.</p>"
+    },
+    {
+      "tag": "the tie-break bug",
+      "stem": "[(0, 10), (10, 20)] — one meeting ends the instant the next begins. Sorting sweep events with arrivals placed before departures on a tie, what does that wrong tie-break report for this input?",
+      "given": "correct answer: 1 room, since they never truly overlap",
+      "options": [
+        { "text": "2 rooms — the arrival at 10 counted before the departure", "correct": true },
+        { "text": "1 room — a tie never affects this particular pair here", "correct": false },
+        { "text": "0 rooms — the sweep undercounts whenever two times align exactly", "correct": false },
+        { "text": "An error — sorting fails outright whenever event times align exactly", "correct": false }
+      ],
+      "why": "<p>With arrivals sorted before departures at time 10, the counter sees +1 (the second meeting opening) before it sees −1 (the first meeting closing), so the running count briefly reads 2 — as if both meetings were open at once. The USACO Guide states the fix directly: departures are processed before arrivals on a tie. Measured over 20,000 trials, the wrong order disagrees with a brute-force count on 36.0% of them, and on 0% of inputs with no touching endpoints — exactly the inputs you'd sketch by hand and never catch it in.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0001",
+      "stem": "n up to 10^5 meetings, both solutions sort once. Reading the bound the way lesson 0001 taught, what does it confirm here?",
+      "given": "1 <= n <= 10^5, whole schedule given up front",
+      "options": [
+        { "text": "O log n stays comfortably fine either way for both these solutions", "correct": true },
+        { "text": "It rules out the heap solution used earlier in this exact lesson", "correct": false },
+        { "text": "It forces the sweep line solution to be picked over the heap", "correct": false },
+        { "text": "Nothing changes at all; the bound only matters for a streamed input", "correct": false }
+      ],
+      "why": "<p>Both solutions sort once (O(n log n)) and then do a single O(n) pass, so n = 10^5 is comfortable for either. The bound doesn't pick between them here — the return-type question above does that.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0010",
+      "stem": "Lesson 0010's problems each sorted by one field and never needed a second. This lesson's sweep-line solution does need a second field to sort by. Why the difference?",
+      "given": "0010 sorted whole intervals; this lesson sorts individual point events",
+      "options": [
+        { "text": "Sorting flat point events can create ties a whole interval avoids", "correct": true },
+        { "text": "It doesn't actually need one; the worked example was already contrived", "correct": false },
+        { "text": "This lesson simply has far more meetings than lesson 0010's did", "correct": false },
+        { "text": "The sweep line solution here isn't really doing any sorting still", "correct": false }
+      ],
+      "why": "<p>Lesson 0010 sorted full [start, end] pairs and only ever compared them inside the loop afterward, so a tie between two intervals' sort keys never had to be resolved by the sort itself. Here, each interval is split into two separate point events before sorting, so two events from different intervals can land on the exact same time — and the sort itself, not the loop, has to decide their order.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('overlap-quiz', 'overlap-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Full schedule, handed to me up front - so no live structure is forced
+ on me. But the number of open meetings still rises and falls as I
+ sweep through it, so I've got two honest options.
+
+ A heap of end times, reusing 0009's trick: sort by start, and before
+ opening a room check whether the soonest-ending one is already free -
+ checking just the root is enough, since nothing else can be free if
+ it isn't.
+
+ Or a flat sweep, reusing 0010's skeleton: turn every interval into an
+ arrival and a departure event, sort, and walk it with a running
+ counter. Leaner, but it gives up knowing which meeting is which - and
+ it needs a tie-break I didn't need before: departures before arrivals
+ at the same instant, or two meetings that just touch get counted as
+ overlapping."</code></pre>
+
+<p>The sentence worth having ready is "what's actually changing here - the input, or just the
+count" &mdash; it's what separates this lesson's problem from both 0009's and 0010's, even though
+the input shape looks like 0010's and the tool looks like 0009's.</p>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/plat/sweep-line">USACO Guide &mdash; Sweep Line</a>, the
+  Restaurant Customers example: converting each interval to an arrival/departure event pair,
+  sorting with departures before arrivals on a tie, and sweeping a running counter &mdash; stated
+  directly, not derived, unlike most of this lesson's neighbours.</p>
+  <p>Practice: <a href="https://cses.fi/problemset/task/1164">CSES 1164, Room Allocation</a> (free,
+  and also asks for the room assignment, which only the heap solution gives you directly). The
+  named interview version is <a href="https://leetcode.com/problems/meeting-rooms-ii/">LeetCode
+  253, Meeting Rooms II</a> (premium-locked, but worth recognising by name).</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>sweep line</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0009-the-root-knows-one-thing.html">Lesson 0009</a> &mdash; the heap solution
+      here is 0009's partial order, reapplied to a set instead of a single running query.</li>
+    <li><a href="0010-which-end-you-sort-by.html">Lesson 0010</a> &mdash; the sweep-line solution
+      is 0010's sort-once-sweep-once skeleton, with a running counter in place of a
+      pairwise comparison.</li>
+    <li><strong>Next lesson:</strong> bitmask and backtracking &mdash; the family lesson 0001's
+      <code>n &le; 20</code> tell has been pointing at since the very first lesson.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    give me an interval problem and say the one sentence before writing code &mdash; is the input
+    changing, or just the count. Or ask me to trace the heap solution by hand on a small example,
+    since watching a room actually get reused is the part multiple choice can't test.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0010-which-end-you-sort-by.html">&larr; Lesson 0010</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
