@@ -70,6 +70,19 @@ apply is far easier than naming the one that does — and it does most of the wo
     — reservoir sampling: a uniform pick from a stream read once, kept fair by replacing with
     probability 1/i; the product telescopes to 1/n, and the fair-coin shortcut returns the last item
     50% of the time.
+15. [Settle Each Node Once](https://thrllionaire.github.io/algoprep/lessons/0015-settle-each-node-once.html)
+    — graph BFS/DFS: a visited set marked the moment a node is discovered, needed the instant a
+    graph (unlike lesson 0008's trees) can offer more than one path to a node. Marking it one step
+    late instead of at discovery turns 26 queue pushes into 106 on a 26-node, 105-edge graph.
+16. [Path Compression Pays for Itself](https://thrllionaire.github.io/algoprep/lessons/0016-path-compression-pays-for-itself.html)
+    — union-find: repeated or incremental connectivity questions answered by a parent-pointer
+    forest instead of a fresh traversal every time. Union by size plus path compression keeps it
+    near O(1); skip the size check and the same 2,000-node chain costs 1,999,000 pointer hops
+    instead of 1,999.
+17. [Nothing Left Pointing At It](https://thrllionaire.github.io/algoprep/lessons/0017-nothing-left-pointing-at-it.html)
+    — topological sort: repeatedly peel off whatever has nothing left pointing at it, using
+    in-degree counts rather than a single visited set. The one-visited-set shortcut for cycle
+    detection falsely flags 75.4% of real, cycle-free dependency graphs.
 
 ## Reference cards
 

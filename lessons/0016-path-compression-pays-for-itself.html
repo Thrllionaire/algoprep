@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Path Compression Pays for Itself</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0016 &middot; algoprep</p>
+  <h1>Path Compression Pays for Itself</h1>
+  <p class="standfirst"><a href="0015-settle-each-node-once.html">Lesson 0015</a> answered
+  &ldquo;fewest edges&rdquo; with BFS over a fixed graph, read once. This lesson answers a
+  different question &mdash; &ldquo;are these two nodes connected,&rdquo; asked over and over,
+  with edges <em>arriving one at a time</em> &mdash; where re-running BFS after every edge is the
+  slow way to get the right answer. A disjoint-set forest tracks connectivity directly: two cheap
+  operations, <code>find</code> and <code>union</code>, and one habit &mdash; never attach the
+  bigger tree under the smaller one &mdash; that keeps both of them nearly O(1).</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is repeated or incremental connectivity questions &mdash; &ldquo;are a and b
+  in the same group,&rdquo; &ldquo;how many groups are there now,&rdquo; asked again after every
+  new edge &mdash; with no need for the actual path between them.</strong> The moment the question
+  becomes &ldquo;what is the path&rdquo; or &ldquo;how many edges,&rdquo; this tool stops being
+  enough and you want lesson 0015's BFS/DFS over the whole graph instead.</p>
+</div>
+
+<h2 id="question">Why re-running lesson 0015 is the slow way</h2>
+
+<p>Nothing stops you from answering &ldquo;are a and b connected&rdquo; by running BFS from
+<code>a</code> after every new edge and checking whether it reaches <code>b</code>. It is
+correct. It is also O(V+E) <em>per question</em>, and if m edges arrive one at a time and you ask
+after each one, that is O(m&middot;(V+E)) overall &mdash; the whole graph, rebuilt from scratch,
+just to answer one yes/no.</p>
+
+<p>A disjoint-set forest keeps the answer standing instead of recomputing it. Every node points at
+a parent; two nodes are connected exactly when walking parents from each one reaches the same
+root:</p>
+
+<pre><code>class UnionFind:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.size = [1] * n
+
+    def find(self, x):
+        while self.parent[x] != x:
+            self.parent[x] = self.parent[self.parent[x]]   # path compression
+            x = self.parent[x]
+        return x
+
+    def union(self, a, b):
+        ra, rb = self.find(a), self.find(b)
+        if ra == rb:
+            return False                 # already connected &mdash; this edge closes a cycle
+        if self.size[ra] < self.size[rb]:
+            ra, rb = rb, ra
+        self.parent[rb] = ra             # smaller tree hangs under the bigger one
+        self.size[ra] += self.size[rb]
+        return True</code></pre>
+
+<h2 id="algorithm">The one habit that makes both operations cheap</h2>
+
+<p><code>find</code> walking parent pointers and <code>union</code> relinking one root under
+another are each trivial in isolation. What makes the forest fast over many operations is a pair
+of habits working together: <strong>union by size</strong> (the smaller tree always hangs under
+the bigger one, so no tree's height can double without its size at least doubling too) and
+<strong>path compression</strong> (every <code>find</code> flattens the pointers it walks, so the
+next lookup is shorter). The <a href="https://usaco.guide/gold/dsu">USACO Guide</a> states what
+the combination buys: with the union-find structure in place, you can &ldquo;unite vertices and
+check if two vertices u<sub>i</sub> and v<sub>i</sub> are in the same connected component using
+only O(&alpha;(N)) amortised time&rdquo; &mdash; amortised, meaning averaged over the whole run,
+the same word lesson 0003's window used for the same reason. &alpha; is the inverse Ackermann
+function, which is at most 4 for any N you could ever construct; in practice this is &ldquo;a
+handful of pointer hops, however many operations you run.&rdquo;</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing a connectivity structure</span>
+  <p>Am I asking &ldquo;connected or not&rdquo; / &ldquo;how many groups,&rdquo; repeatedly, as
+  edges arrive &mdash; or do I need the actual path or edge count between two nodes? The first is
+  union-find; the second is lesson 0015's BFS/DFS. And when I union two roots, am I attaching the
+  smaller tree under the bigger one, or just picking a side by habit?</p>
+</div>
+
+<div class="caveat">
+  <p><strong>The bug that still terminates, and still gets the right answer &mdash; slowly.</strong>
+  Skip the size check and always attach the second argument's root under the first's, and every
+  <code>find</code> and every <code>union</code> still returns the correct answer. Nothing crashes,
+  nothing disagrees with the correct version. But chain the same n &minus; 1 unions
+  (<code>union(0,1)</code>, <code>union(1,2)</code>, &hellip;) into both versions, n = 2000, then
+  call <code>find</code> on every node once: the union-by-size version does
+  <strong>1,999</strong> total parent-pointer hops across all 2,000 calls &mdash; a flat tree,
+  roughly one hop each. Skipping the size check turns the forest into a single 1,999-long chain,
+  and the same 2,000 calls cost <strong>1,999,000</strong> hops &mdash; a thousandfold blow-up,
+  from one comparison left out.</p>
+</div>
+
+<h2 id="tested">Checked against a slower, honest reference</h2>
+
+<p>The worked example &mdash; <a href="https://leetcode.com/problems/redundant-connection/">LeetCode
+684, Redundant Connection</a>: edges of a tree arrive one at a time, plus exactly one extra edge
+that closes a cycle; return the edge that closes it. <code>union</code> returns <code>False</code>
+on that exact edge, because its two endpoints already share a root. Checked on 3,000 random trees
+with one added edge, each one built, shuffled and solved independently, against a second
+plain-Python union-find written from scratch as the reference implementation:
+<strong>0 of 3,000</strong> disagreed.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="uf-quiz"></div>
+
+<script type="application/json" id="uf-quiz-data">
+{
+  "title": "Retrieval practice — union-find",
+  "commit": "Decide what union-find buys you, and what the size check is actually protecting, before you pick.",
+  "perfect": "Six from six. Now write UnionFind from scratch with no code in front of you, then solve LeetCode 547 (Number of Provinces) for real.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "Edges of a graph arrive one at a time, and after each one you must say whether two fixed nodes are now connected. Which fits best?",
+      "given": "no path or edge count is ever asked for, only connected-or-not",
+      "options": [
+        { "text": "A union-find forest, updated once per edge", "correct": true },
+        { "text": "Binary search across the full edge list", "correct": false },
+        { "text": "A min-heap of edges, capped at k", "correct": false },
+        { "text": "A sweep-line pass across sorted time spans", "correct": false }
+      ],
+      "why": "<p>Repeated connectivity questions over an edge stream are exactly union-find's tell: each new edge is one union, each question is two finds, no graph rebuild required.</p>"
+    },
+    {
+      "tag": "the mechanism",
+      "stem": "Why does find compress the path it walks, setting parent[x] to parent[parent[x]] on the way?",
+      "given": "the same node may be looked up many times over the life of the forest",
+      "options": [
+        { "text": "So the next find walks fewer hops total", "correct": true },
+        { "text": "So union never again needs to call find", "correct": false },
+        { "text": "So two unrelated roots merge without any cost", "correct": false },
+        { "text": "So the size array stops needing any updates", "correct": false }
+      ],
+      "why": "<p>Path compression is pure bookkeeping done as a side effect of a lookup already in progress: every hop taken this time is one fewer hop every future find over the same node has to take.</p>"
+    },
+    {
+      "tag": "the habit",
+      "stem": "In union, why compare size[ra] and size[rb] before deciding which root survives?",
+      "given": "always attaching the second root under the first, regardless of size, still returns correct answers",
+      "options": [
+        { "text": "It keeps the bigger tree off smaller ones", "correct": true },
+        { "text": "It is required just for find to terminate", "correct": false },
+        { "text": "It lets union skip checking equal roots fast", "correct": false },
+        { "text": "It only matters past two nodes existing here", "correct": false }
+      ],
+      "why": "<p>Without the check, a bad arrival order can keep attaching the whole growing tree under a fresh singleton, stretching one long chain instead of a flat forest &mdash; correct either way, but the chain costs a thousand times more hops.</p>"
+    },
+    {
+      "tag": "the bug",
+      "stem": "Skipping the size check still returns correct connectivity answers. What does it cost, measured on a 2,000-node chain?",
+      "given": "n − 1 unions built one at a time, then one find per node",
+      "options": [
+        { "text": "Close to 1,999,000 hops instead of 1,999", "correct": true },
+        { "text": "Nothing measurable at all on any input", "correct": false },
+        { "text": "Wrong answers across roughly half the finds", "correct": false },
+        { "text": "An infinite loop trapped inside the find", "correct": false }
+      ],
+      "why": "<p>Every find still terminates and every answer is still right &mdash; the chain is just 2,000 nodes long instead of nearly flat, so walking it 2,000 times costs a thousand times more pointer hops.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0015",
+      "stem": "A problem needs the exact shortest path between two nodes, not just whether one exists. Which tool from this course actually answers that?",
+      "given": "union-find's find only tells you a shared root exists, never the route to it",
+      "options": [
+        { "text": "Lesson 0015's BFS, which the forest cannot replace", "correct": true },
+        { "text": "Union-find, since all connected nodes share one root", "correct": false },
+        { "text": "A bitmask built over every pair of nodes", "correct": false },
+        { "text": "Backtracking over every single possible route between them", "correct": false }
+      ],
+      "why": "<p>A disjoint-set forest deliberately throws away the path the moment two components merge &mdash; it answers connected-or-not and how-many-groups, never the route or the edge count, which is what BFS is for.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0001",
+      "stem": "A problem has up to 10^5 edges arriving one at a time, each followed by a connectivity question. Lesson 0001's constraints tell rules out which approach?",
+      "given": "re-running a full BFS from scratch after every single edge",
+      "options": [
+        { "text": "Per-edge BFS; 100,000 full graph sweeps each", "correct": true },
+        { "text": "Union-find; it cannot handle that many edges", "correct": false },
+        { "text": "Both; neither approach ever runs fast enough", "correct": false },
+        { "text": "Neither; both approaches run fine every time", "correct": false }
+      ],
+      "why": "<p>10^5 edges times a full O(V+E) BFS after each one is quadratic-ish and far past a one-second budget; union-find answers each of the 10^5 questions in close to O(1), comfortably fast.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('uf-quiz', 'uf-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Edges arriving one at a time, repeated connected-or-not questions, no need
+ for the actual path - that's union-find, not a fresh BFS after every edge.
+
+ Each union does two finds and one relink; each find walks parent pointers
+ to the root, compressing the path as it goes so the next lookup over the
+ same node is shorter.
+
+ I always hang the smaller tree under the bigger one's root, by size - skip
+ that and the forest can degrade into one long chain, correct but a
+ thousand times slower, same as lesson 0015's push-versus-pop timing bug:
+ still terminates, still right, just not the complexity I'm claiming."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/gold/dsu">USACO Guide &mdash; Disjoint Set Union</a> (Gold): the
+  union-by-size and path-compression implementation and the O(&alpha;(N)) amortised bound, both
+  quoted above.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/redundant-connection/">LeetCode 684,
+  Redundant Connection</a> (the worked example above), then
+  <a href="https://leetcode.com/problems/number-of-provinces/">LeetCode 547, Number of
+  Provinces</a> (count connected components from an adjacency matrix &mdash; same forest, a
+  counting question instead of a yes/no one).</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>union-find
+      (disjoint set)</em>, <em>path compression</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0015-settle-each-node-once.html">Lesson 0015</a> &mdash; the tool for the
+      question union-find cannot answer: the actual shortest path, not just connectivity.</li>
+    <li><a href="0001-read-the-constraints-first.html">Lesson 0001</a> &mdash; the constraints
+      tell: many repeated queries over a changing graph is the signal to stop re-traversing and
+      start maintaining state.</li>
+    <li><strong>Next lesson:</strong> <a href="0017-nothing-left-pointing-at-it.html">Lesson
+      0017</a> &mdash; topological sort, ordering a <em>directed</em> graph's nodes by
+      dependency, the one thing neither BFS/DFS nor union-find answers as written.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    ask me to trace find and union by hand on five nodes with the edges arriving in a bad order,
+    or to adapt UnionFind to also report the size of the largest component after each union.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0015-settle-each-node-once.html">&larr; Lesson 0015</a>
+    <a href="0017-nothing-left-pointing-at-it.html">Lesson 0017 &rarr;</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

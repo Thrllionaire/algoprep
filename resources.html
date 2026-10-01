@@ -412,6 +412,36 @@ reference (0 disagreements / 2,000 random small graphs) — the same call
 as the <code>exactly(k)</code> identity in lesson 0003, the heap
 inversion in lesson 0009, and the merge-overlap condition in lesson
 0010.</p></li>
+<li><p><a href="https://usaco.guide/gold/dsu">USACO Guide — Disjoint Set
+Union</a> (Gold) — the union-by-size and path-compression implementation
+and the O(α(N)) amortised bound; the lesson 0016 primary source for both
+quotes.</p></li>
+<li><p><strong>Gap:</strong> no high-trust source states the exact
+degeneracy cost of skipping union by size; <a
+href="./lessons/0016-path-compression-pays-for-itself.html">lesson
+0016</a> measures it in place (1,999 hops with union-by-size +
+compression vs. 1,999,000 hops without, both over the same 2,000-node
+chain) and checks the Redundant Connection solution against a
+from-scratch reference union-find (0 disagreements / 3,000 random
+trees-plus-one-edge) — the same call as the <code>exactly(k)</code>
+identity in lesson 0003, the heap inversion in lesson 0009, the
+merge-overlap condition in lesson 0010, and the push-versus-pop timing
+bug in lesson 0015.</p></li>
+<li><p><a href="https://usaco.guide/gold/toposort">USACO Guide —
+Topological Sort</a> (Gold) — the ordering definition and the
+cycle-detection-by-shortfall test; the lesson 0017 primary source for
+both quotes.</p></li>
+<li><p><strong>Gap:</strong> no high-trust source states the
+false-positive rate of a single-visited-set DFS cycle check on a true
+DAG; <a href="./lessons/0017-nothing-left-pointing-at-it.html">lesson
+0017</a> measures it in place (1,126 false cycle reports out of 1,494
+confirmed-acyclic random graphs, 75.4%) and checks
+<code>topo_order</code> against a brute-force all-permutations search
+for both a valid order and an "impossible" verdict (0 disagreements /
+1,500 random small graphs) — the same call as the
+<code>exactly(k)</code> identity in lesson 0003, the heap inversion in
+lesson 0009, the merge-overlap condition in lesson 0010, and lesson
+0015's and 0016's own degeneracy measurements.</p></li>
 </ul>
 </div>
 

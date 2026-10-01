@@ -242,3 +242,29 @@ keeps track of visited nodes, so that it processes each node only once."
 *discovered*, not when it is later processed — marking late does not break correctness but lets
 the same node be queued many times over.
 See [lesson 0015](./lessons/0015-settle-each-node-once.html).
+
+**Union-find (disjoint set)** — a forest of parent pointers that answers "are these two nodes
+connected" and "how many groups exist," updated in close to constant time per edge instead of by
+re-traversing the whole graph. With union by size and path compression both in place, uniting
+vertices and checking whether two of them share a component runs in "only O(α(N)) amortised
+time" ([USACO Guide](https://usaco.guide/gold/dsu)) — α is the inverse Ackermann function, at
+most 4 for any N that could ever be built. It discards the path the moment two components merge,
+so it can never answer "what is the route" or "how many edges" — that is lesson 0015's BFS/DFS.
+See [lesson 0016](./lessons/0016-path-compression-pays-for-itself.html).
+
+**Path compression** *(technique, not ours)* — the side effect of a `find` call relinking every
+node it walks directly toward the root it discovers, so the next `find` over any of those nodes
+takes fewer hops. Paired with union by size, it is what keeps a union-find forest nearly flat no
+matter how many unions have run. See [lesson
+0016](./lessons/0016-path-compression-pays-for-itself.html).
+
+**Topological order** — a linear ordering of a directed graph's nodes such that "for every
+directed edge u→v from vertex u to vertex v, u comes before v in the ordering"
+([USACO Guide](https://usaco.guide/gold/toposort)). Only exists when the graph has no cycle; a
+cycle's nodes would each need to come before one another, which no line of nodes can satisfy.
+See [lesson 0017](./lessons/0017-nothing-left-pointing-at-it.html).
+
+**In-degree** — the number of directed edges pointing into a node. A node with in-degree zero has
+every prerequisite already satisfied and is safe to place next in a topological order; a node
+that never reaches in-degree zero sits inside a cycle. See [lesson
+0017](./lessons/0017-nothing-left-pointing-at-it.html).

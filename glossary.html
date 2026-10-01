@@ -328,6 +328,41 @@ Mark a node visited the instant it is <em>discovered</em>, not when it
 is later processed — marking late does not break correctness but lets
 the same node be queued many times over. See <a
 href="./lessons/0015-settle-each-node-once.html">lesson 0015</a>.</p>
+<p><strong>Union-find (disjoint set)</strong> — a forest of parent
+pointers that answers "are these two nodes connected" and "how many
+groups exist," updated in close to constant time per edge instead of by
+re-traversing the whole graph. With union by size and path compression
+both in place, uniting vertices and checking whether two of them share a
+component runs in "only O(α(N)) amortised time" (<a
+href="https://usaco.guide/gold/dsu">USACO Guide</a>) — α is the inverse
+Ackermann function, at most 4 for any N that could ever be built. It
+discards the path the moment two components merge, so it can never
+answer "what is the route" or "how many edges" — that is lesson 0015's
+BFS/DFS. See <a
+href="./lessons/0016-path-compression-pays-for-itself.html">lesson
+0016</a>.</p>
+<p><strong>Path compression</strong> <em>(technique, not ours)</em> —
+the side effect of a <code>find</code> call relinking every node it
+walks directly toward the root it discovers, so the next
+<code>find</code> over any of those nodes takes fewer hops. Paired with
+union by size, it is what keeps a union-find forest nearly flat no
+matter how many unions have run. See <a
+href="./lessons/0016-path-compression-pays-for-itself.html">lesson
+0016</a>.</p>
+<p><strong>Topological order</strong> — a linear ordering of a directed
+graph's nodes such that "for every directed edge u→v from vertex u to
+vertex v, u comes before v in the ordering" (<a
+href="https://usaco.guide/gold/toposort">USACO Guide</a>). Only exists
+when the graph has no cycle; a cycle's nodes would each need to come
+before one another, which no line of nodes can satisfy. See <a
+href="./lessons/0017-nothing-left-pointing-at-it.html">lesson
+0017</a>.</p>
+<p><strong>In-degree</strong> — the number of directed edges pointing
+into a node. A node with in-degree zero has every prerequisite already
+satisfied and is safe to place next in a topological order; a node that
+never reaches in-degree zero sits inside a cycle. See <a
+href="./lessons/0017-nothing-left-pointing-at-it.html">lesson
+0017</a>.</p>
 </div>
 
 <footer>

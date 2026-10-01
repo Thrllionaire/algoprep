@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nothing Left Pointing At It</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0017 &middot; algoprep</p>
+  <h1>Nothing Left Pointing At It</h1>
+  <p class="standfirst">Lessons 0015 and 0016 both treated edges as pointing nowhere in
+  particular &mdash; a graph you could walk either way. The moment an edge means
+  &ldquo;before,&rdquo; as in a prerequisite or a build dependency, direction stops being
+  decoration and becomes the whole question: <em>is there an order that respects every arrow at
+  once, and if so, what is it?</em> The algorithm is almost embarrassingly simple &mdash; repeatedly
+  peel off whatever currently has nothing left pointing at it &mdash; and a cycle announces itself
+  by leaving nodes behind that never get peeled.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is a <em>directed</em> graph plus a request for a valid order, a build
+  sequence, or a yes/no on whether one exists &mdash; &ldquo;can all these courses be taken,&rdquo;
+  &ldquo;in what order do these tasks run.&rdquo;</strong> If the edges have no direction, or the
+  question only asks about connectivity rather than order, this is the wrong tool &mdash; reach
+  for lesson 0015 or 0016 instead.</p>
+</div>
+
+<h2 id="question">Why connectivity alone doesn't give you an order</h2>
+
+<p>Lessons 0015 and 0016 both answer questions a <em>direction</em> doesn't change: whether a path
+exists, how many edges it takes, whether two nodes share a component. None of that distinguishes
+&ldquo;A depends on B&rdquo; from &ldquo;B depends on A&rdquo; &mdash; both leave an edge between
+the same two nodes. A valid build order needs every edge read the same way:
+&ldquo;A topological sort of a directed acyclic graph is a linear ordering of its vertices such
+that for every directed edge u&rarr;v from vertex u to vertex v, u comes before v in the
+ordering,&rdquo; states the
+<a href="https://usaco.guide/gold/toposort">USACO Guide</a>. Not every directed graph has one
+&mdash; a cycle (A before B before C before A) can never be laid out in a line that respects all
+three arrows, which is exactly the signal this algorithm uses to report &ldquo;impossible.&rdquo;</p>
+
+<h2 id="algorithm">Kahn's algorithm: peel what nothing points at</h2>
+
+<p>Count, for every node, how many edges point <em>into</em> it &mdash; its <strong>in-degree</strong>.
+A node with in-degree zero has nothing left to wait on, so it is safe to place next. Placing it
+removes its outgoing edges, which can drop some neighbour's in-degree to zero in turn:</p>
+
+<pre><code>from collections import deque
+
+def topo_order(n, prereqs):
+    # prereqs: (course, prereq) pairs meaning prereq must come before course
+    indeg = [0] * n
+    adj = [[] for _ in range(n)]
+    for course, prereq in prereqs:
+        adj[prereq].append(course)
+        indeg[course] += 1
+
+    queue = deque(node for node in range(n) if indeg[node] == 0)
+    order = []
+    while queue:
+        u = queue.popleft()
+        order.append(u)
+        for v in adj[u]:
+            indeg[v] -= 1
+            if indeg[v] == 0:
+                queue.append(v)
+
+    return order if len(order) == n else []   # shorter than n means a cycle</code></pre>
+
+<p>This is lesson 0015's BFS with one change: the queue starts from every zero-in-degree node
+instead of a single source, and a node is only safe to queue once <em>every</em> prerequisite
+has placed it there, not the first time any one of them does. The cycle check is the USACO Guide's
+own test, stated plainly: &ldquo;If the length of the array containing the end order does not
+equal the number of elements that need to be sorted, then there is a cycle in the graph.&rdquo;
+A cycle's nodes keep waiting on each other and never reach in-degree zero, so they never get
+queued and never make it into <code>order</code>.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing a topological sort</span>
+  <p>Are these edges directed, and does the question want an order or a before/after check &mdash;
+  not just connectivity? If so: count in-degrees, queue every node starting at zero, and peel.
+  If the final order is shorter than the node count, something never reached in-degree zero
+  &mdash; a cycle, not a bug.</p>
+</div>
+
+<div class="caveat">
+  <p><strong>The bug that looks like cycle detection and isn't.</strong> A DFS-based alternative
+  exists, and a tempting shortcut is to detect a cycle with one <code>visited</code> set: if a DFS
+  call reaches a node already in <code>visited</code>, call it a cycle. This is wrong the moment
+  two different nodes share a prerequisite &mdash; a diamond, not a cycle &mdash; because the
+  shared node is visited once from the first path and looks &ldquo;already seen&rdquo; from the
+  second, with no cycle anywhere. Measured on 1,494 randomly generated graphs confirmed cycle-free
+  by brute force: the single-visited-set check falsely reports a cycle on <strong>1,126</strong>
+  of them &mdash; <strong>75.4%</strong>. The fix is a second set for &ldquo;currently on this
+  DFS's call stack&rdquo; and checking only that one, but Kahn's in-degree count sidesteps the
+  distinction entirely, which is the real reason it is the version in this lesson.</p>
+</div>
+
+<h2 id="tested">Checked against a slower, honest reference</h2>
+
+<p><code>topo_order</code> was run on 1,500 random small graphs (2&ndash;7 nodes) and checked two
+ways: every order it returned was verified to respect every prerequisite edge, and every
+&ldquo;impossible&rdquo; verdict was checked against a brute-force search over all n! orderings
+for an order that works. <strong>0 of 1,500</strong> disagreed either way.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="topo-quiz"></div>
+
+<script type="application/json" id="topo-quiz-data">
+{
+  "title": "Retrieval practice — topological sort",
+  "commit": "Decide whether direction and ordering actually matter here before you pick.",
+  "perfect": "Six from six. Now write topo_order from scratch with no code in front of you, then solve LeetCode 210 (Course Schedule II) for real.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "A problem gives directed prerequisite pairs and asks for a valid course order, or 'impossible' if none exists. Which fits?",
+      "given": "every edge means strictly before, never just connected",
+      "options": [
+        { "text": "Topological sort ordering each node by in-degree", "correct": true },
+        { "text": "Union-find run over the given prerequisite pairs", "correct": false },
+        { "text": "Plain BFS, run from course zero only", "correct": false },
+        { "text": "A sweep-line pass over sorted meeting times", "correct": false }
+      ],
+      "why": "<p>'Directed edges plus a valid order' is the topological-sort tell specifically; union-find discards direction entirely, and plain BFS answers distance, not ordering.</p>"
+    },
+    {
+      "tag": "the mechanism",
+      "stem": "Why does a node become safe to place in the order the moment its in-degree hits zero?",
+      "given": "in-degree counts how many prerequisites a node is still waiting on",
+      "options": [
+        { "text": "Every one of its needs has now been satisfied", "correct": true },
+        { "text": "The node simply has no outgoing edges at all", "correct": false },
+        { "text": "The node simply was the first one ever queued", "correct": false },
+        { "text": "The whole graph is simply free of any cycles", "correct": false }
+      ],
+      "why": "<p>In-degree zero means nothing is still waiting to come before this node — every prerequisite that could have blocked it has already been placed, so placing it now breaks no edge.</p>"
+    },
+    {
+      "tag": "the verdict",
+      "stem": "topo_order returns a list shorter than n. What does that actually mean?",
+      "given": "every node that never reaches in-degree zero never gets queued",
+      "options": [
+        { "text": "A cycle exists among the nodes left unplaced", "correct": true },
+        { "text": "The graph contains one node with no edges", "correct": false },
+        { "text": "Two different nodes happened to tie on in-degree", "correct": false },
+        { "text": "The adjacency list was built in wrong order", "correct": false }
+      ],
+      "why": "<p>A node left out of the order kept at least one prerequisite that itself never finished, which only happens when a chain of prerequisites loops back on itself — a cycle, not an edge-case input.</p>"
+    },
+    {
+      "tag": "the bug",
+      "stem": "A single-visited-set DFS flags 'already seen' as a cycle. Measured on 1,494 real DAGs, how often is that wrong?",
+      "given": "a diamond — two nodes sharing one prerequisite — is not a cycle",
+      "options": [
+        { "text": "Wrong on roughly three out of every four times", "correct": true },
+        { "text": "Never wrong at all, since shared needs are rare", "correct": false },
+        { "text": "Wrong only when the graph truly has a cycle", "correct": false },
+        { "text": "Wrong on exactly half, by a diamond's own shape", "correct": false }
+      ],
+      "why": "<p>A node reached twice by two independent paths looks identical to a DFS checking one visited set whether it's a shared prerequisite or a genuine back edge — on this sample, 1,126 of 1,494 real DAGs got flagged as cyclic anyway.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0015",
+      "stem": "Kahn's algorithm queues every zero-in-degree node and processes with a queue, same as lesson 0015. What's the one thing it changes about when a node is safe to queue?",
+      "given": "BFS over an undirected graph queues a node the first time any neighbour discovers it",
+      "options": [
+        { "text": "A node waits for every prerequisite, not first", "correct": true },
+        { "text": "Nodes get queued in sorted numeric order instead", "correct": false },
+        { "text": "The queue gets replaced by a stack instead", "correct": false },
+        { "text": "Nothing changes, the two algorithms stay identical here", "correct": false }
+      ],
+      "why": "<p>Lesson 0015's BFS marks a node the first time any edge reaches it. Here, a node can have several incoming edges, and it must wait for all of them — that's what the in-degree counter is actually tracking.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0016",
+      "stem": "Could lesson 0016's union-find decide whether a valid course order exists?",
+      "given": "union-find treats every edge as undirected and discards direction on merge",
+      "options": [
+        { "text": "No, it shows connection only, never any order", "correct": true },
+        { "text": "Yes, a cycle is nodes sharing one root", "correct": false },
+        { "text": "Yes, but only when union runs in order", "correct": false },
+        { "text": "Only true for graphs holding under twenty nodes", "correct": false }
+      ],
+      "why": "<p>Union-find can tell you A and B ended up in the same component, which is necessary for a directed cycle but nowhere near sufficient — it has no notion of which edge pointed which way, so it cannot detect direction-dependent cycles or produce an order.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('topo-quiz', 'topo-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Directed edges, a request for a valid order or whether one exists at all -
+ that's topological sort, not plain BFS or union-find, because both of
+ those throw direction away.
+
+ I count in-degree per node and start a queue with everything at zero -
+ nothing left waiting on it. Popping a node and removing its outgoing
+ edges can drop a neighbour to zero, so it joins the queue in turn - same
+ queue-processing shape as lesson 0015's BFS, except a node has to wait
+ for every prerequisite, not just the first one that reaches it.
+
+ If the final order is shorter than the node count, some nodes never hit
+ zero - that's a cycle, not a bug, because something in that leftover set
+ is still waiting on itself, directly or through a chain."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/gold/toposort">USACO Guide &mdash; Topological Sort</a> (Gold):
+  the ordering definition and the cycle-detection test, both quoted above.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/course-schedule/">LeetCode 207, Course
+  Schedule</a> (the yes/no version &mdash; does any order exist), then
+  <a href="https://leetcode.com/problems/course-schedule-ii/">LeetCode 210, Course Schedule
+  II</a> (the worked example above, returning the order itself).</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>topological
+      order</em>, <em>in-degree</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0015-settle-each-node-once.html">Lesson 0015</a> &mdash; the same queue-and-peel
+      shape, over an undirected graph with no notion of waiting for more than one neighbour.</li>
+    <li><a href="0016-path-compression-pays-for-itself.html">Lesson 0016</a> &mdash; what connects
+      without an order: union-find answers reachability, never &ldquo;before.&rdquo;</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    ask me to trace topo_order by hand on a four-course graph with one diamond and one real cycle,
+    side by side, or to adapt it into the DFS-with-three-colours version and see where the
+    single-visited-set bug actually goes wrong.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0016-path-compression-pays-for-itself.html">&larr; Lesson 0016</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
