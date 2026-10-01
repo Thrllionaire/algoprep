@@ -219,3 +219,10 @@ abandoned along with every extension of it. "A backtracking algorithm begins wit
 solution and extends the solution step by step."
 ([USACO Guide](https://usaco.guide/bronze/complete-rec);
 [lesson 0013](./lessons/0013-prune-before-you-recurse.html))
+
+**Reservoir sampling** — keeping a uniformly random sample of *k* items from a stream read once,
+of unknown length, using only the reservoir (and a counter) as memory: keep the first *k*, then
+let item *i* replace a random reservoir slot with probability *k*/*i*. For *k* = 1 that is
+`random.randrange(i) == 0`. Every item ends up in the sample with probability exactly *k*/*n*.
+([CS168 Lecture 13](https://web.stanford.edu/class/cs168/l/l13.pdf);
+[lesson 0014](./lessons/0014-keep-with-probability-one-over-i.html))

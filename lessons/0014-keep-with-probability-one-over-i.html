@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keep With Probability One Over i</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0014 &middot; algoprep</p>
+  <h1>Keep With Probability One Over i</h1>
+  <p class="standfirst">Every lesson so far assumed you could look at the input again. This one
+  cannot: items arrive once, you do not know how many are coming, and you must be able to stop at any
+  moment holding a fair random pick. The whole algorithm is one line &mdash; the <em>i</em>th item
+  replaces your pick with probability 1/<em>i</em> &mdash; and the interesting part is why that one
+  line is fair.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is &ldquo;random, uniform, one pass, length unknown.&rdquo;</strong> Pick a
+  random node from a linked list you cannot index; pick a random index of a value from an array
+  too big to hold; sample from a feed. If you may read the input twice, or store it, this lesson
+  is not needed &mdash; so rule those out first.</p>
+</div>
+
+<h2 id="question">The question</h2>
+
+<p>Return a uniformly random element of a stream, where you see each element once and do not learn
+the length until the stream ends. This is the shape of
+<a href="https://leetcode.com/problems/linked-list-random-node/">LeetCode 382, Linked List Random
+Node</a>, and of <a href="https://leetcode.com/problems/random-pick-index/">LeetCode 398, Random
+Pick Index</a> (pick a random index among those holding a target value). &ldquo;Uniform&rdquo; means
+each of the <em>n</em> items is the answer with probability exactly 1/<em>n</em>.</p>
+
+<h2 id="eliminate">Rule out the obvious answers first</h2>
+
+<p>Two answers come to mind, and each breaks on one word in the question.</p>
+
+<table>
+  <caption>Why the usual ways of picking at random do not fit a stream</caption>
+  <thead><tr><th>Approach</th><th>What it needs</th><th>Why a stream rules it out</th></tr></thead>
+  <tbody>
+    <tr><td>Store everything, <code>random.choice</code></td><td>All <em>n</em> items in memory</td><td>The stream may not fit</td></tr>
+    <tr><td>Count first, then pick index and re-read</td><td>Two passes</td><td>A stream can be read once</td></tr>
+  </tbody>
+</table>
+
+<p>The measured cost of the first row: pushing 1,000,000 items through a generator, storing them
+all and calling <code>random.choice</code> peaked at about <strong>40 MB</strong>; the algorithm
+below, on the same stream, peaked at about <strong>464 bytes</strong> (CPython 3.12,
+<code>tracemalloc</code>). What is left is an answer that keeps <em>one</em> item and a
+<em>counter</em>.</p>
+
+<h2 id="algorithm">One line, and why it is fair</h2>
+
+<pre><code>import random
+
+def sample_one(stream):
+    chosen, seen = None, 0
+    for x in stream:
+        seen += 1
+        if random.randrange(seen) == 0:      # probability 1/seen
+            chosen = x
+    return chosen</code></pre>
+
+<p>The first item is kept for sure (<code>randrange(1)</code> is always 0). The second replaces it
+half the time, the third a third of the time, and so on. It is not obvious this gives every item
+the same chance &mdash; the early items get <em>more</em> turns at being replaced, yet start with a
+much better chance of being the pick. The proof is the lesson&rsquo;s payload, and it is one line of
+multiplication. Item <em>i</em> ends up as the answer when it is <strong>chosen</strong> at step
+<em>i</em> and then <strong>survives</strong> every later step <em>i</em>+1 &hellip; <em>n</em>:</p>
+
+<pre><code>P(item i is the answer) = 1/i  &times;  (i/(i+1))  &times;  ((i+1)/(i+2))  &times;  &hellip;  &times;  ((n-1)/n)  =  1/n</code></pre>
+
+<p>Each survive factor is 1 minus the replace probability: at step <em>j</em> the replace
+probability is 1/<em>j</em>, so survival is (<em>j</em>&minus;1)/<em>j</em>. The numerators and
+denominators cancel in a chain, leaving 1/<em>n</em> for every <em>i</em>. Nothing in the
+calculation mentions <em>n</em> until the last factor &mdash; that is exactly why you do not need
+to know the length in advance.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing a streaming sample</span>
+  <p>What is the <em>state</em> &mdash; what must I carry for the future to be fair? (Here: the
+  current pick, and how many items I have seen.) If two histories end with the same pick and the
+  same count, is the future identical? And what is the probability that item <em>i</em> is
+  <em>still</em> the pick at the end &mdash; does the product telescope to 1/<em>n</em>?</p>
+</div>
+
+<h2 id="k">Keeping k instead of one</h2>
+
+<p>The same idea with a reservoir of <em>k</em> slots. The
+<a href="https://web.stanford.edu/class/cs168/l/l13.pdf">Stanford CS168 notes</a> (Roughgarden and
+Valiant, attributing the algorithm to Vitter) state it as: &ldquo;Put the first <em>k</em> elements
+of the stream into a reservoir &hellip; for <em>i</em> &ge; <em>k</em>+1, with probability
+<em>k</em>/<em>i</em> replace a random entry of R with <em>x<sub>i</sub></em>.&rdquo; In code, one
+draw does both jobs:</p>
+
+<pre><code>def sample_k(stream, k):
+    reservoir = []
+    for seen, x in enumerate(stream, start=1):
+        if seen &lt;= k:
+            reservoir.append(x)
+        else:
+            j = random.randrange(seen)       # uniform in 0..seen-1
+            if j &lt; k:                        # probability k/seen
+                reservoir[j] = x             # and j is the slot to overwrite
+    return reservoir</code></pre>
+
+<p><code>j &lt; k</code> happens with probability <em>k</em>/<em>seen</em>, and when it does,
+<em>j</em> is already a uniformly random slot &mdash; so one draw supplies both the &ldquo;whether&rdquo;
+and the &ldquo;where&rdquo;. The notes&rsquo; proof is induction: an item present after step
+<em>t</em> survives step <em>t</em>+1 with probability
+(1 &minus; <em>k</em>/(<em>t</em>+1)&middot;(1/<em>k</em>)) = <em>t</em>/(<em>t</em>+1), which turns
+<em>k</em>/<em>t</em> into <em>k</em>/(<em>t</em>+1). Setting <em>k</em> = 1 gives exactly
+the function above.</p>
+
+<h2 id="tested">Tested exactly, not just sampled</h2>
+
+<p>Randomised code is easy to believe in and hard to check, because a wrong version still returns
+plausible items. So both functions above were tested <em>exhaustively</em>: <code>random.randrange</code>
+was replaced with a script that feeds in every possible sequence of draws, and the final answer was
+tallied. For every <em>n</em> from 1 to 7, <code>sample_one</code> returned each item the same
+number of times, and for every <em>n</em> up to 7 and every <em>k</em> up to <em>n</em>,
+<code>sample_k</code> returned every one of the C(<em>n</em>, <em>k</em>) subsets the same number
+of times. That is not a statistical claim; it is an enumeration of every outcome.</p>
+
+<div class="caveat">
+  <p><strong>The bug that passes the sample.</strong> A tempting simplification: &ldquo;flip a fair
+  coin at each item and keep it on heads.&rdquo; It returns a real element of the stream every time,
+  and on a single run nothing looks wrong. Over 200,000 runs on a stream of five items, the correct
+  version picked each position about 20% of the time (0.200, 0.200, 0.199, 0.199, 0.201). The coin
+  version picked them <strong>3.0%, 6.2%, 12.6%, 24.8%, 50.2%</strong> of the time &mdash; the last
+  item wins half the time, because only it never has to survive a later flip. The fix is not
+  &ldquo;more randomness&rdquo;; it is that the replace probability must shrink as 1/<em>i</em> to
+  compensate for the early items having more chances to be overwritten.</p>
+</div>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="rs-quiz"></div>
+
+<script type="application/json" id="rs-quiz-data">
+{
+  "title": "Retrieval practice — reservoir sampling",
+  "commit": "Decide what the state is and what must be true at the end before you pick.",
+  "perfect": "Six from six. Now write sample_one from scratch with no code in front of you, then solve LeetCode 382 for real.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "Which feature of the question rules out store-then-choose and count-then-index?",
+      "given": "return a uniform random item; the input is read once and its length is unknown",
+      "options": [
+        { "text": "One read of a stream of unknown length", "correct": true },
+        { "text": "Values must be compared against each other first", "correct": false },
+        { "text": "The answer has to be the largest seen", "correct": false },
+        { "text": "Every item must come back in sorted order", "correct": false }
+      ],
+      "why": "<p>Storing needs memory proportional to the stream, and counting first needs a second pass. A single read of unknown length is what forces a method that keeps only a pick and a counter.</p>"
+    },
+    {
+      "tag": "the probability",
+      "stem": "In sample_one, what is the chance that the 4th of 10 items replaces the current pick?",
+      "given": "seen is 4 when the fourth item arrives",
+      "options": [
+        { "text": "One in four, since seen equals four", "correct": true },
+        { "text": "One in ten, since length equals ten", "correct": false },
+        { "text": "One half, a fair coin each step", "correct": false },
+        { "text": "Three in four, its own survival odds", "correct": false }
+      ],
+      "why": "<p>The replace probability is 1/seen, using only the count so far; the total length is not known and is never used. Three in four is the chance the <em>current pick survives</em> this step.</p>"
+    },
+    {
+      "tag": "the proof",
+      "stem": "What makes item i end up with probability exactly 1/n, whatever i is?",
+      "given": "chosen at step i, then survives each of steps i+1 to n",
+      "options": [
+        { "text": "Survival factors cancel one another in a chain", "correct": true },
+        { "text": "Earlier items are always more likely to stay", "correct": false },
+        { "text": "Later items get discarded whenever n gets large", "correct": false },
+        { "text": "Random draws repeat until all of them agree", "correct": false }
+      ],
+      "why": "<p>1/i times i/(i+1) times (i+1)/(i+2) and so on up to (n-1)/n leaves 1/n. Earlier items start more likely and are overwritten more often; the two effects cancel exactly.</p>"
+    },
+    {
+      "tag": "the bug",
+      "stem": "A solution keeps each item on a fair coin flip instead of 1/seen. What does it return over many runs?",
+      "given": "measured over 200,000 runs on five items",
+      "options": [
+        { "text": "The last item wins about half the time", "correct": true },
+        { "text": "Each item wins about one fifth of runs", "correct": false },
+        { "text": "The first item wins about half the time", "correct": false },
+        { "text": "It crashes on any stream shorter than ten", "correct": false }
+      ],
+      "why": "<p>Measured shares were 3.0%, 6.2%, 12.6%, 24.8%, 50.2%. The last item never has to survive a later flip, so it wins half the time; each earlier item is halved again by every flip after it.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0007",
+      "stem": "Using lesson 0007's vocabulary, what is the state that the future of sample_one depends on?",
+      "given": "if two histories agree on this, the future is identical",
+      "options": [
+        { "text": "The current pick and the count seen so far", "correct": true },
+        { "text": "Every earlier item that was ever kept then dropped", "correct": false },
+        { "text": "The list of random draws made at each step", "correct": false },
+        { "text": "The total length of the stream when it ends", "correct": false }
+      ],
+      "why": "<p>Fairness of every later step depends only on the current pick and on seen, which sets the 1/seen replace probability. Dropped items and past draws cannot matter, and the final length is not known during the run, so it cannot be state.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0009",
+      "stem": "A stream, a fixed k, and the question asks for the k largest values so far. Why is reservoir sampling the wrong tool?",
+      "given": "lesson 0009's tell: static input versus a stream of calls",
+      "options": [
+        { "text": "The answer depends on value, not on fairness", "correct": true },
+        { "text": "Reservoir sampling cannot handle a stream at all", "correct": false },
+        { "text": "Value streams always have to be sorted first", "correct": false },
+        { "text": "The reservoir can only hold exactly one item", "correct": false }
+      ],
+      "why": "<p>Both techniques keep a bounded set from a stream, but a reservoir keeps items at random while a size-k min-heap keeps the largest by value. Which one you want depends on whether the question is about <em>fairness</em> or about <em>ordering</em>.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('rs-quiz', 'rs-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Uniform random item, one pass, length unknown - so I can't store
+ the stream and I can't count first. I keep one pick and a count.
+ When item i arrives, it replaces the pick with probability 1 over i:
+ randrange(i) == 0. The first item always sticks.
+
+ Why that's fair: item i ends as the answer if it was chosen at
+ step i, probability 1/i, and then survives every later step j,
+ probability (j-1)/j. That product telescopes to 1/n for every i,
+ and n never appears until the last factor, which is why I didn't
+ need to know it.
+
+ State is the pick and the count. For k items, same thing: keep the
+ first k, then for item i draw j in 0..i-1 and, if j &lt; k, overwrite
+ slot j - that's k/i and a uniform slot in one draw."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://web.stanford.edu/class/cs168/l/l13.pdf">Roughgarden and Valiant, CS168 Lecture
+  13 &mdash; Sampling and Estimation</a> (Stanford, 2024), section 1: the algorithm for general
+  <em>k</em>, and the inductive proof that every item is in the reservoir with probability
+  <em>k</em>/<em>t</em>. A secondary reference with the same algorithm and further variants:
+  <a href="https://en.wikipedia.org/wiki/Reservoir_sampling">Wikipedia, Reservoir sampling</a>.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/linked-list-random-node/">LeetCode 382</a>
+  (a linked list you cannot index), then
+  <a href="https://leetcode.com/problems/random-pick-index/">LeetCode 398</a> (random index among
+  those matching a value &mdash; the counter counts only matches).</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>reservoir sampling</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0009-the-root-knows-one-thing.html">Lesson 0009</a> &mdash; the other bounded-memory
+      way to read a stream: keep the largest <em>k</em>, not a fair <em>k</em>.</li>
+    <li><a href="0007-recursion-memo-table.html">Lesson 0007</a> &mdash; the state: here the pick and
+      the count, nothing about how you got there.</li>
+    <li><strong>Next lesson:</strong> to be chosen <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    ask me to run the telescoping product by hand for n = 5, or to adapt the code to LeetCode 398 so
+    the counter counts only matching indices.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0013-prune-before-you-recurse.html">&larr; Lesson 0013</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

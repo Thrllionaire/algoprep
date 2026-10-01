@@ -66,6 +66,10 @@ apply is far easier than naming the one that does — and it does most of the wo
 13. [Prune Before You Recurse](https://thrllionaire.github.io/algoprep/lessons/0013-prune-before-you-recurse.html)
     — backtracking as choose, explore, undo, with the legality check before the recursive call:
     8-queens visits ~2,000 nodes instead of ~110,000; forgetting the undo is wrong on 31% of random boards.
+14. [Keep With Probability One Over i](https://thrllionaire.github.io/algoprep/lessons/0014-keep-with-probability-one-over-i.html)
+    — reservoir sampling: a uniform pick from a stream read once, kept fair by replacing with
+    probability 1/i; the product telescopes to 1/n, and the fair-coin shortcut returns the last item
+    50% of the time.
 
 ## Reference cards
 

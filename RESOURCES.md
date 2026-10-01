@@ -245,8 +245,13 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   derives it in place and property-tests it, the same call as the `exactly(k)` identity in lesson
   0003 and the heap inversion in lesson 0009.
 
-- **No trusted source yet for reservoir sampling / randomised algorithms in an interview
-  context.** Naren named it explicitly; needs a search before that lesson.
+- **Reservoir sampling — resolved for the algorithm and proof, still open for interview framing.**
+  Lesson 0014 cites Roughgarden and Valiant's [CS168 Lecture 13](https://web.stanford.edu/class/cs168/l/l13.pdf)
+  (Stanford, 2024) for the general-*k* algorithm and the inductive proof, and
+  [Wikipedia](https://en.wikipedia.org/wiki/Reservoir_sampling) as a secondary reference. The
+  k = 1 telescoping product is derived in place, and both functions are tested by exhaustive
+  enumeration of every draw sequence. Still no high-trust source on how reservoir sampling is
+  actually weighted in an interview, or on the wider randomised-algorithm family.
 - **No source yet on the Staff+-specific bar** — how much the algorithm round actually weighs
   versus design at that level, and what "senior-flavoured" narration looks like. Worth
   resolving early, because it could reshape the mission.

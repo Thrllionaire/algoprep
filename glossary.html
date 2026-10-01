@@ -298,6 +298,17 @@ abandoned along with every extension of it. "A backtracking algorithm
 begins with an empty solution and extends the solution step by step."
 (<a href="https://usaco.guide/bronze/complete-rec">USACO Guide</a>; <a
 href="./lessons/0013-prune-before-you-recurse.html">lesson 0013</a>)</p>
+<p><strong>Reservoir sampling</strong> — keeping a uniformly random
+sample of <em>k</em> items from a stream read once, of unknown length,
+using only the reservoir (and a counter) as memory: keep the first
+<em>k</em>, then let item <em>i</em> replace a random reservoir slot
+with probability <em>k</em>/<em>i</em>. For <em>k</em> = 1 that is
+<code>random.randrange(i) == 0</code>. Every item ends up in the sample
+with probability exactly <em>k</em>/<em>n</em>. (<a
+href="https://web.stanford.edu/class/cs168/l/l13.pdf">CS168 Lecture
+13</a>; <a
+href="./lessons/0014-keep-with-probability-one-over-i.html">lesson
+0014</a>)</p>
 </div>
 
 <footer>
