@@ -266,3 +266,11 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   excludes. It is one line of inclusion–exclusion, so [lesson 0003](./lessons/0003-the-window-invariant.html)
   **derives it in place** rather than citing anyone. Flagged here so the lack of a citation is a
   recorded decision rather than an oversight.
+
+- [USACO Guide — DP with Bitmasks](https://usaco.guide/gold/dp-bitmasks) — the `dp[S][i]`
+  definition for Hamiltonian Flights; states honestly that its Python solution TLEs.
+- [CSES 1623 — Apple Division](https://cses.fi/problemset/task/1623) — n ≤ 20, split into two
+  groups; the lesson 0012 practice problem.
+- **Gap:** no high-trust source states the `mask & -mask` lowest-bit incremental subset-sum
+  trick; [lesson 0012](./lessons/0012-subsets-as-integers.html) derives it in place and
+  property-tests it (0 disagreements / 3,000 trials against brute force).

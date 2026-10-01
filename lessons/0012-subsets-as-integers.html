@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subsets as Integers</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0012 &middot; algoprep</p>
+  <h1>Subsets as Integers</h1>
+  <p class="standfirst">Since <a href="0001-read-the-constraints-first.html">lesson 0001</a>, the
+  constraint <code>n &le; 20</code> has meant one thing: exponential is allowed. This lesson cashes
+  that in. A subset of 20 items is a 20-bit number, so &ldquo;try every subset&rdquo; becomes
+  &ldquo;count from 0 to 2<sup>20</sup>&rdquo; &mdash; and the one trick that stops a
+  factorial from killing you at the same <code>n</code>.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is the tiny bound.</strong> Every other lesson read a large <code>n</code>
+  and eliminated slow families. Here a <em>small</em> <code>n</code> is the signal: nobody sets
+  <code>n &le; 20</code> on a problem with a clever linear solution. They set it because the
+  intended solution looks at every subset &mdash; 2<sup>20</sup> &asymp; 10<sup>6</sup> &mdash;
+  and the bound is there to keep that honest.</p>
+</div>
+
+<h2 id="question">The question</h2>
+
+<p>You have <em>n</em> apples with known weights. Split them into two groups so the difference
+between the group weights is as small as possible, with <code>1 &le; n &le; 20</code> and weights
+up to 10<sup>9</sup>. This is <a href="https://cses.fi/problemset/task/1623">CSES 1623, Apple
+Division</a> . Weights to 10<sup>9</sup>
+rule out any table indexed by weight, so the knapsack-style DP is gone; the bound on <em>n</em> is
+the only thing left to read.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before touching a tiny-n problem</span>
+  <p>Each item is in or out, so there are 2<sup>n</sup> choices, and 2<sup>20</sup> is about a
+  million &mdash; affordable. If the problem instead asks for an <em>order</em>, it's <em>n</em>!,
+  and 20! is about 2.4&times;10<sup>18</sup> &mdash; not affordable. Same <code>n</code>, a
+  trillion-fold different cost. Which one am I being asked for?</p>
+</div>
+
+<h2 id="mask">A subset is an integer</h2>
+
+<p>Number the items 0 to <em>n</em>&minus;1. Let bit <em>i</em> of an integer be 1 if item
+<em>i</em> is in the subset. Then every integer from 0 to 2<sup>n</sup>&minus;1 is exactly one
+subset &mdash; called a <strong>mask</strong> &mdash; and
+<code>range(1 &lt;&lt; n)</code> visits all of them. Three operations are the whole vocabulary:</p>
+
+<pre><code>mask &gt;&gt; i &amp; 1        # is item i in the subset?   (shift it down, read the last bit)
+mask | 1 &lt;&lt; i        # add item i
+mask &amp; -mask         # isolate the lowest set bit (used below)</code></pre>
+
+<p>Apple Division, directly:</p>
+
+<pre><code>def apple_division(p):
+    n, total = len(p), sum(p)
+    s = [0] * (1 &lt;&lt; n)                    # s[mask] = weight of that subset
+    best = total
+    for mask in range(1, 1 &lt;&lt; n):
+        low = mask &amp; -mask                 # lowest item in the subset
+        s[mask] = s[mask ^ low] + p[low.bit_length() - 1]
+        best = min(best, abs(total - 2 * s[mask]))
+    return best</code></pre>
+
+<p>The middle line is the lesson-0007 move in miniature: the weight of a subset is the weight of
+the same subset <em>without its lowest item</em>, plus that item. Each mask is computed from a
+smaller mask in O(1), so the whole loop is O(2<sup>n</sup>) instead of
+O(2<sup>n</sup>&middot;<em>n</em>). The USACO Guide's
+<a href="https://usaco.guide/gold/dp-bitmasks">bitmask DP page</a> uses the same encoding and
+notes that its own Python solution to the harder problem below times out &mdash; Python's constant
+factor is the real enemy at this bound.</p>
+
+<table>
+  <caption>Measured on one random n=20 input (weights up to 10<sup>9</sup>), this machine</caption>
+  <thead><tr><th></th><th>Re-sum every subset</th><th>Build from smaller mask</th></tr></thead>
+  <tbody>
+    <tr><td>Work per mask</td><td class="num">O(n)</td><td class="num">O(1)</td></tr>
+    <tr><td>Wall time</td><td class="num">3.2 s</td><td class="num">0.78 s</td></tr>
+  </tbody>
+</table>
+
+<p>Both are &ldquo;correct&rdquo;. Only one fits a one-second limit. Reading the constraint
+isn't done after you pick the family &mdash; it also prices the inner loop.</p>
+
+<h2 id="orders">When the answer is an order</h2>
+
+<p>Suppose the problem were instead: visit every city exactly once, minimising total travel, with
+<code>n &le; 20</code>. Brute force over orders is 20! &mdash; dead. But look at what actually
+matters about a half-finished route: <em>which cities are done</em> (a mask) and <em>where you
+are now</em>. Two different orders that visit the same set and end at the same city have the same
+future. So define <code>dp[mask][last]</code> and the USACO Guide's statement of it is exactly
+that: &ldquo;the number of routes that visit all the cities in the subset S and end at city
+i.&rdquo; Cost: 2<sup>n</sup>&middot;<em>n</em>&sup2; &mdash; about 4&times;10<sup>8</sup> at
+<em>n</em>=20, heavy for Python but the right <em>shape</em>, versus 10<sup>18</sup>.</p>
+
+<p>That is <a href="0007-recursion-memo-table.html">lesson 0007</a> again: the mask <em>is</em>
+the state, and it works because many paths collapse onto one state. You don't need to write the
+TSP solution today. You need to hear &ldquo;order, <code>n &le; 20</code>&rdquo; and answer
+&ldquo;mask plus last element&rdquo; instead of &ldquo;permutations&rdquo;.</p>
+
+<div class="caveat">
+  <p><strong>The bug that passes the sample.</strong> Writing <code>mask &amp; i</code> instead
+  of <code>mask &gt;&gt; i &amp; 1</code> reads &ldquo;is item i in the set&rdquo; as a bitwise AND
+  with the index <em>itself</em>. It runs, returns plausible numbers, and on 3,000 random small
+  inputs it disagreed with a brute-force check on <strong>39.0%</strong> of them. The correct
+  version, and the incremental one, agreed on all 3,000. (Python precedence also bites:
+  <code>1 &lt;&lt; n - 1</code> parses as <code>1 &lt;&lt; (n-1)</code>, half the masks. Always
+  bracket: <code>(1 &lt;&lt; n) - 1</code>.)</p>
+</div>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="mask-quiz"></div>
+
+<script type="application/json" id="mask-quiz-data">
+{
+  "title": "Retrieval practice — subsets as integers",
+  "commit": "Say the cost first: is the thing being enumerated a subset or an order?",
+  "perfect": "Six from six. Now write apple_division from scratch with no code in front of you, then solve CSES 1623 for real.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "Choose a subset of items to minimise some quantity, with n at most 20 and values up to 10^9. What does the shape of the input suggest first?",
+      "given": "1 <= n <= 20, 1 <= p_i <= 10^9",
+      "options": [
+        { "text": "Try every subset; two to the n is about a million", "correct": true },
+        { "text": "Sort once, then sweep greedily through the whole list", "correct": false },
+        { "text": "Build a table indexed by weight, as in knapsack", "correct": false },
+        { "text": "Binary search the answer, then check each candidate", "correct": false }
+      ],
+      "why": "<p>The tiny bound on n is the signal, and the huge weights eliminate a weight-indexed table. 2^20 is about a million, so enumerating every subset is affordable.</p>"
+    },
+    {
+      "tag": "bit operations",
+      "stem": "Which expression is true exactly when item i belongs to the subset encoded by mask?",
+      "given": "mask is an integer, bit i set means item i is in",
+      "options": [
+        { "text": "mask >> i & 1", "correct": true },
+        { "text": "mask & i", "correct": false },
+        { "text": "mask | 1 << i", "correct": false },
+        { "text": "mask ^ i << 1", "correct": false }
+      ],
+      "why": "<p>Shift item i's bit down to position zero, then read it. <code>mask &amp; i</code> ANDs with the index as if it were a bit pattern; <code>mask | 1 &lt;&lt; i</code> adds the item rather than testing it.</p>"
+    },
+    {
+      "tag": "subset versus order",
+      "stem": "Same n at most 20: one problem asks for the best split into two groups, another asks for the best order to visit all cities. Which is affordable by plain brute force?",
+      "given": "2^20 is about 10^6, while 20! is about 2.4 x 10^18",
+      "options": [
+        { "text": "The split into groups; the visiting order is not", "correct": true },
+        { "text": "The visiting order; the split into groups is not", "correct": false },
+        { "text": "Both are affordable, since n is small enough", "correct": false },
+        { "text": "Neither is affordable without a clever greedy rule", "correct": false }
+      ],
+      "why": "<p>Each item is in or out, giving 2^n choices. An order gives n! choices, and the gap at n=20 is a factor of a trillion. This is lesson 0002's shape axis, now with a price attached.</p>"
+    },
+    {
+      "tag": "the silent bug",
+      "stem": "A solution tests membership with mask & i instead of mask >> i & 1. It runs without error on the sample. What should you expect on random inputs?",
+      "given": "measured against brute force on 3,000 random inputs",
+      "options": [
+        { "text": "Wrong answers on roughly four in ten random cases", "correct": true },
+        { "text": "A crash, because the index is not a valid mask", "correct": false },
+        { "text": "Correct answers, only slower than the shifted test", "correct": false },
+        { "text": "Wrong on exactly the largest inputs and nowhere else", "correct": false }
+      ],
+      "why": "<p>It never crashes; it just tests the wrong set of items. Measured disagreement was 39.0%, and that is why you test against brute force rather than trusting one sample.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0001",
+      "stem": "n = 20, and a solution does O(n) work for every one of the 2^n masks. In Python, what does reading the constraint the way lesson 0001 taught tell you?",
+      "given": "re-summing took 3.2 s; incremental took 0.78 s",
+      "options": [
+        { "text": "About twenty million steps; Python needs the O(1) update", "correct": true },
+        { "text": "About a million steps; either version is comfortably fine", "correct": false },
+        { "text": "About a trillion steps; neither version could ever finish", "correct": false },
+        { "text": "About four hundred steps; the bound makes it trivial", "correct": false }
+      ],
+      "why": "<p>2^20 masks times 20 items is roughly 2x10^7 basic steps, and Python manages perhaps 10^7 per second, so the inner loop has to be O(1). Lesson 0001's ladder, one rung finer.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0007",
+      "stem": "For visiting every city once, dp[mask][last] merges many routes into one entry. In lesson 0007's vocabulary, why is that legitimate?",
+      "given": "two different orders reach the same set of cities and the same last city",
+      "options": [
+        { "text": "Both leave the same cities to visit from the same place", "correct": true },
+        { "text": "Both routes have the same total length so far", "correct": false },
+        { "text": "Order never matters in problems that use bitmasks", "correct": false },
+        { "text": "The table stores every order, just in compressed form", "correct": false }
+      ],
+      "why": "<p>The state is whatever the future depends on. The future depends only on which cities remain and where you stand, not on how you got there. That is the definition of state from lesson 0007, with the mask playing the set-of-done-items part.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('mask-quiz', 'mask-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"n is at most 20, which is a deliberate bound - nobody sets that for
+ a linear solution. Weights go to 1e9, so no weight-indexed table.
+ Each apple is in one group or the other: 2^20, about a million
+ subsets, fine. I'll encode a subset as a bitmask and build each
+ subset's weight from the same subset minus its lowest bit, so the
+ per-mask cost is O(1) - re-summing would be 20 million steps, which
+ is tight in Python.
+
+ If the problem asked for an order instead, that's 20 factorial,
+ so I'd switch to dp over (mask of visited, last visited)."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/gold/dp-bitmasks">USACO Guide &mdash; DP with Bitmasks</a>: the
+  <code>dp[S][i]</code> definition for Hamiltonian Flights, and the O(3<sup>n</sup>) subset-of-subset
+  loop for later. Note it states the Python TLE honestly.</p>
+  <p>Practice: <a href="https://cses.fi/problemset/task/1623">CSES 1623, Apple Division</a>
+  (free). Interview-flavoured cousins: LeetCode 78 Subsets and 698 Partition to K Equal Sum
+  Subsets.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>bitmask</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0001-read-the-constraints-first.html">Lesson 0001</a> &mdash; the
+      <code>n &le; 20</code> rung of the ladder, finally used.</li>
+    <li><a href="0007-recursion-memo-table.html">Lesson 0007</a> &mdash; mask as DP state.</li>
+    <li><strong>Next lesson:</strong> backtracking &mdash; enumerating subsets and orders with
+      pruning when the recursion, not an integer, is the loop.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    ask me to trace <code>mask &amp; -mask</code> on a few masks by hand, or to walk the TSP-style
+    <code>dp[mask][last]</code> on four cities.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0011-counting-maximum-overlap.html">&larr; Lesson 0011</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

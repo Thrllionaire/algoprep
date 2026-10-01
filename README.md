@@ -60,6 +60,9 @@ apply is far easier than naming the one that does — and it does most of the wo
     skeleton, with a counter in place of a pairwise comparison). The one new hazard is a tie-break
     the sweep needs and the heap doesn't — sort arrivals before departures and a meeting ending
     the instant another starts is wrongly counted as overlapping, on 36% of random trials.
+12. [Subsets as Integers](https://thrllionaire.github.io/algoprep/lessons/0012-subsets-as-integers.html)
+    — `n ≤ 20` cashed in: a subset is a bitmask, 2²⁰ is affordable and 20! is not; a missing shift
+    in the membership test is wrong on 39% of random inputs.
 
 ## Reference cards
 

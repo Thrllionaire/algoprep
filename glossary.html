@@ -284,6 +284,13 @@ each traverse the input once. A sliding window is the same-direction
 variant; the opposite-ends variant walks inward from both ends and
 relies on the input being sorted. (<a
 href="https://usaco.guide/silver/two-pointers">USACO Guide</a>)</p>
+<p><strong>Bitmask</strong> — an integer used as a set: bit <em>i</em>
+is 1 when item <em>i</em> is in the subset, so every integer in
+<code>range(1 &lt;&lt; n)</code> is exactly one subset of <em>n</em>
+items. Membership is <code>mask &gt;&gt; i &amp; 1</code>. Affordable
+when <code>n ≤ 20</code> (2²⁰ ≈ 10⁶). (<a
+href="https://usaco.guide/gold/dp-bitmasks">USACO Guide</a>; <a
+href="./lessons/0012-subsets-as-integers.html">lesson 0012</a>)</p>
 </div>
 
 <footer>

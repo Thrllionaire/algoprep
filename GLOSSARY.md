@@ -207,3 +207,8 @@ overlapping it. See [lesson 0011](./lessons/0011-counting-maximum-overlap.html#t
 **Two pointers** — any technique using two indices that each traverse the input once. A sliding
 window is the same-direction variant; the opposite-ends variant walks inward from both ends and
 relies on the input being sorted. ([USACO Guide](https://usaco.guide/silver/two-pointers))
+
+**Bitmask** — an integer used as a set: bit *i* is 1 when item *i* is in the subset, so every
+integer in `range(1 << n)` is exactly one subset of *n* items. Membership is `mask >> i & 1`.
+Affordable when `n ≤ 20` (2²⁰ ≈ 10⁶). ([USACO Guide](https://usaco.guide/gold/dp-bitmasks);
+[lesson 0012](./lessons/0012-subsets-as-integers.html))
