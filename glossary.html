@@ -309,6 +309,25 @@ href="https://web.stanford.edu/class/cs168/l/l13.pdf">CS168 Lecture
 13</a>; <a
 href="./lessons/0014-keep-with-probability-one-over-i.html">lesson
 0014</a>)</p>
+<p><strong>Breadth-first search (BFS)</strong> — graph traversal by a
+queue instead of recursion, exploring every node at distance <em>k</em>
+from the start before any node at distance <em>k</em>+1. "In a
+breadth-first search, we travel through the vertices in order of their
+distance from the starting vertex." (<a
+href="https://usaco.guide/silver/graph-traversal">USACO Guide</a>)
+Because of that layer order, the first time BFS discovers a node is
+guaranteed to be via the fewest possible edges — the tool for "shortest
+path" only when every edge counts the same. See <a
+href="./lessons/0015-settle-each-node-once.html">lesson 0015</a>.</p>
+<p><strong>Visited set</strong> — the record of which nodes a traversal
+has already discovered, needed by both BFS and DFS the moment a graph
+can offer more than one path to a node (any tree cannot). "The algorithm
+keeps track of visited nodes, so that it processes each node only once."
+(<a href="https://usaco.guide/silver/graph-traversal">USACO Guide</a>)
+Mark a node visited the instant it is <em>discovered</em>, not when it
+is later processed — marking late does not break correctness but lets
+the same node be queued many times over. See <a
+href="./lessons/0015-settle-each-node-once.html">lesson 0015</a>.</p>
 </div>
 
 <footer>

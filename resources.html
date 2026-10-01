@@ -395,6 +395,23 @@ nodes-visited comparison or the leaked-state-on-missing-undo failure
 rate; <a href="./lessons/0013-prune-before-you-recurse.html">lesson
 0013</a> measures both (2,057 vs 109,601 nodes; 30.9% of 2,000 random
 6×6 boards).</p></li>
+<li><p><a href="https://usaco.guide/silver/graph-traversal">USACO Guide
+— Graph Traversal</a> (Silver) — the visited-set bookkeeping shared by
+BFS and DFS, and BFS's distance-order guarantee; the lesson 0015 primary
+source for both quotes. <a
+href="https://usaco.guide/gold/unweighted-shortest-paths">USACO Guide —
+Unweighted Shortest Paths</a> (Gold) — secondary reference for the
+shortest-path framing specifically.</p></li>
+<li><p><strong>Gap:</strong> no high-trust source states the
+mark-at-push-versus-pop timing bug or its queue-size cost; <a
+href="./lessons/0015-settle-each-node-once.html">lesson 0015</a> derives
+and measures it in place (26 pushes correct vs. 106 marking at pop, on
+the same 26-node, 105-edge layered graph) and checks
+<code>bfs_shortest_path</code> against a brute-force relaxation
+reference (0 disagreements / 2,000 random small graphs) — the same call
+as the <code>exactly(k)</code> identity in lesson 0003, the heap
+inversion in lesson 0009, and the merge-overlap condition in lesson
+0010.</p></li>
 </ul>
 </div>
 

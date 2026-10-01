@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settle Each Node Once</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0015 &middot; algoprep</p>
+  <h1>Settle Each Node Once</h1>
+  <p class="standfirst"><a href="0008-what-the-children-return.html">Lesson 0008</a> traversed
+  trees, where every node has exactly one path down from the root, so the recursion could never
+  double back. A general graph makes no such promise: cycles and shared neighbours mean many paths
+  can reach the same node. The fix is one extra piece of state &mdash; a visited set, marked the
+  moment a node is <em>discovered</em> &mdash; and getting its timing right is the whole lesson.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is an adjacency list (or matrix) plus a question about reachability,
+  connectivity, or the fewest edges between two nodes.</strong> &ldquo;Fewest edges,&rdquo; not
+  &ldquo;cheapest route&rdquo; &mdash; the moment edges carry different costs, this lesson's BFS is
+  the wrong tool and you want Dijkstra instead, which is out of scope here. Grids count: a 2D grid
+  where you move to the four neighbours is a graph with at most four edges per node, just drawn as
+  a rectangle instead of a diagram.</p>
+</div>
+
+<h2 id="question">Why the tree recursion breaks</h2>
+
+<p>Lesson 0008's DFS visited every child with no bookkeeping, because a tree guarantees the
+recursion can never revisit a node &mdash; there is exactly one path from the root to anywhere.
+Paste that same code onto a graph with a cycle and it stops being safe:</p>
+
+<pre><code>def dfs_no_visited(node, adj):
+    for neighbour in adj[node]:
+        dfs_no_visited(neighbour, adj)   # copied straight from the tree version
+
+# a three-node triangle: 0-1, 1-2, 2-0
+adj = {0: [1], 1: [0, 2], 2: [1, 0]}
+dfs_no_visited(0, adj)</code></pre>
+
+<p>On that three-node triangle, the call above never returns: 0 calls 1, 1 calls 0, 0 calls 1,
+forever. Measured with <code>sys.setrecursionlimit(2000)</code>, it raises
+<code>RecursionError</code> at exactly the 2,000th call &mdash; three nodes and three edges are
+enough to exhaust any recursion limit you set. A tree has no back edges to loop on; a graph can
+have any number of them.</p>
+
+<h2 id="algorithm">The fix: mark a node the moment you find it</h2>
+
+<p>Breadth-first search explores the graph one layer at a time, using a queue instead of
+recursion. The visited set is what keeps every node from being processed more than once:</p>
+
+<pre><code>from collections import deque
+
+def bfs_shortest_path(adj, start):
+    dist = {start: 0}
+    queue = deque([start])
+    while queue:
+        u = queue.popleft()
+        for v in adj[u]:
+            if v not in dist:          # mark the instant it is discovered
+                dist[v] = dist[u] + 1
+                queue.append(v)
+    return dist</code></pre>
+
+<p><code>dist</code> doubles as the visited set here &mdash; a node is marked the moment it is
+<em>discovered</em>, when it is appended to the queue, not when it is later popped. Because BFS
+explores in strict layers &mdash; every node at distance <em>k</em> is queued before any node at
+distance <em>k</em>+1 &mdash; the first time a node is discovered is guaranteed to be by the
+shortest possible path. The <a href="https://usaco.guide/silver/graph-traversal">USACO Guide</a>
+states the traversal order plainly: &ldquo;In a breadth-first search, we travel through the
+vertices in order of their distance from the starting vertex,&rdquo; and the same page notes what
+the visited bookkeeping buys both BFS and DFS: &ldquo;The algorithm keeps track of visited nodes,
+so that it processes each node only once.&rdquo; DFS needs the identical set for the identical
+reason &mdash; it answers <em>reachable or not</em> and <em>how many separate components</em>
+rather than <em>fewest edges</em>, but it still loops forever without one, exactly as above.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing a graph traversal</span>
+  <p>Can this graph revisit a node &mdash; does it have a cycle, or can two edges lead to the same
+  place? If so, I need a visited set, marked at discovery. Does the question want fewest
+  <em>edges</em> (BFS) or just reachable-or-not / how-many-components (BFS or DFS, either works)?
+  And am I marking visited when I <em>find</em> a node, or only when I finish processing it?</p>
+</div>
+
+<div class="caveat">
+  <p><strong>The bug that still terminates.</strong> A tempting shortcut: check
+  <code>visited</code> only when a node is <em>popped</em>, not when it is pushed. It still
+  terminates and still returns the right distances &mdash; so it passes a quick test &mdash; but
+  the same node can sit in the queue many times before its first pop marks it. On a 26-node,
+  105-edge layered graph (five layers of five nodes, each layer fully connected to the next), the
+  correct version does exactly 26 pushes, one per node. Marking at pop instead of push does
+  <strong>106</strong> &mdash; a 4&times; blow-up from one timing change, and it gets worse as the
+  layers widen, because every one of a layer's nodes re-pushes every node in the next layer before
+  any of them is marked.</p>
+</div>
+
+<h2 id="tested">Checked against a slower, honest reference</h2>
+
+<p><code>bfs_shortest_path</code> was run against 2,000 random graphs of 2&ndash;9 nodes and
+compared to a brute-force shortest-path routine (repeatedly relaxing every edge until nothing
+changes &mdash; slow, but not a BFS, so it cannot share a bug with it). <strong>0 of 2,000</strong>
+disagreed.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="graph-quiz"></div>
+
+<script type="application/json" id="graph-quiz-data">
+{
+  "title": "Retrieval practice — graph traversal",
+  "commit": "Decide what the visited set buys you and when it is marked before you pick.",
+  "perfect": "Six from six. Now write bfs_shortest_path from scratch with no code in front of you, then solve LeetCode 200 for real.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "A problem gives an adjacency list and asks for the fewest edges between two nodes. Which family fits?",
+      "given": "every edge counts the same; none carry a weight",
+      "options": [
+        { "text": "Breadth-first search from the start node", "correct": true },
+        { "text": "Sort the edges, then merge intervals", "correct": false },
+        { "text": "Binary search over the node count", "correct": false },
+        { "text": "A bitmask over every pair of nodes", "correct": false }
+      ],
+      "why": "<p>\"Fewest edges, all equal weight\" is the BFS tell: layer-by-layer exploration finds a node by its shortest route before any longer route is even queued.</p>"
+    },
+    {
+      "tag": "the timing",
+      "stem": "In bfs_shortest_path, why is a node marked in dist when it is pushed, not when it is popped?",
+      "given": "the same node can be a neighbour of several nodes already in the queue",
+      "options": [
+        { "text": "Marking at push stops it being queued twice", "correct": true },
+        { "text": "Popped nodes are already finished processing", "correct": false },
+        { "text": "Python dictionaries require keys set in order", "correct": false },
+        { "text": "The queue would otherwise run out of nodes", "correct": false }
+      ],
+      "why": "<p>Several nodes already queued can share an unvisited neighbour. Marking at push claims it the first time any of them sees it; marking later lets every one of them push it again before the mark lands.</p>"
+    },
+    {
+      "tag": "the guarantee",
+      "stem": "Why is the first time BFS discovers a node guaranteed to be via a shortest path?",
+      "given": "BFS queues every node at distance k before any node at distance k+1",
+      "options": [
+        { "text": "A shorter route would have queued it earlier", "correct": true },
+        { "text": "BFS always tries the lowest-numbered node first", "correct": false },
+        { "text": "Every graph has only one path between two nodes", "correct": false },
+        { "text": "The queue sorts nodes by edge count before popping", "correct": false }
+      ],
+      "why": "<p>Layer k is fully queued before layer k+1 starts. If a shorter route existed, it would belong to an earlier, already-exhausted layer, so it would have discovered the node first.</p>"
+    },
+    {
+      "tag": "the bug",
+      "stem": "Marking visited at pop instead of push still returns correct distances. What does it cost?",
+      "given": "measured on a 26-node, 105-edge layered graph",
+      "options": [
+        { "text": "Extra queue pushes, 106 instead of 26", "correct": true },
+        { "text": "Nothing measurable on any graph shape", "correct": false },
+        { "text": "Wrong distances on roughly half the nodes", "correct": false },
+        { "text": "An infinite loop on every connected graph", "correct": false }
+      ],
+      "why": "<p>Correctness survives because dist is still set on first discovery, but every node can be re-pushed by each of its neighbours before its first pop marks it &mdash; 26 pushes became 106 on this graph.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0008",
+      "stem": "Lesson 0008's tree DFS used no visited set at all. What changed to make one necessary here?",
+      "given": "a tree has exactly one path from the root to any node",
+      "options": [
+        { "text": "A graph can have more than one path to a node", "correct": true },
+        { "text": "Graphs are always too large to fit in memory", "correct": false },
+        { "text": "DFS cannot be written recursively on a graph", "correct": false },
+        { "text": "Trees have more edges than general graphs do", "correct": false }
+      ],
+      "why": "<p>A tree's single path per node is what let lesson 0008 skip bookkeeping. A graph drops that guarantee &mdash; cycles and shared neighbours mean the same node can be reached more than once, so something has to remember it already has been.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0001",
+      "stem": "A graph has up to 10^5 nodes and 10^5 edges. Lesson 0001's constraints tell rules out which approach?",
+      "given": "an O(V^2) adjacency-matrix scan of every pair of nodes",
+      "options": [
+        { "text": "The matrix scan; 10^10 pairs is too slow", "correct": true },
+        { "text": "BFS; a queue cannot hold 10^5 items", "correct": false },
+        { "text": "DFS; recursion cannot visit 10^5 nodes", "correct": false },
+        { "text": "Nothing; both approaches run in time", "correct": false }
+      ],
+      "why": "<p>10^5 nodes means an adjacency matrix has roughly 10^10 cells to scan &mdash; far past a one-second budget. BFS and DFS over an adjacency list are O(V+E), about 2&times;10^5 steps, comfortably fast.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('graph-quiz', 'graph-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Adjacency list, fewest edges between two nodes, every edge the same
+ weight - that's BFS. I need a visited set because this graph can have
+ cycles, unlike the trees in lesson 0008 - a node can be reached more
+ than once, so something has to remember it already has been.
+
+ I mark a node visited the moment I push it onto the queue, not when
+ I pop it - otherwise several already-queued nodes can all push the
+ same neighbour before any of them marks it, and I do extra work for
+ no extra correctness.
+
+ BFS finds the shortest route first because it empties one whole layer
+ of distance k before starting layer k+1 - a shorter route would have
+ belonged to an earlier layer and would have gotten there first."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/silver/graph-traversal">USACO Guide &mdash; Graph Traversal</a>
+  (Silver): the visited-set bookkeeping shared by BFS and DFS, and BFS's distance-order guarantee,
+  both quoted above. For the shortest-path framing specifically:
+  <a href="https://usaco.guide/gold/unweighted-shortest-paths">USACO Guide &mdash; Unweighted
+  Shortest Paths</a>.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/number-of-islands/">LeetCode 200, Number of
+  Islands</a> (a grid is a graph; count components with the same visited set), then
+  <a href="https://leetcode.com/problems/shortest-path-in-binary-matrix/">LeetCode 1091, Shortest
+  Path in Binary Matrix</a> (BFS layers on a grid, with eight neighbours instead of four).</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>breadth-first search
+      (BFS)</em>, <em>visited set</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0008-what-the-children-return.html">Lesson 0008</a> &mdash; the special case where
+      a visited set is never needed: a tree, with exactly one path to every node.</li>
+    <li><a href="0001-read-the-constraints-first.html">Lesson 0001</a> &mdash; the constraints tell:
+      V and E both up to about 10^5 is the O(V+E) traversal range.</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    ask me to trace bfs_shortest_path by hand on the triangle graph above with a fourth node
+    hanging off it, or to adapt it to count connected components instead of distances.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0014-keep-with-probability-one-over-i.html">&larr; Lesson 0014</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

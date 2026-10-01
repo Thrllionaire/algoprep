@@ -226,3 +226,19 @@ let item *i* replace a random reservoir slot with probability *k*/*i*. For *k* =
 `random.randrange(i) == 0`. Every item ends up in the sample with probability exactly *k*/*n*.
 ([CS168 Lecture 13](https://web.stanford.edu/class/cs168/l/l13.pdf);
 [lesson 0014](./lessons/0014-keep-with-probability-one-over-i.html))
+
+**Breadth-first search (BFS)** — graph traversal by a queue instead of recursion, exploring every
+node at distance *k* from the start before any node at distance *k*+1. "In a breadth-first search,
+we travel through the vertices in order of their distance from the starting vertex."
+([USACO Guide](https://usaco.guide/silver/graph-traversal)) Because of that layer order, the first
+time BFS discovers a node is guaranteed to be via the fewest possible edges — the tool for
+"shortest path" only when every edge counts the same.
+See [lesson 0015](./lessons/0015-settle-each-node-once.html).
+
+**Visited set** — the record of which nodes a traversal has already discovered, needed by both BFS
+and DFS the moment a graph can offer more than one path to a node (any tree cannot). "The algorithm
+keeps track of visited nodes, so that it processes each node only once."
+([USACO Guide](https://usaco.guide/silver/graph-traversal)) Mark a node visited the instant it is
+*discovered*, not when it is later processed — marking late does not break correctness but lets
+the same node be queued many times over.
+See [lesson 0015](./lessons/0015-settle-each-node-once.html).
