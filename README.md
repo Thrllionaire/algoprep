@@ -63,6 +63,9 @@ apply is far easier than naming the one that does — and it does most of the wo
 12. [Subsets as Integers](https://thrllionaire.github.io/algoprep/lessons/0012-subsets-as-integers.html)
     — `n ≤ 20` cashed in: a subset is a bitmask, 2²⁰ is affordable and 20! is not; a missing shift
     in the membership test is wrong on 39% of random inputs.
+13. [Prune Before You Recurse](https://thrllionaire.github.io/algoprep/lessons/0013-prune-before-you-recurse.html)
+    — backtracking as choose, explore, undo, with the legality check before the recursive call:
+    8-queens visits ~2,000 nodes instead of ~110,000; forgetting the undo is wrong on 31% of random boards.
 
 ## Reference cards
 

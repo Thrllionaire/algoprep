@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prune Before You Recurse</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0013 &middot; algoprep</p>
+  <h1>Prune Before You Recurse</h1>
+  <p class="standfirst"><a href="0012-subsets-as-integers.html">Lesson 0012</a> counted every
+  subset with an integer. That works when each choice is independent. When a choice can make the
+  <em>rest</em> impossible &mdash; two queens on one diagonal &mdash; you want to stop the moment
+  that happens, not after all the choices are made. That is backtracking: build the answer one
+  decision at a time, and abandon a partial answer as soon as it is dead.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is a validity rule between choices.</strong> &ldquo;Count all arrangements
+  such that no two &hellip;&rdquo; with a small board or a small <code>n</code>. The answer is
+  an <em>order or placement</em> (lesson 0002), the bound is tiny (lesson 0001), and the
+  conflicts are checkable one choice at a time.</p>
+</div>
+
+<h2 id="question">The question</h2>
+
+<p>Place eight queens on a chessboard so that no two share a row, column or diagonal; some squares
+are reserved and cannot hold a queen. Count the valid placements. This is
+<a href="https://cses.fi/problemset/task/1624">CSES 1624, Chessboard and Queens</a>, and
+LeetCode&rsquo;s N-Queens is the same idea. The board is 8&times;8, so the bound is tiny and
+exponential is allowed &mdash; the only question is <em>how</em> exponential.</p>
+
+<p>The <a href="https://usaco.guide/bronze/complete-rec">USACO Guide</a> makes the first cut for
+you: choosing 8 of 64 squares is over four billion placements, but two queens can never share a
+column, so place exactly one per column and only the <em>row</em> varies. That is a permutation of
+8 rows &mdash; 8! = 40,320 candidates. Already affordable. Backtracking goes further.</p>
+
+<h2 id="skeleton">Choose, explore, undo</h2>
+
+<p>The Guide&rsquo;s definition: &ldquo;A backtracking algorithm begins with an empty solution and
+extends the solution step by step. The search recursively goes through all different ways how a
+solution can be constructed.&rdquo; In code, that is three lines around a recursive call, plus a
+check <em>before</em> them:</p>
+
+<pre><code>def queens(board):
+    n = len(board)
+    rows, d1, d2 = set(), set(), set()     # the state: what is already taken
+    count = 0
+
+    def go(col):
+        nonlocal count
+        if col == n:                       # every column filled: one valid placement
+            count += 1
+            return
+        for r in range(n):
+            if board[r][col] == '*' or r in rows or r + col in d1 or r - col in d2:
+                continue                   # PRUNE: this choice is already dead
+            rows.add(r); d1.add(r + col); d2.add(r - col)      # choose
+            go(col + 1)                                        # explore
+            rows.remove(r); d1.remove(r + col); d2.remove(r - col)   # undo
+
+    go(0)
+    return count</code></pre>
+
+<p>Two details do the work. First, <code>r + col</code> is constant along one diagonal and
+<code>r - col</code> along the other, which is the Guide&rsquo;s representation (sums and
+differences of coordinates), so &ldquo;is this diagonal taken&rdquo; is a set lookup. Second, those
+three sets are exactly the <em>state</em> of <a href="0007-recursion-memo-table.html">lesson
+0007</a>: everything about the past that the future depends on. The recursion carries it down and
+the undo line restores it on the way back up.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing a backtracking solution</span>
+  <p>What is one decision? What is the smallest state that tells me whether the next decision is
+  legal? Can I check legality <em>before</em> recursing, so a dead partial answer never gets
+  extended? And what do I have to undo on the way out?</p>
+</div>
+
+<h2 id="why">Why pruning is the whole point</h2>
+
+<p>Generate-all-then-filter and backtracking find the same 92 placements on an empty board. They
+do not do the same work. Measured on this machine, empty 8&times;8 board:</p>
+
+<table>
+  <caption>Counting all 8-queens placements, empty board</caption>
+  <thead><tr><th></th><th>All 8! permutations, then filter</th><th>Backtracking with the check</th></tr></thead>
+  <tbody>
+    <tr><td>Nodes visited</td><td class="num">109,601</td><td class="num">2,057</td></tr>
+    <tr><td>Wall time</td><td class="num">97 ms</td><td class="num">4 ms</td></tr>
+  </tbody>
+</table>
+
+<p>109,601 is every partial row-assignment of every length (the whole permutation tree). Backtracking
+visits about 2,000 of them, because the moment the third queen lands on a diagonal with the first,
+that entire subtree &mdash; every way of placing the remaining five &mdash; is skipped. Same output,
+roughly a fifty-fold smaller search. Reading the bound still matters, as in lesson 0001; pruning is
+what lets the same bound hold when it is a little less friendly (<em>n</em>=12, say).</p>
+
+<div class="caveat">
+  <p><strong>The bug that passes the sample.</strong> Leave out the three <code>remove</code>
+  calls. Nothing crashes; the first queen&rsquo;s row and diagonals stay &ldquo;taken&rdquo; for
+  every later branch, so the search quietly misses valid placements. On 2,000 random 6&times;6
+  boards with reserved squares it disagreed with a brute-force count on <strong>30.9%</strong> of
+  them; the version with the undo line agreed on all 2,000. The failure is in <em>state that leaks
+  between sibling branches</em>, and it is only visible against a reference. (Same family as the
+  lesson 0008 post-order bugs: the recursion is right, the bookkeeping is not.)</p>
+</div>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="bt-quiz"></div>
+
+<script type="application/json" id="bt-quiz-data">
+{
+  "title": "Retrieval practice — backtracking",
+  "commit": "Name the decision, the state, and where the legality check goes before you pick.",
+  "perfect": "Six from six. Now write queens from scratch with no code in front of you, then solve CSES 1624 for real.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "Count arrangements on a small board where placing one piece can forbid later pieces. What does that structure suggest?",
+      "given": "8x8 board, no two pieces may attack each other",
+      "options": [
+        { "text": "Build placements one piece at a time, pruning", "correct": true },
+        { "text": "Sort the squares once, then sweep greedily across", "correct": false },
+        { "text": "Fill a table indexed by size and count", "correct": false },
+        { "text": "Binary search the count, then verify each guess", "correct": false }
+      ],
+      "why": "<p>The answer is a placement, the bound is tiny, and conflicts can be checked one choice at a time. That is backtracking's home territory.</p>"
+    },
+    {
+      "tag": "the check position",
+      "stem": "Where should the conflict test go to get the pruning benefit?",
+      "given": "go(col) tries each row r for the queen in this column",
+      "options": [
+        { "text": "Before recursing, so dead choices get pruned fast", "correct": true },
+        { "text": "At the base case, after everything gets completed", "correct": false },
+        { "text": "After the undo line, once the call returns", "correct": false },
+        { "text": "Only once at the top before searching begins", "correct": false }
+      ],
+      "why": "<p>Checking at the base case is generate-then-filter: correct but it visits every leaf. Checking before the recursive call skips the whole subtree under a dead choice.</p>"
+    },
+    {
+      "tag": "undo",
+      "stem": "A solution forgets to remove the row and diagonals after the recursive call returns. What should you expect?",
+      "given": "measured against brute force on 2,000 random boards",
+      "options": [
+        { "text": "Wrong answers on roughly three in ten boards", "correct": true },
+        { "text": "A crash, because a set changes mid iteration", "correct": false },
+        { "text": "Correct counts, only slower than the undoing run", "correct": false },
+        { "text": "Wrong counts on exactly the empty board only", "correct": false }
+      ],
+      "why": "<p>The leaked state makes later sibling branches see squares as taken that are not. It never crashes; measured disagreement was 30.9%.</p>"
+    },
+    {
+      "tag": "the state",
+      "stem": "In the queens recursion, which of these is the state that the future depends on?",
+      "given": "one queen per column, columns filled left to right",
+      "options": [
+        { "text": "Taken rows and both sets of taken diagonals", "correct": true },
+        { "text": "The exact order the rows were chosen in", "correct": false },
+        { "text": "The number of valid placements counted so far", "correct": false },
+        { "text": "The index of the very first row tried", "correct": false }
+      ],
+      "why": "<p>Legality of the next queen depends only on which rows and diagonals are occupied, not on how they got that way. The running count is an output, not state. Lesson 0007's definition.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0012",
+      "stem": "Same n at most 20: one problem asks for the best split into two groups, another for the best visiting order. Which can plain subset enumeration handle?",
+      "given": "2^20 is about 10^6, while 20! is about 2.4 x 10^18",
+      "options": [
+        { "text": "The split into groups, because 2^n is affordable", "correct": true },
+        { "text": "The visiting order, because pruning always saves it", "correct": false },
+        { "text": "Both, because the bound on n is small", "correct": false },
+        { "text": "Neither, since both need a dynamic programming table", "correct": false }
+      ],
+      "why": "<p>A split is in-or-out per item, 2^n. An order is n!. Pruning helps only when conflicts kill branches early; it does not turn 20! into a safe bound by itself, which is why lesson 0012 reached for dp over (mask, last) instead.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0002",
+      "stem": "Count the ways to choose a subset of items with a given total, where n is 40 and values are small. Why is plain backtracking a poor first choice?",
+      "given": "2^40 is about 10^12",
+      "options": [
+        { "text": "A trillion leaves; a sum-indexed table is better", "correct": true },
+        { "text": "The recursion cannot undo its own choices here", "correct": false },
+        { "text": "Backtracking only ever works on grids and chessboards", "correct": false },
+        { "text": "Subset sums have no easily checkable conflict rule", "correct": false }
+      ],
+      "why": "<p>Backtracking needs the bound to be affordable even before pruning gets lucky. At n=40 the leaf count is 10^12 and nothing forbids most branches early, so lesson 0007's memo or table indexed by the sum is the right tool.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('bt-quiz', 'bt-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Eight by eight, count placements where no two queens attack. Tiny
+ bound, so exponential is allowed, and two queens can't share a
+ column, so I place one per column and only choose the row - that's
+ at most 8 factorial. Better: the conflicts are checkable as I go.
+ State is three sets: taken rows, taken r+c diagonals, taken r-c
+ diagonals. For each column I try each row, skip it if it's reserved
+ or conflicts, otherwise add it to the sets, recurse, and remove it.
+ Checking before the recursive call prunes whole subtrees - about
+ two thousand nodes instead of a hundred thousand.
+
+ If the bound were 40 and the problem a subset sum, I'd stop: 2^40
+ leaves and nothing prunes early, so that's a table, not a search."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/bronze/complete-rec">USACO Guide &mdash; Complete Search with
+  Recursion</a>: the backtracking definition, the one-queen-per-column reduction, the
+  diagonal-by-coordinate-sums trick, and subsets and permutations generated recursively.</p>
+  <p>Practice: <a href="https://cses.fi/problemset/task/1624">CSES 1624, Chessboard and
+  Queens</a> (free; the sample answer is 65). Interview-flavoured cousins: LeetCode 51 N-Queens,
+  46 Permutations, 78 Subsets.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>backtracking</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0012-subsets-as-integers.html">Lesson 0012</a> &mdash; the iterative
+      alternative when choices are independent.</li>
+    <li><a href="0007-recursion-memo-table.html">Lesson 0007</a> &mdash; the state, and when
+      memo beats search.</li>
+    <li><strong>Next lesson:</strong> reservoir sampling and the randomised oddballs.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    ask me to trace <code>go(col)</code> on a 4&times;4 board by hand, or to show how the same
+    skeleton generates all permutations or all subsets.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0012-subsets-as-integers.html">&larr; Lesson 0012</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

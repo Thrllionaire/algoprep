@@ -274,3 +274,12 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
 - **Gap:** no high-trust source states the `mask & -mask` lowest-bit incremental subset-sum
   trick; [lesson 0012](./lessons/0012-subsets-as-integers.html) derives it in place and
   property-tests it (0 disagreements / 3,000 trials against brute force).
+
+- [USACO Guide — Complete Search with Recursion](https://usaco.guide/bronze/complete-rec) — the
+  backtracking definition, the one-queen-per-column reduction (8! instead of C(64,8)), and the
+  `i+j` / `i−j` diagonal trick; the lesson 0013 primary source.
+- [CSES 1624 — Chessboard and Queens](https://cses.fi/problemset/task/1624) — 8×8 with reserved
+  squares; the lesson 0013 practice problem (sample answer 65, reproduced).
+- **Gap:** no high-trust source states the nodes-visited comparison or the leaked-state-on-missing-undo
+  failure rate; [lesson 0013](./lessons/0013-prune-before-you-recurse.html) measures both
+  (2,057 vs 109,601 nodes; 30.9% of 2,000 random 6×6 boards).

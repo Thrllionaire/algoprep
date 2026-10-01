@@ -97,9 +97,15 @@
     <span class="blurb">n &le; 20 cashed in: a subset is a bitmask, 2<sup>20</sup> is affordable and
     20! is not. A missing shift in the membership test is wrong on 39% of random inputs.</span>
   </li>
+  <li>
+    <a href="lessons/0013-prune-before-you-recurse.html">Prune Before You Recurse</a>
+    <span class="blurb">Backtracking as choose, explore, undo, with the legality check before the
+    recursive call: 8-queens visits about 2,000 nodes instead of 110,000. Forget the undo and it is
+    wrong on 31% of random boards.</span>
+  </li>
   <li class="upcoming">
-    <a href="#">Backtracking</a>
-    <span class="blurb">Coming next. Subsets and orders with pruning, when the recursion is the loop.</span>
+    <a href="#">Reservoir Sampling</a>
+    <span class="blurb">Coming next. Uniform random choice from a stream you can only read once.</span>
   </li>
 </ol>
 

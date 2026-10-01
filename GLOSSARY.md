@@ -212,3 +212,10 @@ relies on the input being sorted. ([USACO Guide](https://usaco.guide/silver/two-
 integer in `range(1 << n)` is exactly one subset of *n* items. Membership is `mask >> i & 1`.
 Affordable when `n ≤ 20` (2²⁰ ≈ 10⁶). ([USACO Guide](https://usaco.guide/gold/dp-bitmasks);
 [lesson 0012](./lessons/0012-subsets-as-integers.html))
+
+**Backtracking** — building a solution one decision at a time by recursion, testing legality
+*before* each recursive call and undoing the choice afterwards, so a dead partial solution is
+abandoned along with every extension of it. "A backtracking algorithm begins with an empty
+solution and extends the solution step by step."
+([USACO Guide](https://usaco.guide/bronze/complete-rec);
+[lesson 0013](./lessons/0013-prune-before-you-recurse.html))
