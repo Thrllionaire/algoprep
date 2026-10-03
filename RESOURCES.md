@@ -335,3 +335,9 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   (14,614 of 100,000 random queries wrong, 14.6%; the correct `search` 0) and checks both operations
   against brute force (0 / 100,000 disagreements, after excluding the empty prefix on an empty
   dictionary, which the lesson reports).
+- [CMSC 451 Lecture 9 — DP: Longest Common Subsequence and Edit Distance](https://www.cs.umd.edu/class/fall2025/cmsc451-0101/Lects/lect09-dp-lcs-edit.pdf)
+  (Dave Mount, University of Maryland) — the prefix-pair state, base cases, match/mismatch rules and
+  O(mn) cost, quoted in [lesson 0020](./lessons/0020-two-prefixes-one-cell.html).
+- **Gap:** no high-trust source measures the lockstep-greedy or missing-base-case bugs; lesson 0020
+  measures them in place (7,736 and 8,637 of 20,000 random pairs wrong, 38.7% and 43.2%; the correct
+  grid 0, and 0 disagreements with a memoised recursion).

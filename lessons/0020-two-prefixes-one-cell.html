@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Prefixes, One Cell</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0020 &middot; algoprep</p>
+  <h1>Two Prefixes, One Cell</h1>
+  <p class="standfirst">When a problem hands you <em>two</em> strings and asks how alike they are, the state
+  of the recursion from lesson <a href="0007-recursion-memo-table.html">0007</a> needs two numbers
+  instead of one: how much of the first string, and how much of the second, are still in play. Every
+  cell of a grid answers the question for one such pair of prefixes.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is two strings (or two arrays) and a question about turning, matching or
+  aligning one into the other</strong> &mdash; edit distance, longest common subsequence, &ldquo;is
+  this an interleaving,&rdquo; &ldquo;minimum deletions to make equal.&rdquo; Greedy lockstep
+  walking looks tempting and fails; the constraints in lesson
+  <a href="0001-read-the-constraints-first.html">0001</a> tell you a grid of m &times; n cells is
+  affordable when both lengths are in the hundreds or low thousands, and hopeless at 10<sup>5</sup>.</p>
+</div>
+
+<h2 id="question">The question</h2>
+
+<p>Edit Distance (<a href="https://leetcode.com/problems/edit-distance/">LeetCode 72</a>): the fewest
+single-character inserts, deletes and changes that turn <code>horse</code> into <code>ros</code>. The
+answer is 3. The definition, from the
+<a href="https://www.cs.umd.edu/class/fall2025/cmsc451-0101/Lects/lect09-dp-lcs-edit.pdf">CMSC 451
+lecture notes</a>: &ldquo;the minimum number of insertions, deletions, and changes to convert one string
+to another is called the Levenshtein distance.&rdquo;</p>
+
+<h2 id="state">The state is a pair of prefix lengths</h2>
+
+<p>The notes define <code>Lev(i, j)</code> as &ldquo;the Levenshtein distance between the prefixes
+X<sub>i</sub> &hellip; and Y<sub>j</sub>.&rdquo; So <code>dp[i][j]</code> is the edit distance between the
+first <code>i</code> letters of <code>a</code> and the first <code>j</code> letters of <code>b</code>.
+Looking only at the <em>last</em> letter of each prefix gives every case:</p>
+
+<ul>
+  <li><strong>An empty prefix:</strong> &ldquo;If X<sub>i</sub> is empty, then we need to insert all j
+  characters &hellip; If Y<sub>j</sub> is empty, then we need to delete all i characters.&rdquo; So
+  <code>dp[i][0] = i</code> and <code>dp[0][j] = j</code>.</li>
+  <li><strong>Last letters match:</strong> take them for free &mdash; <code>dp[i][j] = dp[i-1][j-1]</code>.
+  The notes argue holding out for an earlier copy &ldquo;would only limit our future options.&rdquo;</li>
+  <li><strong>Last letters differ:</strong> one edit is needed, and there are three choices &mdash; delete
+  <code>a</code>'s last letter (<code>dp[i-1][j]</code>), insert <code>b</code>'s last letter
+  (<code>dp[i][j-1]</code>), or change one into the other (<code>dp[i-1][j-1]</code>). Take the cheapest, plus 1.</li>
+</ul>
+
+<pre><code>def edit_distance(a, b):
+    m, n = len(a), len(b)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(m + 1): dp[i][0] = i        # delete all of a[:i]
+    for j in range(n + 1): dp[0][j] = j        # insert all of b[:j]
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if a[i - 1] == b[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1]
+            else:
+                dp[i][j] = 1 + min(dp[i - 1][j],       # delete
+                                   dp[i][j - 1],       # insert
+                                   dp[i - 1][j - 1])   # change
+    return dp[m][n]</code></pre>
+
+<p>This is lesson 0007's table: each cell reads only cells above and to the left, so filling row by
+row guarantees they are ready. Cost is O(m &middot; n) &mdash; the notes: &ldquo;the running time is
+O(mn).&rdquo; The grid for <code>horse</code> &rarr; <code>ros</code>, with the answer in the bottom-right corner:</p>
+
+<table>
+  <thead>
+    <tr><th></th><th class="num">&epsilon;</th><th class="num">r</th><th class="num">o</th><th class="num">s</th></tr>
+  </thead>
+  <tbody>
+    <tr><th>&epsilon;</th><td class="num">0</td><td class="num">1</td><td class="num">2</td><td class="num">3</td></tr>
+    <tr><th>h</th><td class="num">1</td><td class="num">1</td><td class="num">2</td><td class="num">3</td></tr>
+    <tr><th>o</th><td class="num">2</td><td class="num">2</td><td class="num">1</td><td class="num">2</td></tr>
+    <tr><th>r</th><td class="num">3</td><td class="num">2</td><td class="num">2</td><td class="num">2</td></tr>
+    <tr><th>s</th><td class="num">4</td><td class="num">3</td><td class="num">3</td><td class="num">2</td></tr>
+    <tr><th>e</th><td class="num">5</td><td class="num">4</td><td class="num">4</td><td class="num">3</td></tr>
+  </tbody>
+  <caption>Row = prefix of <code>horse</code>, column = prefix of <code>ros</code>. The cell at
+  (<code>o</code>, <code>o</code>) is 1 because the last letters match, so it copies the diagonal; the
+  cell at (<code>h</code>, <code>r</code>) is 1 because <code>h</code> &rarr; <code>r</code> is one change.</caption>
+</table>
+
+<div class="tell">
+  <span class="tell-label">Say this before filling a grid</span>
+  <p>Two strings, and I'm asking about the cheapest way to align them: state is
+  <code>(i, j)</code>, the prefixes of length i and j. Decide the empty-prefix row and column first,
+  then the match case, then the mismatch case &mdash; each cell reads only up, left and diagonal.</p>
+</div>
+
+<div class="caveat">
+  <p><strong>The tempting wrong answer: walk both strings in lockstep.</strong> Compare
+  <code>a[k]</code> with <code>b[k]</code>, count a change on each mismatch, then add the length
+  difference. It is O(n), it handles <code>horse</code>/<code>ros</code>-style intuition, and it is
+  wrong whenever one insertion would shift everything after it into alignment (<code>ab</code> &rarr;
+  <code>b</code> is 1 deletion; lockstep says 2). Measured on 20,000 random pairs of strings over
+  {a, b}, lengths 0&ndash;7, the lockstep count disagreed with a brute-force recursion on
+  <strong>7,736 of 20,000</strong> (38.7%); the grid DP on <strong>0</strong>.</p>
+</div>
+
+<h2 id="tested">Checked against a slower, honest reference</h2>
+
+<p><code>edit_distance</code> was compared with a plain memoised recursion on string suffixes over the same
+20,000 pairs: <strong>0 disagreements</strong>. A second variant that forgot to set <code>dp[i][0] = i</code>
+(leaving the first column at 0) was wrong on <strong>8,637 of 20,000</strong> (43.2%) &mdash; the base
+cases are load-bearing, not boilerplate. Also checked by hand: <code>horse</code>&rarr;<code>ros</code> is 3
+and <code>intention</code>&rarr;<code>execution</code> is 5.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="grid-quiz"></div>
+
+<script type="application/json" id="grid-quiz-data">
+{
+  "title": "Retrieval practice — two-string DP",
+  "commit": "Decide what dp[i][j] means before you pick.",
+  "perfect": "Six from six. Now write edit_distance from scratch with no code in front of you, then solve LeetCode 72 (Edit Distance) and LeetCode 1143 (Longest Common Subsequence) for real, where the grid is the same and only the transitions change.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "You are given two strings of length 500 and asked for the fewest edits turning one into the other. Which fits?",
+      "given": "two strings, and a question about aligning one to the other",
+      "options": [
+        { "text": "A grid indexed by both prefix lengths", "correct": true },
+        { "text": "A sliding window over one long string", "correct": false },
+        { "text": "A min-heap holding the cheapest edits", "correct": false },
+        { "text": "A trie holding every prefix of both", "correct": false }
+      ],
+      "why": "<p>Two strings plus an alignment question is the two-prefix grid. A window needs one sequence to slide along, a heap has nothing to rank, and a trie answers prefix lookups, not costs of turning one string into another.</p>"
+    },
+    {
+      "tag": "what a cell means",
+      "stem": "In the edit distance table, what does dp[i][j] hold?",
+      "given": "i and j each count letters from the start of a string",
+      "options": [
+        { "text": "Cost of turning a's first i into b's first j", "correct": true },
+        { "text": "Cost of turning a's last i into b's last j", "correct": false },
+        { "text": "Count of letters a's first i share with b's", "correct": false },
+        { "text": "Count of positions where a and b differ", "correct": false }
+      ],
+      "why": "<p>The cell is the answer to the same question on smaller prefixes, so the corner dp[m][n] is the answer to the whole problem.</p>"
+    },
+    {
+      "tag": "the mismatch case",
+      "stem": "The last letters of the two prefixes differ. What is dp[i][j]?",
+      "given": "delete, insert and change are each one edit",
+      "options": [
+        { "text": "One plus the smallest of three neighbours", "correct": true },
+        { "text": "One plus the largest of three neighbours", "correct": false },
+        { "text": "One plus the diagonal neighbour only now", "correct": false },
+        { "text": "One plus the left neighbour only now", "correct": false }
+      ],
+      "why": "<p>Each of the three edits lands in a different neighbour &mdash; up for delete, left for insert, diagonal for change &mdash; and you want the cheapest, so take the minimum. Using the diagonal alone is the lockstep bug, wrong on 38.7% of the measured pairs.</p>"
+    },
+    {
+      "tag": "the base cases",
+      "stem": "What are dp[i][0] and dp[0][j], the empty-prefix edges?",
+      "given": "turning a prefix into the empty string, and back",
+      "options": [
+        { "text": "Equal to i and equal to j", "correct": true },
+        { "text": "Equal to zero and equal to zero", "correct": false },
+        { "text": "Equal to one and equal to one", "correct": false },
+        { "text": "Equal to m and equal to n", "correct": false }
+      ],
+      "why": "<p>Turning i letters into nothing costs i deletes, and building j letters from nothing costs j inserts. Leaving the first column at zero was wrong on 43.2% of the measured pairs.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0007",
+      "stem": "In lesson 0007's coin problem the state was one number. Why does edit distance need two?",
+      "given": "the state is whatever fixes the remaining subproblem",
+      "options": [
+        { "text": "Progress in both strings is independent", "correct": true },
+        { "text": "Progress in both strings is identical", "correct": false },
+        { "text": "Edits come in exactly two flavours", "correct": false },
+        { "text": "Strings are always the same length", "correct": false }
+      ],
+      "why": "<p>How much of a remains and how much of b remains can vary independently, and both are needed to say what is left to solve. The state is the minimum information that pins down the subproblem.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0001",
+      "stem": "Both strings have length 10^5. About how many grid cells is that, and does it fit a budget?",
+      "given": "an m by n grid costs one operation per cell",
+      "options": [
+        { "text": "Ten billion cells, well beyond any budget", "correct": true },
+        { "text": "Ten million cells, comfortably within budget", "correct": false },
+        { "text": "Two hundred thousand cells, one pass total", "correct": false },
+        { "text": "Seventeen hundred thousand cells, n log n", "correct": false }
+      ],
+      "why": "<p>10^5 x 10^5 = 10^10, which lesson 0001's ladder rules out. At lengths of 500 (as in LeetCode 72) the grid is 250,000 cells and fine &mdash; the constraint is what licenses the technique.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('grid-quiz', 'grid-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Two strings, cheapest way to turn one into the other. Lengths are
+ about 500, so an m-by-n grid is a quarter million cells - fine.
+
+ State is (i, j): the prefixes of length i and j. dp[i][j] is the
+ edit distance between them. Empty prefix: dp[i][0] is i deletes,
+ dp[0][j] is j inserts.
+
+ Last letters match: free, copy the diagonal. They differ: one edit,
+ and it's the cheapest of delete (up), insert (left) or change
+ (diagonal), plus one. Fill row by row. Answer is the corner.
+
+ Lockstep comparison is tempting but one insertion can shift
+ everything after it, so greedy is wrong - it failed on about 39% of
+ random small pairs when I measured. O(mn) time and space."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://www.cs.umd.edu/class/fall2025/cmsc451-0101/Lects/lect09-dp-lcs-edit.pdf">CMSC 451
+  Lecture 9 &mdash; DP: Longest Common Subsequence and Edit Distance</a> (Dave Mount, University of
+  Maryland): develops LCS and edit distance with the same prefix-pair state, quoted above. Its LCS
+  rule &mdash; match the last letters and add one, else drop one letter from either string &mdash; is
+  the same grid with different transitions.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/edit-distance/">LeetCode 72, Edit Distance</a>, then
+  <a href="https://leetcode.com/problems/longest-common-subsequence/">LeetCode 1143, Longest Common
+  Subsequence</a>.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>edit distance</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0007-recursion-memo-table.html">Lesson 0007</a> &mdash; state, memo and table; here the
+      state is a pair.</li>
+    <li><a href="0019-one-node-per-prefix.html">Lesson 0019</a> &mdash; another string family, for
+      prefix lookups rather than alignment.</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: ask me to
+    trace the grid for <code>ab</code> &rarr; <code>b</code> by hand, to show how to recover the actual
+    edits (not just the count), or to adapt the grid to LCS.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0019-one-node-per-prefix.html">&larr; Lesson 0019</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

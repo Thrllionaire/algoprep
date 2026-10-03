@@ -281,3 +281,10 @@ each edge of the tree is labeled with some letter and outgoing edges of a vertex
 labels," [cp-algorithms](https://cp-algorithms.com/string/aho_corasick.html)). A flag marks nodes
 where a word ends, which is what separates exact search from prefix search. Queries cost O(length of
 the string). See [lesson 0019](./lessons/0019-one-node-per-prefix.html).
+
+**Edit distance (Levenshtein distance)** — the minimum number of single-character inserts, deletes
+and changes that turn one string into another ("the minimum number of insertions, deletions, and
+changes to convert one string to another,"
+[CMSC 451](https://www.cs.umd.edu/class/fall2025/cmsc451-0101/Lects/lect09-dp-lcs-edit.pdf)).
+Solved by a grid whose cell (i, j) is the distance between the first i letters of one string and the
+first j of the other; O(m·n). See [lesson 0020](./lessons/0020-two-prefixes-one-cell.html).

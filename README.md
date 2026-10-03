@@ -90,6 +90,9 @@ apply is far easier than naming the one that does — and it does most of the wo
 19. [One Node Per Prefix](https://thrllionaire.github.io/algoprep/lessons/0019-one-node-per-prefix.html)
     — tries: one node per distinct prefix answers prefix questions in O(length). Skipping the end
     flag makes `search` wrong on 14.6% of random queries.
+20. [Two Prefixes, One Cell](https://thrllionaire.github.io/algoprep/lessons/0020-two-prefixes-one-cell.html)
+    — two-string DP: edit distance as a grid with one cell per pair of prefix lengths. Lockstep
+    greedy comparison is wrong on 38.7% of random small pairs.
 
 ## Reference cards
 
