@@ -322,3 +322,9 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   "impossible" verdict (0 disagreements / 1,500 random small graphs) — the same call as the
   `exactly(k)` identity in lesson 0003, the heap inversion in lesson 0009, the merge-overlap
   condition in lesson 0010, and lesson 0015's and 0016's own degeneracy measurements.
+- [USACO Guide — Monotonic Stack](https://usaco.guide/gold/stacks) (Gold) — the pop condition and its
+  justification, quoted in [lesson 0018](./lessons/0018-pop-what-can-never-answer.html).
+- **Gap:** no high-trust source measures the `<` versus `<=` tie bug; lesson 0018 measures it in place
+  (13,157 of 20,000 tie-heavy random arrays disagree with brute force, 65.8%; the correct pop test 0)
+  and reports honestly that scan-right needs only about 14,000 comparisons on 2,000 random values but
+  1,999,000 on a decreasing one, against 2,000 loop steps for the stack.

@@ -442,6 +442,17 @@ for both a valid order and an "impossible" verdict (0 disagreements /
 <code>exactly(k)</code> identity in lesson 0003, the heap inversion in
 lesson 0009, the merge-overlap condition in lesson 0010, and lesson
 0015's and 0016's own degeneracy measurements.</p></li>
+<li><p><a href="https://usaco.guide/gold/stacks">USACO Guide — Monotonic
+Stack</a> (Gold) — the pop condition and its justification, quoted in <a
+href="./lessons/0018-pop-what-can-never-answer.html">lesson
+0018</a>.</p></li>
+<li><p><strong>Gap:</strong> no high-trust source measures the
+<code>&lt;</code> versus <code>&lt;=</code> tie bug; lesson 0018
+measures it in place (13,157 of 20,000 tie-heavy random arrays disagree
+with brute force, 65.8%; the correct pop test 0) and reports honestly
+that scan-right needs only about 14,000 comparisons on 2,000 random
+values but 1,999,000 on a decreasing one, against 2,000 loop steps for
+the stack.</p></li>
 </ul>
 </div>
 

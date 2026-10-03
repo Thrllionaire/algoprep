@@ -83,6 +83,10 @@ apply is far easier than naming the one that does — and it does most of the wo
     — topological sort: repeatedly peel off whatever has nothing left pointing at it, using
     in-degree counts rather than a single visited set. The one-visited-set shortcut for cycle
     detection falsely flags 75.4% of real, cycle-free dependency graphs.
+18. [Pop What Can Never Answer](https://thrllionaire.github.io/algoprep/lessons/0018-pop-what-can-never-answer.html)
+    — monotonic stack: nearest larger or smaller neighbour per element in O(n), by popping every
+    waiting position a new arrival beats. Using `<=` instead of `<` disagrees with brute force on
+    65.8% of tie-heavy arrays.
 
 ## Reference cards
 

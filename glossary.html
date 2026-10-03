@@ -363,6 +363,14 @@ satisfied and is safe to place next in a topological order; a node that
 never reaches in-degree zero sits inside a cycle. See <a
 href="./lessons/0017-nothing-left-pointing-at-it.html">lesson
 0017</a>.</p>
+<p><strong>Monotonic stack</strong> — a stack of positions still waiting
+for an answer, kept sorted (here, non-increasing from bottom to top) by
+popping every entry a new arrival beats before pushing it. Each index is
+pushed and popped once, so a whole sweep is O(n). Whether a tie pops is
+decided by <code>&lt;</code> versus <code>&lt;=</code> and must be read
+from the problem. See <a
+href="./lessons/0018-pop-what-can-never-answer.html">lesson
+0018</a>.</p>
 </div>
 
 <footer>

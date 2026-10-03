@@ -268,3 +268,9 @@ See [lesson 0017](./lessons/0017-nothing-left-pointing-at-it.html).
 every prerequisite already satisfied and is safe to place next in a topological order; a node
 that never reaches in-degree zero sits inside a cycle. See [lesson
 0017](./lessons/0017-nothing-left-pointing-at-it.html).
+
+**Monotonic stack** — a stack of positions still waiting for an answer, kept sorted (here,
+non-increasing from bottom to top) by popping every entry a new arrival beats before pushing it.
+Each index is pushed and popped once, so a whole sweep is O(n). Whether a tie pops is decided by
+`<` versus `<=` and must be read from the problem. See [lesson
+0018](./lessons/0018-pop-what-can-never-answer.html).

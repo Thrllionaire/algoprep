@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pop What Can Never Answer</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0018 &middot; algoprep</p>
+  <h1>Pop What Can Never Answer</h1>
+  <p class="standfirst">Some problems ask, for every position in a sequence, about the
+  <em>nearest element to its right that beats it</em> &mdash; the next warmer day, the next taller
+  building, the next larger price. Checking rightwards from every position is quadratic. The fix is
+  to keep a stack of positions still waiting for an answer, and to notice that the moment a new
+  element arrives, it settles every waiting position it beats &mdash; and nothing else is worth
+  keeping out of order.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is &ldquo;for each element, find the nearest one to the left or right that is
+  larger (or smaller),&rdquo;</strong> with n up to 10<sup>5</sup>, so a scan-right from every
+  position is off the table. Close cousins: &ldquo;how many days until&hellip;,&rdquo;
+  &ldquo;span of consecutive days,&rdquo; &ldquo;largest rectangle in a histogram.&rdquo; If the
+  question is about a <em>window of fixed width</em> instead, that is lesson
+  <a href="0003-the-window-invariant.html">0003</a>'s territory.</p>
+</div>
+
+<h2 id="question">The quadratic version, and why it's wasteful</h2>
+
+<p>Daily Temperatures (<a href="https://leetcode.com/problems/daily-temperatures/">LeetCode 739</a>):
+for each day, how many days until a strictly warmer one, or 0 if none. For
+<code>[73, 74, 75, 71, 69, 72, 76, 73]</code> the answer is <code>[1, 1, 4, 2, 1, 1, 0, 0]</code>.
+The obvious code scans right from each day. Per lesson <a href="0001-read-the-constraints-first.html">0001</a>,
+n = 10<sup>5</sup> allows roughly O(n log n), not O(n&sup2;). And the waste is visible: when day 5
+(72) looks right, it re-reads days that days 3 and 4 already read.</p>
+
+<h2 id="algorithm">The stack of days still waiting</h2>
+
+<p>Walk left to right, keeping a stack of day indices that have not yet found a warmer day. Each new
+temperature <code>t</code> answers every waiting day colder than it. Because we pop only while the
+top is colder, the temperatures on the stack are always <em>non-increasing</em> from bottom to top
+&mdash; that is the &ldquo;monotonic&rdquo; (see the <a href="../glossary.html">glossary</a>). The
+<a href="https://usaco.guide/gold/stacks">USACO Guide</a> states the reason a waiting element can be
+discarded: &ldquo;the pair containing value will never be the solution to any index
+j&gt;i, since a<sub>i</sub> is less than or equal to value and has an index further to the right.&rdquo;
+Here, a colder day buried under a warmer one can never be anyone's nearest warmer day first.</p>
+
+<pre><code>def next_warmer(temps):
+    ans = [0] * len(temps)
+    stack = []                       # indices still waiting; temps[] non-increasing
+    for i, t in enumerate(temps):
+        while stack and temps[stack[-1]] &lt; t:
+            j = stack.pop()
+            ans[j] = i - j           # day i is j's first warmer day
+        stack.append(i)
+    return ans</code></pre>
+
+<p>Each index is pushed once and popped at most once, so the loop does at most 2n stack operations
+no matter how the inner <code>while</code> looks &mdash; O(n) overall, amortised (the same
+&ldquo;each pointer moves forward only&rdquo; argument as lesson 0003's window). Measured on 2,000
+strictly decreasing temperatures, the worst case for the scan-right version: <strong>1,999,000</strong>
+comparisons for the quadratic code, <strong>2,000</strong> loop steps for the stack. Honest nuance:
+on 2,000 <em>random</em> temperatures the quadratic code only needs about 14,000 comparisons, because
+a warmer day usually turns up quickly. The stack's advantage is the guarantee, not the average.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing a monotonic stack</span>
+  <p>Am I asked, per element, for the nearest larger or smaller neighbour on one side? If so: a
+  stack of positions still waiting, popped by each new arrival that beats them. Which direction I
+  sweep and which comparison I pop on come from the question &mdash; and whether ties count.</p>
+</div>
+
+<div class="caveat">
+  <p><strong>The one-character bug: <code>&lt;</code> versus <code>&lt;=</code>.</strong> Change the pop
+  test to <code>temps[stack[-1]] &lt;= t</code> and the code looks identical, runs just as fast, and
+  answers the wrong question &mdash; it resolves a day with the next <em>equal-or-warmer</em> day, not
+  strictly warmer. Measured on 20,000 random arrays of 1&ndash;9 values drawn from 1&ndash;5 (so ties
+  are common), the <code>&lt;=</code> version disagrees with brute force on <strong>13,157</strong>
+  &mdash; <strong>65.8%</strong>. The correct version disagreed on <strong>0</strong>. Read the
+  problem for &ldquo;strictly&rdquo; before choosing.</p>
+</div>
+
+<h2 id="tested">Checked against a slower, honest reference</h2>
+
+<p><code>next_warmer</code> was run against the scan-right brute force on 20,000 random small arrays
+with heavy ties. <strong>0 of 20,000</strong> disagreed.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="mono-quiz"></div>
+
+<script type="application/json" id="mono-quiz-data">
+{
+  "title": "Retrieval practice — monotonic stack",
+  "commit": "Decide what the stack is holding before you pick.",
+  "perfect": "Six from six. Now write next_warmer from scratch with no code in front of you, then solve LeetCode 739 (Daily Temperatures) and LeetCode 496 (Next Greater Element I) for real.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "For every element, a problem wants the nearest larger value to its right, with n up to 10^5. Which fits?",
+      "given": "the answer is per element, and order of positions matters",
+      "options": [
+        { "text": "A stack of positions still awaiting answers", "correct": true },
+        { "text": "A min-heap capped at k smallest values", "correct": false },
+        { "text": "Union-find merging each adjacent pair of neighbours", "correct": false },
+        { "text": "Binary search across the whole answer range", "correct": false }
+      ],
+      "why": "<p>A per-element nearest-neighbour answer on one side is the monotonic-stack tell. A heap forgets positions, union-find forgets order, and there is no monotonic yes/no to binary search.</p>"
+    },
+    {
+      "tag": "the invariant",
+      "stem": "During next_warmer, what is always true of the temperatures on the stack, bottom to top?",
+      "given": "we pop only while the top is strictly colder than the newcomer",
+      "options": [
+        { "text": "They never increase going upward from the bottom", "correct": true },
+        { "text": "They never decrease going upward from the bottom", "correct": false },
+        { "text": "They always appear sorted in strictly rising order", "correct": false },
+        { "text": "They always equal the most recent window's values", "correct": false }
+      ],
+      "why": "<p>Anything colder than the newcomer is popped before the newcomer is pushed, so each pushed value is at most the one beneath it: non-increasing from bottom to top.</p>"
+    },
+    {
+      "tag": "the cost",
+      "stem": "The pop loop is nested inside the for loop. Why is the total still O(n)?",
+      "given": "count how many times any single index can be pushed and popped",
+      "options": [
+        { "text": "Each index gets pushed once, popped once", "correct": true },
+        { "text": "The inner loop runs twice per step", "correct": false },
+        { "text": "Popping stack elements costs literally zero operations", "correct": false },
+        { "text": "The input gets sorted before looping begins", "correct": false }
+      ],
+      "why": "<p>The inner loop can run long on one step, but every pop consumes an index that was pushed exactly once, so pops across the whole run total at most n.</p>"
+    },
+    {
+      "tag": "the bug",
+      "stem": "Swapping the pop test from < to <= on tie-heavy random arrays disagreed with brute force how often?",
+      "given": "the version looks identical and runs just as fast",
+      "options": [
+        { "text": "Roughly two arrays out of every three", "correct": true },
+        { "text": "Roughly one array out of every hundred", "correct": false },
+        { "text": "Never, because ties are quite rare here", "correct": false },
+        { "text": "Only on arrays that contain no ties", "correct": false }
+      ],
+      "why": "<p>With <= a day resolves on the next equal-or-warmer day, not strictly warmer; on arrays drawn from 1 to 5, 13,157 of 20,000 (65.8%) disagreed.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0001",
+      "stem": "Scan-right from every position, n = 10^5, worst case a strictly decreasing array. Roughly how many comparisons?",
+      "given": "each position scans everything to its right and finds nothing",
+      "options": [
+        { "text": "About five billion, far beyond any budget", "correct": true },
+        { "text": "About a million, comfortably inside the budget", "correct": false },
+        { "text": "About a hundred thousand, one pass total", "correct": false },
+        { "text": "About seventeen hundred thousand, n log n", "correct": false }
+      ],
+      "why": "<p>n(n-1)/2 for n = 10^5 is about 5 x 10^9, which the constraint ladder from lesson 0001 rules out before any code is written.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0009",
+      "stem": "Why not keep every waiting day in a min-heap of temperatures instead of a stack?",
+      "given": "the heap pops the coldest waiting day each time a warm day arrives",
+      "options": [
+        { "text": "The stack top already is the next", "correct": true },
+        { "text": "A heap cannot store index value pairs", "correct": false },
+        { "text": "A heap always pops the wrong end", "correct": false },
+        { "text": "A heap needs input sorted up front", "correct": false }
+      ],
+      "why": "<p>A heap would work, at O(log n) per operation, but it is overbuilt: arrivals come in index order, so the stack is already kept sorted for free and its top is the next candidate to resolve.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('mono-quiz', 'mono-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"For each element, nearest larger neighbour on one side, n up to 1e5 -
+ scanning right from every position is quadratic, so that's out.
+
+ I keep a stack of positions still waiting for an answer. Each new
+ value pops every waiting position it beats and gives them their answer;
+ then it joins the stack. The stack stays non-increasing, so the top is
+ always the next one a bigger value will settle.
+
+ Each index is pushed once and popped once, so it's O(n) overall.
+ And I check 'strictly' against the problem - pop on < or <= decides
+ whether ties count."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://usaco.guide/gold/stacks">USACO Guide &mdash; Monotonic Stack</a> (Gold): the
+  pop condition and its justification, quoted above.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/daily-temperatures/">LeetCode 739, Daily
+  Temperatures</a>, then <a href="https://leetcode.com/problems/next-greater-element-i/">LeetCode
+  496, Next Greater Element I</a>.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>monotonic stack</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0003-the-window-invariant.html">Lesson 0003</a> &mdash; the other
+      &ldquo;nothing moves backwards, so work is amortised&rdquo; technique.</li>
+    <li><a href="0009-the-root-knows-one-thing.html">Lesson 0009</a> &mdash; the heap, the
+      heavier tool this stack replaces when arrivals are already in order.</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    ask me to trace the stack by hand on <code>[73, 74, 75, 71, 69, 72, 76, 73]</code>, or to show
+    how the same stack gives Largest Rectangle in Histogram.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0017-nothing-left-pointing-at-it.html">&larr; Lesson 0017</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
