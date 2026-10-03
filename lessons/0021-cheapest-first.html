@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cheapest First</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0021 &middot; algoprep</p>
+  <h1>Cheapest First</h1>
+  <p class="standfirst">Lesson <a href="0015-settle-each-node-once.html">0015</a>'s BFS settles nodes in
+  order of <em>edge count</em>. Once edges carry costs, the order that matters is total cost &mdash; and a
+  min-heap from lesson <a href="0009-the-root-knows-one-thing.html">0009</a> hands you the cheapest
+  unsettled node every time. That pairing is Dijkstra's algorithm.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is &ldquo;shortest&rdquo; or &ldquo;cheapest&rdquo; over a graph whose edges have
+  different non-negative costs</strong> &mdash; travel times, prices, delays. Equal costs mean plain BFS;
+  negative costs mean Dijkstra is the wrong tool. Constraints like V, E &le; 10<sup>5</sup> (lesson
+  <a href="0001-read-the-constraints-first.html">0001</a>) point at O(E log V), which is exactly its cost.</p>
+</div>
+
+<h2 id="question">The question</h2>
+
+<p>Network Delay Time (<a href="https://leetcode.com/problems/network-delay-time/">LeetCode 743</a>):
+signals travel along directed edges <code>(u, v, w)</code> taking <code>w</code> units; starting at node
+<code>k</code>, how long until every node has the signal? That is the largest of the shortest distances from
+<code>k</code>. The definition, from
+<a href="https://cp-algorithms.com/graph/dijkstra.html">cp-algorithms</a>: &ldquo;The weights of all edges are
+non-negative.&rdquo;</p>
+
+<h2 id="why">Why BFS stops being enough</h2>
+
+<p>BFS finds a node first along the path with the <em>fewest edges</em>, and lesson 0015 settled it at that
+moment. With costs, the fewest-edges path need not be the cheapest: a direct edge costing 9 loses to two
+edges costing 1 and 2. So the settling rule changes from &ldquo;first reached&rdquo; to &ldquo;cheapest
+reached, among everything not yet settled.&rdquo; The source states the invariant: &ldquo;After any vertex
+v becomes marked, the current distance to it d[v] is the shortest, and will no longer change.&rdquo; It
+holds because every remaining path to v must pass through some unsettled node that is already at least as
+costly, and adding a non-negative edge cannot make it cheaper.</p>
+
+<pre><code>import heapq
+
+def dijkstra(n, adj, source):
+    dist = [float('inf')] * n
+    dist[source] = 0
+    heap = [(0, source)]                    # (cost so far, node)
+    while heap:
+        d, u = heapq.heappop(heap)          # cheapest unsettled entry
+        if d > dist[u]:                     # stale: a cheaper route to u was already found
+            continue
+        for v, w in adj[u]:
+            if d + w &lt; dist[v]:
+                dist[v] = d + w
+                heapq.heappush(heap, (d + w, v))
+    return dist
+
+def network_delay_time(times, n, k):
+    adj = [[] for _ in range(n)]
+    for u, v, w in times:
+        adj[u - 1].append((v - 1, w))
+    dist = dijkstra(n, adj, k - 1)
+    worst = max(dist)
+    return -1 if worst == float('inf') else worst</code></pre>
+
+<p>A node can be pushed several times, each time with a lower cost; the heap pops the cheapest entry first,
+so older, costlier copies surface later as <em>stale</em> and are skipped. The USACO Guide's note on this:
+&ldquo;It's important to include <code>continue</code>. This ensures that when all edge weights are
+non-negative, we will never go through the adjacency list of any vertex more than once.&rdquo; Cost:
+&ldquo;O(N+M log N)&rdquo; in their implementation, written O(E log V) in interview shorthand.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing the loop</span>
+  <p>Shortest path, edges have different non-negative costs, so BFS is out. I'll keep a min-heap of
+  <code>(cost, node)</code>; pop the cheapest, skip it if stale, relax its edges, push any improvement.
+  Settling happens when a node is <em>popped</em>, not when it is pushed.</p>
+</div>
+
+<div class="caveat">
+  <p><strong>Two tempting wrong versions.</strong> (1) Run lesson 0015's BFS and add the weights along the
+  way: it settles each node on its first arrival. (2) Keep the heap but mark a node settled when you
+  <em>push</em> it, as BFS does with its queue. Both fix a node's distance before a cheaper route can arrive.
+  Measured on 20,000 random small directed graphs (2&ndash;7 nodes, weights 1&ndash;9) against
+  Bellman-Ford: BFS-with-weights wrong on <strong>4,006</strong> (20.0%), mark-on-push wrong on
+  <strong>3,916</strong> (19.6%), and the code above on <strong>0</strong>.</p>
+</div>
+
+<h2 id="tested">What the stale check buys</h2>
+
+<p>Dropping the <code>if d &gt; dist[u]: continue</code> line leaves the answers correct but the work
+inflated. On a 400-node graph with an edge from every node to every later node (79,800 edges), the
+version with the check scans 79,801 edges in total; without it, <strong>10,587,199</strong>. The line is a
+performance guard, not a correctness one &mdash; which is exactly why it gets forgotten.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="dij-quiz"></div>
+
+<script type="application/json" id="dij-quiz-data">
+{
+  "title": "Retrieval practice — Dijkstra",
+  "commit": "Decide what the heap holds before you pick.",
+  "perfect": "Six from six. Now write dijkstra from scratch with no code in front of you, then solve LeetCode 743 (Network Delay Time) and LeetCode 1631 (Path With Minimum Effort), where the cost of a path is a max rather than a sum.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "A road network has 10^5 junctions and travel times between them. You need the fastest route from one junction to all others. Which fits?",
+      "given": "edges carry different non-negative travel times",
+      "options": [
+        { "text": "A min-heap of cost and node pairs", "correct": true },
+        { "text": "A plain queue of nodes by arrival", "correct": false },
+        { "text": "A union-find over all the junctions", "correct": false },
+        { "text": "A stack of nodes along current path", "correct": false }
+      ],
+      "why": "<p>Different edge costs break BFS's fewest-edges order, so the cheapest unsettled node must come first, which is what a heap provides. Union-find only reports connectivity and a stack gives no ordering by cost.</p>"
+    },
+    {
+      "tag": "the settling rule",
+      "stem": "When is a node's distance final in Dijkstra?",
+      "given": "the heap may hold several entries for one node",
+      "options": [
+        { "text": "When its entry is popped as the cheapest", "correct": true },
+        { "text": "When its first entry is pushed on heap", "correct": false },
+        { "text": "When all its neighbours have been pushed", "correct": false },
+        { "text": "When the heap holds only that one entry", "correct": false }
+      ],
+      "why": "<p>Settling at pop is the invariant. Settling at push is the BFS habit and was wrong on 19.6% of the measured graphs.</p>"
+    },
+    {
+      "tag": "the stale check",
+      "stem": "What does removing the line that skips stale heap entries change?",
+      "given": "a stale entry has a cost above the node's recorded distance",
+      "options": [
+        { "text": "Answers stay right but work balloons", "correct": true },
+        { "text": "Answers turn wrong but work stays low", "correct": false },
+        { "text": "Answers stay right and work stays low", "correct": false },
+        { "text": "Answers turn wrong and work balloons", "correct": false }
+      ],
+      "why": "<p>Re-relaxing from a stale entry cannot find anything cheaper, so correctness holds; it just rescans adjacency lists, 10,587,199 edge scans versus 79,801 in the measured case.</p>"
+    },
+    {
+      "tag": "when it breaks",
+      "stem": "Which input makes the settled-at-pop invariant unsafe?",
+      "given": "the invariant relies on paths never getting cheaper as they grow",
+      "options": [
+        { "text": "An edge with a negative travel cost", "correct": true },
+        { "text": "An edge with a zero travel cost", "correct": false },
+        { "text": "A graph containing a directed cycle", "correct": false },
+        { "text": "A node with no outgoing edges", "correct": false }
+      ],
+      "why": "<p>A negative edge can make a longer route cheaper after a node is settled. Zero-cost edges, cycles and dead ends are all fine; for negative edges the next tool is Bellman-Ford.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0015",
+      "stem": "Every edge costs exactly 1. Which is the better choice?",
+      "given": "the graph has 10^5 nodes and 10^5 edges",
+      "options": [
+        { "text": "Plain BFS, since a queue already orders them", "correct": true },
+        { "text": "Dijkstra, since it handles weights in general", "correct": false },
+        { "text": "Union-find, since it merges the components", "correct": false },
+        { "text": "Topological sort, since it orders the nodes", "correct": false }
+      ],
+      "why": "<p>With equal costs, fewest edges is cheapest, so BFS gives the same answer in O(V + E) without the heap's log factor.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0009",
+      "stem": "Why is a min-heap, not a sorted list, the right container for the frontier?",
+      "given": "every relaxation may add a new entry",
+      "options": [
+        { "text": "Pushes and pops both cost logarithmic time", "correct": true },
+        { "text": "Pushes and pops both cost constant time", "correct": false },
+        { "text": "Sorted lists cannot hold duplicate nodes", "correct": false },
+        { "text": "Heaps keep every entry fully in order", "correct": false }
+      ],
+      "why": "<p>Only the cheapest entry is ever needed, which is the heap's one guarantee (lesson 0009). Re-sorting a list after each push would cost far more, and a heap is not fully ordered.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('dij-quiz', 'dij-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Shortest path with varying non-negative edge costs, 10^5 nodes.
+ BFS counts edges, not cost, so it's out; negative edges would rule
+ Dijkstra out too, and there are none.
+
+ Min-heap of (cost, node). Pop the cheapest. If its cost is above the
+ recorded distance it's stale, skip it. Otherwise relax each edge: if
+ cost-plus-weight beats the neighbour's distance, record it and push.
+ A node is final when popped, not when pushed.
+
+ Each edge pushes at most once, so O(E log V). Answer here is the max
+ distance, or -1 if any node is still infinite. If every edge cost 1
+ I'd just use BFS."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://cp-algorithms.com/graph/dijkstra.html">cp-algorithms &mdash; Dijkstra Algorithm</a>:
+  states the non-negative requirement and the mark-then-final invariant quoted above. The
+  <a href="https://usaco.guide/gold/sp">USACO Guide &mdash; Shortest Paths with Non-Negative Weights</a>
+  covers the heap implementation and the stale-entry <code>continue</code>.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/network-delay-time/">LeetCode 743, Network Delay
+  Time</a>, then <a href="https://leetcode.com/problems/path-with-minimum-effort/">LeetCode 1631, Path With
+  Minimum Effort</a>.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>Dijkstra's algorithm</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0015-settle-each-node-once.html">Lesson 0015</a> &mdash; BFS, the equal-cost special case.</li>
+    <li><a href="0009-the-root-knows-one-thing.html">Lesson 0009</a> &mdash; the heap that supplies the cheapest entry.</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: ask me to
+    trace the heap by hand on a four-node graph, to explain why negative edges break the invariant, or to
+    show how Path With Minimum Effort changes only the cost line.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0020-two-prefixes-one-cell.html">&larr; Lesson 0020</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

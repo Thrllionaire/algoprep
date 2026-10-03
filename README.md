@@ -93,6 +93,9 @@ apply is far easier than naming the one that does — and it does most of the wo
 20. [Two Prefixes, One Cell](https://thrllionaire.github.io/algoprep/lessons/0020-two-prefixes-one-cell.html)
     — two-string DP: edit distance as a grid with one cell per pair of prefix lengths. Lockstep
     greedy comparison is wrong on 38.7% of random small pairs.
+21. [Cheapest First](https://thrllionaire.github.io/algoprep/lessons/0021-cheapest-first.html)
+    — Dijkstra: settle the cheapest unsettled node via a min-heap. BFS with weights is wrong on 20.0%
+    of random small graphs.
 
 ## Reference cards
 

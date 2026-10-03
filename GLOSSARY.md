@@ -288,3 +288,9 @@ changes to convert one string to another,"
 [CMSC 451](https://www.cs.umd.edu/class/fall2025/cmsc451-0101/Lects/lect09-dp-lcs-edit.pdf)).
 Solved by a grid whose cell (i, j) is the distance between the first i letters of one string and the
 first j of the other; O(m·n). See [lesson 0020](./lessons/0020-two-prefixes-one-cell.html).
+
+**Dijkstra's algorithm** — single-source shortest paths on a graph with non-negative edge weights:
+repeatedly settle the unsettled node with the smallest known distance, using a min-heap. "After any
+vertex v becomes marked, the current distance to it d[v] is the shortest, and will no longer change"
+([cp-algorithms](https://cp-algorithms.com/graph/dijkstra.html)). O(E log V). See
+[lesson 0021](./lessons/0021-cheapest-first.html).

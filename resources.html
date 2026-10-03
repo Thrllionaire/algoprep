@@ -476,6 +476,21 @@ lockstep-greedy or missing-base-case bugs; lesson 0020 measures them in
 place (7,736 and 8,637 of 20,000 random pairs wrong, 38.7% and 43.2%;
 the correct grid 0, and 0 disagreements with a memoised
 recursion).</p></li>
+<li><p><a
+href="https://cp-algorithms.com/graph/dijkstra.html">cp-algorithms —
+Dijkstra Algorithm</a> — the non-negative-weight requirement and the
+marked-vertex invariant, quoted in <a
+href="./lessons/0021-cheapest-first.html">lesson 0021</a>.</p></li>
+<li><p><a href="https://usaco.guide/gold/sp">USACO Guide — Shortest
+Paths with Non-Negative Weights</a> (Gold) — the heap implementation,
+the stale-entry <code>continue</code>, and the O(N+M log N)
+cost.</p></li>
+<li><p><strong>Gap:</strong> no high-trust source measures the
+BFS-with-weights or mark-on-push bugs; lesson 0021 measures them in
+place (4,006 and 3,916 of 20,000 random graphs wrong, 20.0% and 19.6%;
+the correct version 0, against Bellman-Ford) and reports that dropping
+the stale check costs 10,587,199 edge scans versus 79,801 on a 400-node
+forward-complete graph.</p></li>
 </ul>
 </div>
 
