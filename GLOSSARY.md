@@ -274,3 +274,10 @@ non-increasing from bottom to top) by popping every entry a new arrival beats be
 Each index is pushed and popped once, so a whole sweep is O(n). Whether a tie pops is decided by
 `<` versus `<=` and must be read from the problem. See [lesson
 0018](./lessons/0018-pop-what-can-never-answer.html).
+
+**Trie** — a rooted tree with one node per distinct prefix of a set of words: each edge is labelled
+with a letter, and a node's path from the root spells its prefix ("a trie is a rooted tree, where
+each edge of the tree is labeled with some letter and outgoing edges of a vertex have distinct
+labels," [cp-algorithms](https://cp-algorithms.com/string/aho_corasick.html)). A flag marks nodes
+where a word ends, which is what separates exact search from prefix search. Queries cost O(length of
+the string). See [lesson 0019](./lessons/0019-one-node-per-prefix.html).

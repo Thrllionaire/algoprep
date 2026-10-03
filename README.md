@@ -87,6 +87,9 @@ apply is far easier than naming the one that does — and it does most of the wo
     — monotonic stack: nearest larger or smaller neighbour per element in O(n), by popping every
     waiting position a new arrival beats. Using `<=` instead of `<` disagrees with brute force on
     65.8% of tie-heavy arrays.
+19. [One Node Per Prefix](https://thrllionaire.github.io/algoprep/lessons/0019-one-node-per-prefix.html)
+    — tries: one node per distinct prefix answers prefix questions in O(length). Skipping the end
+    flag makes `search` wrong on 14.6% of random queries.
 
 ## Reference cards
 

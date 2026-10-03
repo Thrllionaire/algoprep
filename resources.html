@@ -453,6 +453,17 @@ with brute force, 65.8%; the correct pop test 0) and reports honestly
 that scan-right needs only about 14,000 comparisons on 2,000 random
 values but 1,999,000 on a decreasing one, against 2,000 loop steps for
 the stack.</p></li>
+<li><p><a
+href="https://cp-algorithms.com/string/aho_corasick.html">cp-algorithms
+— Aho-Corasick automaton</a> — its opening trie section gives the
+definition and the O(m k) versus O(m) memory trade-off, quoted in <a
+href="./lessons/0019-one-node-per-prefix.html">lesson 0019</a>.</p></li>
+<li><p><strong>Gap:</strong> no high-trust source measures the
+missing-end-flag bug; lesson 0019 measures it in place (14,614 of
+100,000 random queries wrong, 14.6%; the correct <code>search</code> 0)
+and checks both operations against brute force (0 / 100,000
+disagreements, after excluding the empty prefix on an empty dictionary,
+which the lesson reports).</p></li>
 </ul>
 </div>
 

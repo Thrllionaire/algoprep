@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Node Per Prefix</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0019 &middot; algoprep</p>
+  <h1>One Node Per Prefix</h1>
+  <p class="standfirst">Some problems hand you a fixed dictionary of words and then ask, again and
+  again, &ldquo;does anything start with <em>this</em>?&rdquo; Scanning every word per question
+  rereads the same leading letters over and over. A trie stores each distinct prefix exactly once,
+  so a question costs the length of the prefix asked about &mdash; not the size of the dictionary.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is many queries about prefixes of a fixed set of strings</strong> &mdash;
+  autocomplete, &ldquo;implement startsWith,&rdquo; &ldquo;add and search words,&rdquo; &ldquo;find all
+  words from a dictionary on a board.&rdquo; If instead you are searching for <em>one pattern inside
+  one long text</em>, that is a different family (substring search), not this one. If the words are
+  few and the queries are few, a plain loop is fine &mdash; check the budget with lesson
+  <a href="0001-read-the-constraints-first.html">0001</a> first.</p>
+</div>
+
+<h2 id="question">The repeated-scan version</h2>
+
+<p>Implement Trie (<a href="https://leetcode.com/problems/implement-trie-prefix-tree/">LeetCode 208</a>):
+insert words, then answer <code>search(word)</code> (is this exact word present?) and
+<code>starts_with(prefix)</code> (does any word begin with this?). With a list, each query is a loop
+over every word: with 5,000 words and 2,000 prefix queries that is up to 10,000,000 word checks, and
+every check re-compares the same first letters that the previous check already compared.</p>
+
+<h2 id="algorithm">A tree where a path spells a prefix</h2>
+
+<p>Make one node per distinct prefix. A node maps each next letter to a child, and carries a flag
+saying whether a word <em>ends</em> here. In the words of
+<a href="https://cp-algorithms.com/string/aho_corasick.html">cp-algorithms</a>: &ldquo;a trie is a
+rooted tree, where each edge of the tree is labeled with some letter and outgoing edges of a vertex
+have distinct labels,&rdquo; and each vertex is identified with the string spelled on the path from
+the root. This is a tree in lesson <a href="0008-what-the-children-return.html">0008</a>'s sense:
+every node has exactly one parent, so there is no visited set to keep
+(contrast lesson <a href="0015-settle-each-node-once.html">0015</a>).</p>
+
+<pre><code>class Trie:
+    def __init__(self):
+        self.kids = {}               # next letter -&gt; child Trie
+        self.end = False             # does a word finish exactly here?
+
+    def insert(self, word):
+        node = self
+        for c in word:
+            node = node.kids.setdefault(c, Trie())
+        node.end = True
+
+    def _walk(self, s):              # follow s from the root, or None if it falls off
+        node = self
+        for c in s:
+            node = node.kids.get(c)
+            if node is None:
+                return None
+        return node
+
+    def search(self, word):
+        node = self._walk(word)
+        return node is not None and node.end
+
+    def starts_with(self, prefix):
+        return self._walk(prefix) is not None</code></pre>
+
+<p>Each operation touches one node per letter, so it costs O(L) for a string of length L, whatever the
+dictionary size. cp-algorithms gives the memory side: with an array of k links per vertex it uses
+&ldquo;O(m k) memory&rdquo; (m is the total length of all words, k the alphabet size), and with a
+map per vertex &ldquo;O(m)&rdquo; at the price of a log k factor. The dict above is the map version.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing a trie</span>
+  <p>Is the dictionary fixed while prefix questions pile up? If so: one node per prefix, a path per
+  word, and an end flag. <code>search</code> and <code>starts_with</code> are the same walk &mdash;
+  they differ only in what they check at the last node.</p>
+</div>
+
+<div class="caveat">
+  <p><strong>The one-line bug: forgetting the end flag.</strong> If <code>search</code> returns just
+  <code>self._walk(word) is not None</code>, it looks right and is fast, but it answers
+  <code>starts_with</code>. After inserting <code>apple</code>, it claims <code>app</code> is a word.
+  Measured on 20,000 random dictionaries of 0&ndash;6 short words over {a, b}, with 5 random queries
+  each, the flagless <code>search</code> was wrong on <strong>14,614 of 100,000</strong> queries
+  (14.6%); the correct one on <strong>0</strong>.</p>
+</div>
+
+<h2 id="tested">Checked against a slower, honest reference</h2>
+
+<p><code>search</code> and <code>starts_with</code> were compared with <code>q in words</code> and
+<code>any(w.startswith(q))</code> on the same 100,000 random queries. <strong>0 of 100,000</strong>
+disagreed. (A first run showed 2,372 disagreements; they were all the empty prefix against an empty
+dictionary, where the trie's root exists but no word does &mdash; a test-harness edge, not a trie bug,
+and worth knowing if a problem allows empty prefixes.)</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="trie-quiz"></div>
+
+<script type="application/json" id="trie-quiz-data">
+{
+  "title": "Retrieval practice — tries",
+  "commit": "Decide what a node stands for before you pick.",
+  "perfect": "Six from six. Now write Trie from scratch with no code in front of you, then solve LeetCode 208 (Implement Trie) and LeetCode 211 (Design Add and Search Words Data Structure) for real.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "A fixed dictionary of 10^5 words faces 10^5 queries asking whether any word starts with a given prefix. Which fits?",
+      "given": "the dictionary never changes, and every query is about prefixes",
+      "options": [
+        { "text": "A trie giving each prefix one node", "correct": true },
+        { "text": "A min-heap of the k smallest words", "correct": false },
+        { "text": "A monotonic stack over all sorted words", "correct": false },
+        { "text": "A union-find merging all words sharing letters", "correct": false }
+      ],
+      "why": "<p>Repeated prefix questions over a fixed set are the trie tell. A window needs a contiguous range to slide, a monotonic stack answers nearest-larger questions, and union-find forgets order.</p>"
+    },
+    {
+      "tag": "what a node means",
+      "stem": "In a trie, what does the path from the root to a node spell out?",
+      "given": "each edge is labelled with one letter",
+      "options": [
+        { "text": "One prefix that occurs within the dictionary", "correct": true },
+        { "text": "One complete word drawn from the dictionary", "correct": false },
+        { "text": "One suffix shared among several dictionary words", "correct": false },
+        { "text": "One letter count for every dictionary word", "correct": false }
+      ],
+      "why": "<p>Every node is a prefix; only nodes whose end flag is set are also complete words. That distinction is exactly what separates search from starts_with.</p>"
+    },
+    {
+      "tag": "the bug",
+      "stem": "After inserting only apple, a search that skips the end flag reports app as present. What is missing?",
+      "given": "the walk for app succeeds, because app is a prefix",
+      "options": [
+        { "text": "A check that some word ends here", "correct": true },
+        { "text": "A check that this node has kids", "correct": false },
+        { "text": "A check that this walk was quick", "correct": false },
+        { "text": "A check that letters were all sorted", "correct": false }
+      ],
+      "why": "<p>Reaching a node only proves its path is a prefix. The end flag records that an inserted word stopped there; without it search behaves as starts_with, wrong on 14.6% of the measured queries.</p>"
+    },
+    {
+      "tag": "the cost",
+      "stem": "Each trie query walks a string of length L. What does it cost, as dictionary size grows?",
+      "given": "one node visited per letter, one dict lookup per node",
+      "options": [
+        { "text": "Proportional to L alone, not dictionary size", "correct": true },
+        { "text": "Proportional to dictionary size alone, not L", "correct": false },
+        { "text": "Proportional to L times dictionary size now", "correct": false },
+        { "text": "Proportional to log of the dictionary size", "correct": false }
+      ],
+      "why": "<p>The walk takes at most L steps and never looks at other words, so a bigger dictionary costs memory, not query time.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0008",
+      "stem": "A trie is a tree. Why does walking it need no visited set, unlike a general graph?",
+      "given": "think about how many paths lead from the root to a node",
+      "options": [
+        { "text": "Every node has one parent, one path", "correct": true },
+        { "text": "Every node has one child, one path", "correct": false },
+        { "text": "Every node stores its own depth value", "correct": false },
+        { "text": "Every node gets visited by a queue", "correct": false }
+      ],
+      "why": "<p>With exactly one path from the root to each node, you can never arrive at the same node twice, so nothing needs marking. That is lesson 0008's tree against lesson 0015's graph.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0001",
+      "stem": "Scanning a list per prefix query: 10^5 words, 10^5 queries. About how many word checks?",
+      "given": "every query checks every word, since none can be skipped",
+      "options": [
+        { "text": "About ten billion, well beyond any budget", "correct": true },
+        { "text": "About ten million, comfortably within any budget", "correct": false },
+        { "text": "About two hundred thousand, one pass overall", "correct": false },
+        { "text": "About seventeen hundred thousand, n log n", "correct": false }
+      ],
+      "why": "<p>10^5 x 10^5 = 10^10, which the constraint ladder from lesson 0001 rules out before any code is written.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('trie-quiz', 'trie-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Fixed dictionary, lots of prefix questions - rescanning the word list
+ per query is words x queries, too slow at 1e5 each.
+
+ I build a trie: one node per distinct prefix, each node maps the next
+ letter to a child, plus a flag for 'a word ends here'. Insert walks
+ and creates as needed; a query walks and stops if it falls off.
+
+ starts_with is 'did the walk survive'. search is 'did it survive AND
+ is the end flag set'. Both are O(length of the string), independent
+ of how many words there are. Memory is O(total letters) with a dict
+ per node, times alphabet size with arrays."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://cp-algorithms.com/string/aho_corasick.html">cp-algorithms &mdash; Aho-Corasick
+  automaton</a>: its opening section defines the trie and its memory trade-off, quoted above (the
+  automaton on top is beyond this lesson's scope).</p>
+  <p>Practice: <a href="https://leetcode.com/problems/implement-trie-prefix-tree/">LeetCode 208,
+  Implement Trie</a>, then <a href="https://leetcode.com/problems/design-add-and-search-words-data-structure/">LeetCode
+  211, Design Add and Search Words</a>.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>trie</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0008-what-the-children-return.html">Lesson 0008</a> &mdash; the trie is a tree whose
+      edges are letters.</li>
+    <li><a href="0015-settle-each-node-once.html">Lesson 0015</a> &mdash; why a tree needs no visited
+      set and a graph does.</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now:
+    ask me to draw the trie for <code>app, apple, apt</code>, or to show how Word Search II uses a
+    trie to prune a board search (it connects to lesson 0013).</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0018-pop-what-can-never-answer.html">&larr; Lesson 0018</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
