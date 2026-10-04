@@ -54,7 +54,7 @@ ever revisiting it. A greedy step is only correct when there is a proof that the
 choice can never be beaten by saving it for later — usually by showing that whatever the greedy
 choice would let you do next, any other choice would let you do too, or less. That proof is called
 an **exchange argument**. Contrast with dynamic programming, above, which keeps every candidate
-alive until the input forces a decision. See [lesson 0010](./lessons/0010-which-end-you-sort-by.html).
+alive until the input forces a decision. See [lesson 0010](./lessons/0010-which-end-you-sort-by.html) and, for the counterexample hunt that precedes the proof, [lesson 0023](./lessons/0023-counterexample-before-code.html).
 
 **Heap** — a binary tree stored as an array, satisfying one local rule: every parent compares no
 worse than either of its children. *"Min-heaps are binary trees for which every parent node has a

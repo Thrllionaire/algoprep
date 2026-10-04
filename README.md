@@ -100,6 +100,9 @@ apply is far easier than naming the one that does — and it does most of the wo
     — rolling hash: prefix fingerprints make substring comparison O(1); different fingerprints prove a
     mismatch, equal ones only nominate a candidate. A character-sum fingerprint is wrong on 32.5% of
     random small cases.
+23. [Counterexample Before Code](https://thrllionaire.github.io/algoprep/lessons/0023-counterexample-before-code.html)
+    — greedy versus DP: hunt a counterexample on tiny inputs, then state the exchange argument.
+    Largest-coin-first is wrong on 9.8% of random coin sets.
 
 ## Reference cards
 

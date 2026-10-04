@@ -258,9 +258,12 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
 - No verified Python-specific idiom reference (e.g. when `bisect`, `heapq`, `deque`,
   `collections.Counter` are the intended tool). Likely needed as a reference doc.
 
-- **No trusted source yet for greedy-versus-DP.** Lesson 0002 deliberately left greedy out of
-  the shape × return-type grid because it is a proof obligation rather than a shape. That needs
-  its own lesson and a source on *exchange arguments*, which nothing here covers.
+- **Greedy-versus-DP now sourced** (lesson 0023): [Competitive Programmer's Handbook, ch.
+  6](https://cses.fi/book/book.pdf) gives the coin counterexample ({1, 3, 4}, x = 6) and the
+  scheduling exchange argument. Text extracted locally with pdftotext. Practice: [LeetCode
+  55](https://leetcode.com/problems/jump-game/), [LeetCode 45](https://leetcode.com/problems/jump-game-ii/),
+  [LeetCode 134](https://leetcode.com/problems/gas-station/). Gap: the Jump Game reach argument is
+  ours, not from a cited source.
 
 - Searched for high-trust "how to recognise patterns" writing and found mostly SEO content
   (leetcopilot, studocu, assorted Medium posts). Deliberately excluded. The USACO Guide modules

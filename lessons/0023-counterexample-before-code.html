@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Counterexample Before Code</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0023 &middot; algoprep</p>
+  <h1>Counterexample Before Code</h1>
+  <p class="standfirst">Lesson <a href="0010-which-end-you-sort-by.html">0010</a> showed a greedy rule that works
+  (sort by end) and one that does not (sort by start). This lesson is the general test for telling them apart:
+  <em>try to break the rule on a tiny input first</em>, and only if it survives, give the one-sentence exchange
+  argument. Two problems, one that passes the test and one that fails it.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is &ldquo;obvious best choice, and the constraints forbid trying everything.&rdquo;</strong>
+  Greedy is a candidate whenever one local rule seems to settle each step (largest coin, furthest reach,
+  earliest end). <strong>Rule it out</strong> the moment you find a small counterexample; fall back to
+  dynamic programming (lesson <a href="0007-recursion-memo-table.html">0007</a>) when the choice has to be
+  kept open. Constraints such as n &le; 10<sup>5</sup> (lesson
+  <a href="0001-read-the-constraints-first.html">0001</a>) are what push you to look for greedy at all.</p>
+</div>
+
+<h2 id="fail">A greedy rule that fails</h2>
+
+<p>The <a href="https://cses.fi/book/book.pdf">Competitive Programmer&rsquo;s Handbook</a>, chapter 6, defines the
+approach: &ldquo;A greedy algorithm constructs a solution to the problem by always making a choice that looks the
+best at the moment. A greedy algorithm never takes back its choices.&rdquo; It warns that &ldquo;it is often
+difficult to argue that a greedy algorithm works&rdquo;, and its first example is the coin problem of lesson 0007
+(fewest coins summing to x). Take the largest coin that fits, repeatedly. With euro coins that is correct. For
+coins {1, 3, 4} and x = 6 it picks 4 + 1 + 1 (three coins) while 3 + 3 (two) is better. The handbook&rsquo;s
+verdict: &ldquo;We can prove that a greedy algorithm does not work by showing a counterexample.&rdquo;</p>
+
+<p>That is the whole test, and it is cheap: <strong>spend a minute on inputs of size 3 to 5 before writing any
+code.</strong> We measured how often it matters. Over 20,000 random coin sets (always including a 1, so every
+amount is reachable; two to four coins up to 12; x from 1 to 30), largest-coin-first disagreed with the
+lesson 0007 table on <strong>1,967</strong> (9.8%). On the euro coins it disagreed on 0 of the amounts 1 to
+2,000, so the rule is not &ldquo;greedy never works on coins&rdquo; but &ldquo;it works on <em>some</em> coin
+sets, and you must check which.&rdquo;</p>
+
+<h2 id="pass">A greedy rule that survives</h2>
+
+<p><a href="https://leetcode.com/problems/jump-game/">LeetCode 55, Jump Game</a>: <code>nums[i]</code> is the
+longest jump allowed from index <code>i</code>; can you get from index 0 to the last index? Two rules sound
+equally plausible. <strong>Rule A:</strong> always take the longest jump from where you stand. <strong>Rule
+B:</strong> track the furthest index reachable from anywhere you could have been.</p>
+
+<p>Run the counterexample hunt on A. For <code>[2, 2, 0, 0]</code> rule A jumps 0 &rarr; 2 and is stuck on a
+zero, yet 0 &rarr; 1 &rarr; 3 reaches the end. A is dead in four numbers. (Over 20,000 random arrays of length
+1&ndash;8 with values 0&ndash;4, rule A disagreed with an exhaustive search on <strong>1,178</strong>.)</p>
+
+<p>Rule B has no such counterexample, and here is why, in one sentence: <em>every index up to the current reach
+is itself reachable, so remembering only the maximum loses nothing</em>. That is the exchange argument. Any
+other plan for where to stand can be swapped for &ldquo;the furthest&rdquo; without shrinking the set of indexes
+you can continue from &mdash; the same shape as the handbook&rsquo;s scheduling proof, &ldquo;selecting an event
+that ends later can never yield a better solution.&rdquo;</p>
+
+<pre><code>def can_jump(nums):
+    reach = 0                          # furthest index reachable so far
+    for i, x in enumerate(nums):
+        if i &gt; reach:                  # a gap: index i cannot be reached
+            return False
+        reach = max(reach, i + x)
+    return True</code></pre>
+
+<p>One pass, O(n) time, O(1) space. It was compared with a memoised exhaustive search on the same 20,000
+arrays and disagreed on <strong>0</strong>.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing the loop</span>
+  <p>The obvious local rule is furthest reach. Before I trust it I try to break it on small inputs; I could not,
+  and the reason is that everything up to the reach is reachable, so keeping only the maximum discards nothing.
+  If I had found a counterexample I would switch to a table that keeps every state.</p>
+</div>
+
+<div class="caveat">
+  <p><strong>The proof is not decoration.</strong> A rule can survive your five hand-picked tests and still be
+  wrong, which is why the handbook calls the argument &ldquo;often difficult&rdquo;. The counterexample hunt can
+  only rule a rule <em>out</em>; the exchange sentence is what lets you rule it <em>in</em>. If you cannot say
+  the sentence, say so to the interviewer and offer the DP, which is always safe.</p>
+</div>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="gr-quiz"></div>
+
+<script type="application/json" id="gr-quiz-data">
+{
+  "title": "Retrieval practice — greedy or not",
+  "commit": "Decide what would settle the question before you pick.",
+  "perfect": "Six from six. Now write can_jump from scratch with no code in front of you, then solve LeetCode 55 (Jump Game) and LeetCode 45 (Jump Game II, the same reach idea counting jumps). Stretch: LeetCode 134 (Gas Station), then state its exchange argument in one sentence.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "One local rule seems to settle every step, and n is 10^5 so trying everything is out. What do you do first?",
+      "given": "you have not yet written any code for the rule",
+      "options": [
+        { "text": "Hunt counterexamples on tiny inputs first", "correct": true },
+        { "text": "Implement the rule, then submit quickly", "correct": false },
+        { "text": "Construct the complete table before starting", "correct": false },
+        { "text": "Sort the entire input before anything", "correct": false }
+      ],
+      "why": "<p>A counterexample on three to five elements costs a minute and can kill the rule outright. Writing and submitting tests only what the samples cover, and building the table first gives up the speed that made greedy attractive.</p>"
+    },
+    {
+      "tag": "what a counterexample proves",
+      "stem": "Largest-coin-first gives 3 coins for x = 6 with coins {1, 3, 4}, but 2 is possible. What does that establish?",
+      "given": "the rule gives the right answer on the euro coins",
+      "options": [
+        { "text": "The rule breaks for this coin set", "correct": true },
+        { "text": "The rule fails on every coin set", "correct": false },
+        { "text": "The rule works on most coin sets", "correct": false },
+        { "text": "The rule needs bigger sums to fail", "correct": false }
+      ],
+      "why": "<p>One counterexample kills the rule for the input family that contains it, here arbitrary coin sets. It says nothing about the euro set, where the handbook gives a separate argument. Failing on 9.8% of random sets is a measurement, not what a single counterexample proves.</p>"
+    },
+    {
+      "tag": "the exchange argument",
+      "stem": "Why is keeping only the furthest reachable index enough in Jump Game?",
+      "given": "reach is the maximum of i plus nums[i] over every index visited",
+      "options": [
+        { "text": "Every index below the reach is reachable", "correct": true },
+        { "text": "Longer jumps always beat the shorter ones", "correct": false },
+        { "text": "Zeros can never appear before the reach", "correct": false },
+        { "text": "Each index is visited exactly one time", "correct": false }
+      ],
+      "why": "<p>Because there are no gaps below the reach, any plan that stands somewhere earlier can be swapped for the furthest without losing options. Longest-jump-first is the failing rule, and zeros before the reach are fine as long as something jumps over them.</p>"
+    },
+    {
+      "tag": "when it breaks",
+      "stem": "Which input defeats the rule that always takes the longest jump from the current index?",
+      "given": "the rule moves to index i plus nums[i] every turn",
+      "options": [
+        { "text": "[2, 2, 0, 0]", "correct": true },
+        { "text": "[1, 1, 1, 1]", "correct": false },
+        { "text": "[3, 0, 0, 0]", "correct": false },
+        { "text": "[2, 1, 1, 4]", "correct": false }
+      ],
+      "why": "<p>The rule jumps 0 to 2 and is stuck on a zero, although 0 to 1 to 3 works. On the other three it succeeds: [1,1,1,1] steps along, [3,0,0,0] jumps straight to the end, and [2,1,1,4] goes 0 to 2 to 3.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0010",
+      "stem": "Pick the most non-overlapping intervals. Why does sorting by start fail where sorting by end holds?",
+      "given": "lesson 0010 used one sort key for max-count and another for merging",
+      "options": [
+        { "text": "One long early interval blocks later ones", "correct": true },
+        { "text": "Sorting by start costs more than end", "correct": false },
+        { "text": "Start times can be equal across intervals", "correct": false },
+        { "text": "End times are always distinct across intervals", "correct": false }
+      ],
+      "why": "<p>The earliest-start interval can be huge and block everything, a counterexample the handbook draws. Ending earliest leaves the most room for what follows, which is the exchange argument for sort-by-end. Both sorts cost the same.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0007",
+      "stem": "A counterexample kills your greedy for coin change with coins {1, 3, 4}. What replaces it?",
+      "given": "lesson 0007 solved the same problem for any coin set",
+      "options": [
+        { "text": "A table of fewest coins per amount", "correct": true },
+        { "text": "The same rule with coins sorted upward", "correct": false },
+        { "text": "A heap of the largest coins left", "correct": false },
+        { "text": "A fingerprint for each of the sums", "correct": false }
+      ],
+      "why": "<p>The table from lesson 0007 keeps the best answer for every amount, so it never has to commit to one coin early. Reordering the coins or adding a heap leaves the same commit-once rule, and fingerprints answer equality, not minimum.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('gr-quiz', 'gr-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Can you reach the last index, n = 10^5. Trying every jump sequence is
+ exponential, so I want a local rule. Longest jump from here sounds
+ right, but [2, 2, 0, 0] breaks it: it lands on a zero while 0 to 1 to 3
+ works. That rule is out.
+
+ Furthest reach survives: every index up to the reach is itself
+ reachable, so keeping only the maximum loses nothing. One pass, fail if
+ the index passes the reach. O(n) time, O(1) space.
+
+ If I could not state why it holds, I would fall back to a table over
+ indexes, which is always correct, at O(n^2) worst case."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://cses.fi/book/book.pdf">Competitive Programmer&rsquo;s Handbook</a>, chapter 6 (Greedy
+  algorithms): the coin problem with its counterexample, and the three scheduling rules with the argument for
+  the one that works. Then the
+  <a href="https://usaco.guide/silver/greedy-sorting">USACO Guide on greedy with sorting</a> for the same
+  exchange argument stated for intervals.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/jump-game/">LeetCode 55</a>,
+  <a href="https://leetcode.com/problems/jump-game-ii/">LeetCode 45</a>, then
+  <a href="https://leetcode.com/problems/gas-station/">LeetCode 134, Gas Station</a>.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; <em>greedy</em> and <em>exchange argument</em> are already
+    defined there; this lesson adds the counterexample hunt as the first step.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0007-recursion-memo-table.html">Lesson 0007</a> &mdash; the table that replaces a failed greedy.</li>
+    <li><a href="0010-which-end-you-sort-by.html">Lesson 0010</a> &mdash; the interval greedy and its sort key.</li>
+    <li><a href="0021-cheapest-first.html">Lesson 0021</a> &mdash; Dijkstra, a greedy with a proof.</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: ask me for a
+    counterexample hunt on a rule you are unsure of, to walk through the exchange argument for Gas Station, or
+    to explain why Dijkstra's greedy fails once an edge weight goes negative.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0022-fingerprint-then-check.html">&larr; Lesson 0022</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
