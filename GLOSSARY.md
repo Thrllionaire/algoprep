@@ -300,3 +300,10 @@ modulo a large `M`, stored as a prefix array so any substring's fingerprint is `
 two lookups. Equal strings always get equal fingerprints, so *different* fingerprints prove the strings
 differ; *equal* fingerprints only make them candidates, which is why a match is confirmed against the
 real characters. See [lesson 0022](./lessons/0022-fingerprint-then-check.html).
+
+**Border** — a proper prefix of a string that is also a suffix of it ("proper" = shorter than the whole
+string). `abca` is a border of `abcabca`. See [lesson 0024](./lessons/0024-the-border-you-already-matched.html).
+
+**Prefix function** — the array π where π[i] is the length of the longest border of `s[0..i]`. After a
+mismatch with k characters matched, KMP falls back to π[k−1] instead of restarting. See
+[lesson 0024](./lessons/0024-the-border-you-already-matched.html).

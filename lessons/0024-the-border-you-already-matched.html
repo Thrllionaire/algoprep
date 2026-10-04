@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Border You Already Matched</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0024 &middot; algoprep</p>
+  <h1>The Border You Already Matched</h1>
+  <p class="standfirst">Lesson <a href="0022-fingerprint-then-check.html">0022</a> found a pattern in a text by
+  fingerprinting every window, with randomness and a confirmation step. <em>KMP</em> gets the same O(n + m) with no
+  randomness: when a mismatch happens, it does not re-read the characters it already matched. It keeps the longest
+  stretch that is still alive, and a single array, the <em>prefix function</em>, says how long that stretch is.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is exact matching where hashing is unwelcome</strong> &mdash; an adversarial judge, a demand for a
+  deterministic bound, or a question about the pattern <em>itself</em>: its repeating period, its longest prefix that
+  is also a suffix. <strong>Rule it out</strong> when matching is approximate (edit distance, lesson
+  <a href="0020-two-prefixes-one-cell.html">0020</a>) or when many words share prefixes (a trie, lesson
+  <a href="0019-one-node-per-prefix.html">0019</a>).</p>
+</div>
+
+<h2 id="question">The question</h2>
+
+<p>Same as lesson 0022: every position where a pattern occurs in a text. Comparing the pattern against each window
+character by character costs, on a text of 100,000 <code>a</code>s and a pattern of 49,999 <code>a</code>s then a
+<code>b</code>, (n &minus; m + 1) &middot; m = <strong>2,500,050,000</strong> comparisons. The code below does the
+same job reading 150,001 characters, with 99,999 fallback steps in total.</p>
+
+<h2 id="border">One array: how much of the pattern is still alive</h2>
+
+<p>A <strong>border</strong> of a string is a proper prefix that is also a suffix. (&ldquo;Proper&rdquo; means shorter
+than the whole string.) The <strong>prefix function</strong> is the table of the longest border at each position.
+In <a href="https://cp-algorithms.com/string/prefix-function.html">cp-algorithms</a>&rsquo; words, &ldquo;&pi;[i] is the
+length of the longest proper prefix of the substring s[0&hellip;i] which is also a suffix of this substring.&rdquo;
+By hand, for <code>abcabca</code>:</p>
+
+<table>
+  <thead><tr><th>i</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
+  <tbody>
+    <tr><td>s[i]</td><td>a</td><td>b</td><td>c</td><td>a</td><td>b</td><td>c</td><td>a</td></tr>
+    <tr><td>&pi;[i]</td><td>0</td><td>0</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+  </tbody>
+</table>
+
+<p>&pi;[6] = 4 because <code>abca</code> is both the first four and the last four characters. Why this helps: if you
+have matched k characters of the pattern and the next text character disagrees, then the last k text characters
+<em>are</em> the first k pattern characters, so the longest part of that which can still be a pattern prefix is
+exactly the longest border of the matched part: &pi;[k&minus;1]. Fall back to it and compare again. The text
+position never moves backward.</p>
+
+<pre><code>def prefix_function(s):
+    pi = [0] * len(s)
+    k = 0                                    # length of the border still alive
+    for i in range(1, len(s)):
+        while k and s[i] != s[k]:
+            k = pi[k - 1]                    # fall back to the next-longest border
+        if s[i] == s[k]:
+            k += 1
+        pi[i] = k
+    return pi
+
+def find_all(text, pat):
+    if not pat or len(pat) &gt; len(text):
+        return []
+    m = len(pat)
+    pi = prefix_function(pat + "#" + text)   # "#" appears in neither string
+    return [i - 2 * m for i in range(m + 1, len(pi)) if pi[i] == m]</code></pre>
+
+<p>Gluing <code>pat + "#" + text</code> is cp-algorithms&rsquo; own trick: &ldquo;We generate the string s + # + t,
+where # is a separator that appears neither in s nor in t.&rdquo; Any position where &pi; equals the pattern length
+is a match ending there. The cost is the amortisation from lesson
+<a href="0003-the-window-invariant.html">0003</a>: the border length k rises by at most one per character
+(&ldquo;the values of the prefix function can only increase by at most one&rdquo;), and each fallback lowers it, so
+fallbacks in total never exceed the increases. O(n + m) time, and the quote&rsquo;s memory claim is
+&ldquo;O(n) memory&rdquo;.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing the loop</span>
+  <p>Window-by-window comparison is O(n&middot;m). On a mismatch after k matched characters, those k text characters
+  equal the pattern&rsquo;s first k, so I keep the longest border of that prefix, &pi;[k&minus;1], instead of
+  restarting. Border length rises at most one per step, so fallbacks are amortised and the whole thing is
+  O(n + m), deterministic. I join pattern, a separator and text so one pass computes everything.</p>
+</div>
+
+<div class="caveat">
+  <p><strong>Three ways to get it wrong</strong>, measured on 20,000 random small cases (text length 1&ndash;14,
+  pattern length 1&ndash;5, alphabets of 2&ndash;3 letters) against a brute-force search.
+  (1) Dropping the separator (<code>pat + text</code>) disagrees on <strong>3,234</strong> (16.2%): a border can then
+  run across the boundary and read as a match. (2) Falling back by <code>k -= 1</code> instead of
+  <code>k = pi[k-1]</code> disagrees on <strong>2,537</strong> (12.7%): it tries a shorter prefix, not the longest
+  <em>border</em>. (3) A text scan that resets <code>k</code> to 0 on a mismatch disagrees on <strong>269</strong>
+  (1.3%) &mdash; rare on random input, which is why it survives casual testing. The code above scored
+  <strong>0</strong>.</p>
+</div>
+
+<h2 id="period">The same array answers questions about the string itself</h2>
+
+<p>If the whole string has longest border L, its smallest period is p = n &minus; L, and the string is made of
+repeated blocks exactly when L &gt; 0 and p divides n. That is the whole of
+<a href="https://leetcode.com/problems/repeated-substring-pattern/">LeetCode 459</a> in four lines. Checked against a
+brute-force &ldquo;does some block repeat to give s&rdquo; on 20,000 random binary strings: 0 disagreements.
+Hashing cannot answer this without testing every divisor.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="kmp-quiz"></div>
+
+<script type="application/json" id="kmp-quiz-data">
+{
+  "title": "Retrieval practice — KMP and the prefix function",
+  "commit": "Decide what the matched stretch lets you keep before you pick.",
+  "perfect": "Six from six. Now write prefix_function and find_all from scratch with no code in front of you, then solve LeetCode 28 and LeetCode 459 (Repeated Substring Pattern). Stretch: LeetCode 1392 (Longest Happy Prefix), which is just the last entry of the table.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "Find a pattern in a text, with a hard O(n + m) bound and test data built against hashing. Which approach fits?",
+      "given": "the judge may craft inputs that collide a fixed modulus",
+      "options": [
+        { "text": "Prefix function over pattern, separator, text", "correct": true },
+        { "text": "Hash every window with a fixed modulus", "correct": false },
+        { "text": "Edit-distance grid of pattern against text", "correct": false },
+        { "text": "Trie holding every suffix of the text", "correct": false }
+      ],
+      "why": "<p>The prefix function is deterministic, so nobody can build a collision against it. A fixed-modulus hash is exactly what an adversary targets, an edit-distance grid is O(nm) and for approximate matching, and a trie of all suffixes has O(n&sup2;) nodes.</p>"
+    },
+    {
+      "tag": "what pi means",
+      "stem": "For the string abcabca, what is pi at the last position?",
+      "given": "pi[i] is the longest proper prefix of s[0..i] that is also a suffix",
+      "options": [
+        { "text": "Four, because abca is both ends", "correct": true },
+        { "text": "Three, because abc is both ends", "correct": false },
+        { "text": "One, because a is both ends", "correct": false },
+        { "text": "Seven, because the whole string", "correct": false }
+      ],
+      "why": "<p>abca is the first four and the last four characters. Seven is not allowed because the prefix must be proper, and abc is a border of the string only at position five.</p>"
+    },
+    {
+      "tag": "the fallback",
+      "stem": "k pattern characters have matched and the next text character disagrees. What should happen next?",
+      "given": "the last k text characters equal the first k pattern characters",
+      "options": [
+        { "text": "Set k to pi[k-1], compare again", "correct": true },
+        { "text": "Set k to zero, compare again", "correct": false },
+        { "text": "Set k to k-1, compare again", "correct": false },
+        { "text": "Back the text up k, compare again", "correct": false }
+      ],
+      "why": "<p>The longest part of the matched stretch that can still be a pattern prefix is its longest border, pi[k&minus;1]. Resetting to zero throws away live progress (wrong on 1.3% of random cases), k&minus;1 tries the wrong lengths (12.7%), and backing the text up is the O(nm) loop KMP exists to avoid.</p>"
+    },
+    {
+      "tag": "the separator",
+      "stem": "Why join pattern and text with a character found in neither?",
+      "given": "one pass of the prefix function runs over the joined string",
+      "options": [
+        { "text": "A border could span both pieces", "correct": true },
+        { "text": "The array would need extra memory", "correct": false },
+        { "text": "Fallbacks would stop being amortised", "correct": false },
+        { "text": "The text would need sorting first", "correct": false }
+      ],
+      "why": "<p>Without it a border can start inside the pattern and end inside the text, so values can pass the pattern length or hit it falsely; dropping it disagreed with brute force on 16.2% of random cases. Memory and the amortised bound are unaffected.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0022",
+      "stem": "What does KMP give you that the rolling hash of lesson 0022 does not?",
+      "given": "both run in O(n + m) when hits are rare",
+      "options": [
+        { "text": "A deterministic answer with no collisions", "correct": true },
+        { "text": "A lower memory use than hashing", "correct": false },
+        { "text": "Support for approximate matches too", "correct": false },
+        { "text": "Sublinear time on every input case", "correct": false }
+      ],
+      "why": "<p>Hashing gives only candidates that need confirming, and a fixed modulus can be attacked. KMP is exact by construction; it is not approximate, not sublinear, and not smaller (it also stores an O(n) array).</p>"
+    },
+    {
+      "tag": "interleave: lesson 0001",
+      "stem": "Text length 10^6, pattern length 5*10^5, checking every window by slicing. Worst-case comparisons?",
+      "given": "windows number n minus m plus one, each costing up to m",
+      "options": [
+        { "text": "About 2.5*10^11, far too slow", "correct": true },
+        { "text": "About 1.5*10^6, comfortably fast", "correct": false },
+        { "text": "About 5*10^5, comfortably fast", "correct": false },
+        { "text": "About 10^12, barely too slow", "correct": false }
+      ],
+      "why": "<p>(10<sup>6</sup> &minus; 5&middot;10<sup>5</sup> + 1) &middot; 5&middot;10<sup>5</sup> &asymp; 2.5&middot;10<sup>11</sup>, against a budget near 10<sup>8</sup> from lesson 0001. KMP reads about 1.5&middot;10<sup>6</sup> characters instead.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('kmp-quiz', 'kmp-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Exact pattern search, n = 10^6. Slicing every window is O(n*m), so
+ that's out; it's exact, so edit distance and a trie are out too. A
+ rolling hash works but is randomised and needs confirmation. I want a
+ deterministic O(n + m), so KMP.
+
+ pi[i] is the longest border of s[0..i]. On a mismatch after k matched
+ characters I fall back to pi[k-1] instead of restarting, so the text
+ index never moves back. k rises at most one per character and each
+ fallback lowers it, so total fallbacks are O(n + m). I join
+ pattern + '#' + text so one pass finds every position where pi = m."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://cp-algorithms.com/string/prefix-function.html">cp-algorithms &mdash; Prefix function,
+  Knuth&ndash;Morris&ndash;Pratt</a>: the definition, the O(n) computation and its proof, and the string-search
+  application quoted above.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string/">LeetCode 28</a>,
+  <a href="https://leetcode.com/problems/repeated-substring-pattern/">LeetCode 459</a>, then
+  <a href="https://leetcode.com/problems/longest-happy-prefix/">LeetCode 1392</a>.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>border</em> and <em>prefix function</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0022-fingerprint-then-check.html">Lesson 0022</a> &mdash; the randomised alternative.</li>
+    <li><a href="0003-the-window-invariant.html">Lesson 0003</a> &mdash; the same amortised argument.</li>
+    <li><a href="0019-one-node-per-prefix.html">Lesson 0019</a> &mdash; tries, for many words.</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: ask me to build the
+    table for a string of your choosing by hand, to explain why fallback to &pi;[k&minus;1] never skips a match, or
+    to show how the period trick solves LeetCode 459.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0023-counterexample-before-code.html">&larr; Lesson 0023</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

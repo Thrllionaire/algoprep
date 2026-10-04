@@ -103,6 +103,9 @@ apply is far easier than naming the one that does — and it does most of the wo
 23. [Counterexample Before Code](https://thrllionaire.github.io/algoprep/lessons/0023-counterexample-before-code.html)
     — greedy versus DP: hunt a counterexample on tiny inputs, then state the exchange argument.
     Largest-coin-first is wrong on 9.8% of random coin sets.
+24. [The Border You Already Matched](https://thrllionaire.github.io/algoprep/lessons/0024-the-border-you-already-matched.html)
+    — KMP: the prefix function gives exact O(n + m) matching with no randomness. Dropping the separator
+    is wrong on 16.2% of random small cases.
 
 ## Reference cards
 
