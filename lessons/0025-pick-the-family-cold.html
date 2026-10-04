@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pick the Family, Cold</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0025 &middot; algoprep &middot; review</p>
+  <h1>Pick the Family, Cold</h1>
+  <p class="standfirst">No new technique. Lessons <a href="0021-cheapest-first.html">0021</a> to
+  <a href="0024-the-border-you-already-matched.html">0024</a> are published but not yet worked through, and the
+  mission (<a href="../mission.html">naming the family in two minutes</a>) is a recognition skill. So this lesson is
+  eight problem statements, mixed, with the lessons they came from hidden until you answer.</p>
+</header>
+
+<div class="lede">
+  <p><strong>How to use it:</strong> do not reopen the earlier lessons first &mdash; reopening measures fluency, not
+  retention. For each question, say the elimination out loud (what do the constraints rule out?) before looking at the
+  options. Anything you miss, re-read that one lesson and redo this page tomorrow; the quiz reshuffles.</p>
+</div>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="rev-quiz"></div>
+
+<script type="application/json" id="rev-quiz-data">
+{
+  "title": "Retrieval practice — mixed families, 0001 to 0024",
+  "commit": "Name what the constraints rule out first, then pick.",
+  "perfect": "Eight from eight, cold. Spend the saved time on the open assignments: write prefix_function and dijkstra from scratch with no code in front of you, then LeetCode 743 and 459.",
+  "questions": [
+    {
+      "tag": "lesson 0001",
+      "stem": "n = 10^5 and a one-second limit. Which worst-case complexities are realistic?",
+      "given": "a conservative budget is about 10^8 simple operations",
+      "options": [
+        { "text": "O(n log n) and anything smaller", "correct": true },
+        { "text": "O(n squared) and anything smaller", "correct": false },
+        { "text": "O(2^n) and anything smaller here", "correct": false },
+        { "text": "Only O(n) and anything smaller", "correct": false }
+      ],
+      "why": "<p>n&sup2; = 10<sup>10</sup> is two orders over budget; n log n is about 1.7&middot;10<sup>6</sup>. Restricting to strictly O(n) throws away heaps, sorting and binary search for no reason.</p>"
+    },
+    {
+      "tag": "lesson 0002",
+      "stem": "Count the ways to climb n = 1000 stairs, answer modulo 10^9+7. Which family fits?",
+      "given": "the output is one number, but the number is huge",
+      "options": [
+        { "text": "Dynamic programming over stair index", "correct": true },
+        { "text": "Backtracking over every possible climb", "correct": false },
+        { "text": "A sliding window across the stairs", "correct": false },
+        { "text": "Union-find over the connected stairs", "correct": false }
+      ],
+      "why": "<p>A count modulo a prime with overlapping subproblems is the DP tell; enumerating the climbs is exponential, and a window or union-find has nothing to say about ways of arriving.</p>"
+    },
+    {
+      "tag": "lesson 0018",
+      "stem": "For each element of an array of n = 10^5, find the nearest larger value to its right. Which fits?",
+      "given": "scanning right from every position is O(n squared)",
+      "options": [
+        { "text": "A monotonic stack, one left-to-right pass", "correct": true },
+        { "text": "A min-heap holding every element seen", "correct": false },
+        { "text": "Binary search over the answer values", "correct": false },
+        { "text": "A trie keyed on the digits seen", "correct": false }
+      ],
+      "why": "<p>Elements waiting for a larger value can be discarded once a larger one arrives, so each index is pushed and popped once: O(n). A heap would be O(n log n) and still not know which index is waiting.</p>"
+    },
+    {
+      "tag": "lesson 0019",
+      "stem": "5,000 words are given, then 2,000 queries ask whether any word starts with a prefix. Which fits?",
+      "given": "re-comparing the same first letters per word is the waste",
+      "options": [
+        { "text": "A trie with one node per prefix", "correct": true },
+        { "text": "A sorted list with two pointers", "correct": false },
+        { "text": "A rolling hash of every word", "correct": false },
+        { "text": "A union-find over shared letters", "correct": false }
+      ],
+      "why": "<p>Many words sharing prefixes is the trie tell: a query walks its own length, regardless of dictionary size. A hash answers exact equality of a window, not &ldquo;begins with&rdquo; across a set.</p>"
+    },
+    {
+      "tag": "lesson 0021",
+      "stem": "Cheapest route in a graph with n = 10^5 nodes and edge costs from 1 to 100. Which fits?",
+      "given": "the fewest-edges path need not be the cheapest",
+      "options": [
+        { "text": "Dijkstra with a min-heap of costs", "correct": true },
+        { "text": "Plain breadth-first search from start", "correct": false },
+        { "text": "Union-find merging all cheap edges", "correct": false },
+        { "text": "A DFS keeping one visited set", "correct": false }
+      ],
+      "why": "<p>Non-negative weights are Dijkstra&rsquo;s licence, settling the cheapest unsettled node each time. BFS counts edges and was wrong on 20.0% of random small graphs in lesson 0021.</p>"
+    },
+    {
+      "tag": "lesson 0022",
+      "stem": "n = 10^5. Find the longest substring that appears at least twice. Which fits?",
+      "given": "if a duplicate of length L exists, one of length L minus 1 does",
+      "options": [
+        { "text": "Binary search the length, hash each window", "correct": true },
+        { "text": "Run the prefix function on every start", "correct": false },
+        { "text": "Insert every substring into a trie", "correct": false },
+        { "text": "Edit-distance grid of text against itself", "correct": false }
+      ],
+      "why": "<p>The given sentence is the monotonic licence from 0006, and each check is one pass of window fingerprints in a set. A trie of all substrings has O(n&sup2;) nodes and an edit-distance grid is O(n&sup2;) cells.</p>"
+    },
+    {
+      "tag": "lesson 0024",
+      "stem": "Decide whether a string is one block repeated several times, n = 10^6, no randomness allowed. Which fits?",
+      "given": "the longest border L gives a smallest period of n minus L",
+      "options": [
+        { "text": "Prefix function, check n minus L divides n", "correct": true },
+        { "text": "Hash every divisor length and compare", "correct": false },
+        { "text": "Backtrack over every possible block cut", "correct": false },
+        { "text": "Two pointers walking inward on the string", "correct": false }
+      ],
+      "why": "<p>The prefix function answers questions about the string itself in one O(n) pass. Hashing needs a probabilistic check per divisor, and backtracking is exponential.</p>"
+    },
+    {
+      "tag": "lesson 0023",
+      "stem": "Fewest coins for amount 6 with coins 1, 3 and 4. Largest-coin-first gives three. What follows?",
+      "given": "three coins is 4 plus 1 plus 1, but 3 plus 3 uses two",
+      "options": [
+        { "text": "Greedy is refuted, so use the DP table", "correct": true },
+        { "text": "Greedy is fine, so sort the coins first", "correct": false },
+        { "text": "Greedy is refuted, so use Dijkstra instead", "correct": false },
+        { "text": "Greedy is fine, so confirm with a heap", "correct": false }
+      ],
+      "why": "<p>One counterexample on a tiny input is enough to refute the rule; the fallback is the lesson 0007 table. Largest-first was wrong on 9.8% of random coin sets in lesson 0023.</p>"
+    },
+    {
+      "tag": "lesson 0023",
+      "stem": "A greedy rule sounds plausible and you have ten minutes. What do you do before coding it?",
+      "given": "greedy rules fail silently on some inputs",
+      "options": [
+        { "text": "Hunt a counterexample on tiny inputs", "correct": true },
+        { "text": "Run it on one large random input", "correct": false },
+        { "text": "Assume it works if sorted first", "correct": false },
+        { "text": "Write the DP in case it fails", "correct": false }
+      ],
+      "why": "<p>A counterexample on inputs of size three to five costs a minute and settles the question for refutation; then state the exchange argument if none appears. One large random input rarely hits the rare failure (the Jump Game rule failed on 1,178 of 20,000 random arrays only when small cases were enumerated).</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('rev-quiz', 'rev-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Read the constraints first: n = 10^5 means O(n log n), so quadratic
+ scans are out. Then the output shape: one number modulo a prime is DP,
+ an ordering or enumeration is not. Then the tell: nearest larger to the
+ right is a monotonic stack; many words sharing prefixes is a trie;
+ cheapest weighted path is Dijkstra; duplicate substrings is binary
+ search plus hash; a question about the string's own period is the
+ prefix function. And before any greedy, I try to break it on three
+ or four tiny inputs."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p>Whichever lesson you missed &mdash; each one ends with its own primary source. For the whole set at once, the
+  <a href="https://usaco.guide/">USACO Guide</a> is the single most consistent reference across the course.</p>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0021-cheapest-first.html">0021</a>, <a href="0022-fingerprint-then-check.html">0022</a>,
+    <a href="0023-counterexample-before-code.html">0023</a>,
+    <a href="0024-the-border-you-already-matched.html">0024</a> &mdash; the four unworked lessons this covers.</li>
+    <li><a href="../glossary.html">Glossary</a> &middot; <a href="../index.html">Course index</a></li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: tell me which
+    questions you missed and I'll rebuild that lesson around your actual mistake, or ask me to write you a fresh
+    set of mixed problems.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0024-the-border-you-already-matched.html">&larr; Lesson 0024</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
