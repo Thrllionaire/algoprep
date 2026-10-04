@@ -96,6 +96,10 @@ apply is far easier than naming the one that does — and it does most of the wo
 21. [Cheapest First](https://thrllionaire.github.io/algoprep/lessons/0021-cheapest-first.html)
     — Dijkstra: settle the cheapest unsettled node via a min-heap. BFS with weights is wrong on 20.0%
     of random small graphs.
+22. [Fingerprint, Then Check](https://thrllionaire.github.io/algoprep/lessons/0022-fingerprint-then-check.html)
+    — rolling hash: prefix fingerprints make substring comparison O(1); different fingerprints prove a
+    mismatch, equal ones only nominate a candidate. A character-sum fingerprint is wrong on 32.5% of
+    random small cases.
 
 ## Reference cards
 

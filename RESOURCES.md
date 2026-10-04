@@ -350,3 +350,12 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   measures them in place (4,006 and 3,916 of 20,000 random graphs wrong, 20.0% and 19.6%; the correct
   version 0, against Bellman-Ford) and reports that dropping the stale check costs 10,587,199 edge
   scans versus 79,801 on a 400-node forward-complete graph.
+- [cp-algorithms — String Hashing](https://cp-algorithms.com/string/string-hashing.html) — the polynomial
+  hash, the substring identity, the ≈ 1/m collision probability and the note against m = 2⁶⁴, quoted in
+  [lesson 0022](./lessons/0022-fingerprint-then-check.html).
+- [cp-algorithms — Rabin-Karp](https://cp-algorithms.com/string/rabin-karp.html) — the pattern-matching
+  statement and O(|s| + |t|) cost, quoted in lesson 0022.
+- **Gap:** no source measures the character-sum fingerprint bug; lesson 0022 measures it in place (6,498 of
+  20,000 random small cases wrong, 32.5%; tiny modulus without confirmation 5,078, 25.4%; the 61-bit
+  version, and any version that confirms candidates, 0), plus the Thue–Morse pair colliding mod 2⁶⁴ for
+  963 of 963 odd bases.

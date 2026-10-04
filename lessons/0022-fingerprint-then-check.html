@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fingerprint, Then Check</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0022 &middot; algoprep</p>
+  <h1>Fingerprint, Then Check</h1>
+  <p class="standfirst">Lesson <a href="0004-the-prefix-pair.html">0004</a> turned a subarray into a pair of
+  prefix boundaries, so its sum became one subtraction. A <em>rolling hash</em> does the same to a substring:
+  keep a prefix array of fingerprints, and any substring's fingerprint is two lookups. Comparing two substrings
+  then costs O(1) instead of their length &mdash; with one catch the lesson is built around.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is equality of many same-length substrings</strong> &mdash; &ldquo;find the pattern in the
+  text&rdquo;, &ldquo;does any length-L block repeat&rdquo;. <strong>Rule it out</strong> when the question is
+  approximate (edit distance, lesson <a href="0020-two-prefixes-one-cell.html">0020</a>) or many words share
+  prefixes (a trie, lesson <a href="0019-one-node-per-prefix.html">0019</a>): a hash answers &ldquo;equal?&rdquo;
+  and nothing else. Constraints like n &le; 10<sup>5</sup> (lesson
+  <a href="0001-read-the-constraints-first.html">0001</a>) are what say slicing every window is too slow.</p>
+</div>
+
+<h2 id="question">The question</h2>
+
+<p>Find every position where a pattern occurs in a text (<a href="https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string/">LeetCode 28</a>
+is the single-answer version). The <a href="https://cp-algorithms.com/string/rabin-karp.html">cp-algorithms</a>
+statement is to &ldquo;determine if the pattern appears in the text and if it does, enumerate all its
+occurrences in O(|s| + |t|) time.&rdquo; The obvious way compares the pattern against each window character by
+character. On a text of 100,000 <code>a</code>s and a pattern of 49,999 <code>a</code>s then a <code>b</code>,
+every window matches all the way to the last character, which is (n &minus; m + 1) &middot; m =
+<strong>2,500,050,000</strong> comparisons. The hash version below does about 200,000 operations on the same input.</p>
+
+<h2 id="why">A fingerprint can eliminate, never confirm</h2>
+
+<p>A <a href="../glossary.html">rolling hash</a> maps a string to a number, and the same string always gets the
+same number. That asymmetry is the whole lesson. <strong>Different fingerprints prove the strings are
+different</strong> &mdash; a certain no, which is elimination. <strong>Equal fingerprints only make the strings
+<em>candidates</em></strong>: two different strings can share a number. So you fingerprint every window to
+eliminate nearly all of them in O(1) each, then compare real characters on the survivors.</p>
+
+<p>The fingerprint is a polynomial: read the string as digits in base <code>B</code>, modulo a large
+<code>M</code>. Following lesson 0004, store a prefix array <code>H</code> where <code>H[i]</code> is the
+fingerprint of the first <code>i</code> characters. Then the fingerprint of <code>text[i:j]</code> is
+<code>H[j] &minus; H[i] &middot; B<sup>j&minus;i</sup></code>. The multiply is the new part: unlike a sum, the
+first <code>i</code> characters sit <code>j&minus;i</code> digit positions higher inside <code>H[j]</code>, so
+they must be shifted before they can be subtracted away. (cp-algorithms writes the same identity with powers
+running the other way: &ldquo;hash(s[i&hellip;j]) &middot; p<sup>i</sup> = hash(s[0&hellip;j]) &minus;
+hash(s[0&hellip;i&minus;1]) mod m&rdquo;.)</p>
+
+<pre><code>import random
+M = (1 &lt;&lt; 61) - 1                          # large prime modulus
+
+def find_all(text, pat):
+    n, m = len(text), len(pat)
+    if m == 0 or m &gt; n:
+        return []
+    B = random.randrange(256, M - 1)         # random base, chosen per run
+    H, P = [0] * (n + 1), [1] * (n + 1)      # prefix fingerprints, powers of B
+    for i, ch in enumerate(text):
+        H[i + 1] = (H[i] * B + ord(ch)) % M
+        P[i + 1] = P[i] * B % M
+    target = 0
+    for ch in pat:
+        target = (target * B + ord(ch)) % M
+    hits = []
+    for i in range(n - m + 1):
+        h = (H[i + m] - H[i] * P[m]) % M     # fingerprint of text[i:i+m]
+        if h == target and text[i:i + m] == pat:   # candidate, then confirm
+            hits.append(i)
+    return hits</code></pre>
+
+<p>Cost is O(n + m) for the fingerprints plus O(m) for each <em>candidate</em> you confirm. With almost no false
+candidates that is O(n + m) overall &mdash; but only on inputs where hits are rare. If every window truly
+matches (text and pattern all <code>a</code>), each of the n &minus; m + 1 hits costs a full O(m) confirmation,
+so confirming every hit brings back O(nm). When the question is only &ldquo;does it occur at all?&rdquo;,
+stopping at the first confirmed hit avoids that.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing the loop</span>
+  <p>Comparing windows by slicing costs the window length each. I'll store prefix fingerprints so any window's
+  fingerprint is two lookups. Different fingerprints are a certain no; equal ones are only candidates, so I
+  confirm those against the real characters. Random base, 61-bit prime modulus.</p>
+</div>
+
+<div class="caveat">
+  <p><strong>Three ways to get it wrong</strong>, measured on 20,000 random small cases (text length 1&ndash;14,
+  pattern length 1&ndash;5, alphabets of 2&ndash;4 letters) against a brute-force search.
+  (1) A fingerprint that is the <em>sum</em> of character codes, with no confirmation, disagrees on
+  <strong>6,498</strong> (32.5%): every anagram of the pattern collides. (2) The polynomial hash with a tiny
+  modulus (7) and no confirmation disagrees on <strong>5,078</strong> (25.4%). (3) The same tiny modulus
+  <em>with</em> the confirmation step disagrees on <strong>0</strong> &mdash; confirmation is what keeps the
+  answer exact, and the 61-bit version above also scored 0 with and without it. The modulus therefore decides
+  how <em>fast</em> you are, confirmation decides whether you are <em>right</em>.</p>
+</div>
+
+<h2 id="tested">Why the modulus and base are not decoration</h2>
+
+<p>cp-algorithms puts the chance two random strings collide at &ldquo;&asymp; 1/m&rdquo;, and warns that with
+10<sup>6</sup> strings compared against each other &ldquo;the probability of at least one collision happening
+is already &asymp; 1&rdquo;. It also says m = 2<sup>64</sup> &ldquo;is not recommended&rdquo;, because a
+colliding pair can be generated. We checked the strongest form: the Thue&ndash;Morse string of length 2,048 and
+its bitwise complement collide mod 2<sup>64</sup> for <strong>every</strong> odd base tried (963 of 963 in a
+sample of 2,000 random bases), and for no even base (0 of 1,037); mod 2<sup>61</sup>&minus;1, 0 of 1,000 random
+bases collided. A fixed, well-known base and modulus is the same weakness from the other side: someone can
+choose input against it, which is why the code draws <code>B</code> at random.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="rh-quiz"></div>
+
+<script type="application/json" id="rh-quiz-data">
+{
+  "title": "Retrieval practice — rolling hash",
+  "commit": "Decide what a fingerprint can and cannot prove before you pick.",
+  "perfect": "Six from six. Now write find_all from scratch with no code in front of you, then solve LeetCode 28 (Find the Index of the First Occurrence) and LeetCode 187 (Repeated DNA Sequences). Stretch: LeetCode 1044 (Longest Duplicate Substring), which is exactly question 6.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "Find every occurrence of a 50,000-character pattern inside a 100,000-character text. Which approach fits?",
+      "given": "slicing and comparing each window costs 50,000 per window",
+      "options": [
+        { "text": "Prefix hashes, compare each window fingerprint", "correct": true },
+        { "text": "Edit-distance grids comparing pattern against windows", "correct": false },
+        { "text": "A trie storing every window position", "correct": false },
+        { "text": "A min-heap keyed by window start", "correct": false }
+      ],
+      "why": "<p>Exact matching of same-length windows is what a fingerprint answers in O(1) per window. The edit-distance grid is for approximate matches and a trie for many words sharing prefixes; a heap supplies an ordering nobody asked for.</p>"
+    },
+    {
+      "tag": "what a fingerprint proves",
+      "stem": "Two windows produce different fingerprints under the same base and modulus. What does that prove?",
+      "given": "the same string always yields the same fingerprint",
+      "options": [
+        { "text": "The two strings are certainly unequal", "correct": true },
+        { "text": "The two strings are probably different", "correct": false },
+        { "text": "The two strings share no characters", "correct": false },
+        { "text": "Both strings differ at position zero", "correct": false }
+      ],
+      "why": "<p>A hash is a function, so equal strings can never give different fingerprints; unequal fingerprints are a certain no. Equal fingerprints are the uncertain direction, which is why survivors get confirmed.</p>"
+    },
+    {
+      "tag": "when it breaks",
+      "stem": "Why is summing the character codes of a window a poor fingerprint?",
+      "given": "the sum can be updated in constant time as the window slides",
+      "options": [
+        { "text": "Any anagram of pattern collides too", "correct": true },
+        { "text": "Sums overflow far too quickly always", "correct": false },
+        { "text": "Sums cannot be updated per slide", "correct": false },
+        { "text": "Sums need a random base chosen", "correct": false }
+      ],
+      "why": "<p>Order does not affect a sum, so any rearrangement of the pattern matches it; with no confirmation step this disagreed with brute force on 32.5% of random cases. The sum updates fine in O(1), which is what makes it tempting.</p>"
+    },
+    {
+      "tag": "the modulus and base",
+      "stem": "Which setup lets an adversary craft two strings that collide whatever base you pick?",
+      "given": "cp-algorithms recommends against one of these moduli",
+      "options": [
+        { "text": "Working modulo two to the sixty-fourth", "correct": true },
+        { "text": "Working modulo a prime near 2^61", "correct": false },
+        { "text": "Drawing the base randomly each run", "correct": false },
+        { "text": "Confirming each candidate by comparing characters", "correct": false }
+      ],
+      "why": "<p>The Thue&ndash;Morse pair collides mod 2<sup>64</sup> for every odd base (963 of 963 sampled) but not mod 2<sup>61</sup>&minus;1 (0 of 1,000). A random base and confirmation are the defences, not the weakness.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0004",
+      "stem": "Why is a substring's fingerprint H[j] minus H[i] times a power of the base, not plain H[j] minus H[i]?",
+      "given": "lesson 0004 got a subarray sum from one plain subtraction of prefixes",
+      "options": [
+        { "text": "Earlier characters sit shifted higher in H[j]", "correct": true },
+        { "text": "Fingerprints must never hold a negative number", "correct": false },
+        { "text": "The modulus must divide the prefix length", "correct": false },
+        { "text": "Characters outside the window add no weight", "correct": false }
+      ],
+      "why": "<p>In a sum every element has the same weight, so prefixes cancel directly. In a polynomial the first i characters are multiplied by B<sup>j&minus;i</sup> within H[j], so H[i] must be shifted by that power before it cancels.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0006",
+      "stem": "n = 10^5. Find the longest substring that appears at least twice in the text. Which combination fits?",
+      "given": "if a duplicate of length L exists, one of length L minus 1 does too",
+      "options": [
+        { "text": "Binary search the length, hash each window", "correct": true },
+        { "text": "Try every length, hash each window once", "correct": false },
+        { "text": "Sweep two pointers inward across the text", "correct": false },
+        { "text": "Insert every substring into one single trie", "correct": false }
+      ],
+      "why": "<p>The given sentence is the monotonic licence from lesson 0006, so binary search on length works, and each feasibility check is one pass of window fingerprints in a set. Trying every length is O(n&sup2;), and a trie of every substring has O(n&sup2;) nodes.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('rh-quiz', 'rh-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Same-length substrings compared for equality, n = 10^5. Slicing every
+ window costs its length each, so that's O(n*m) and out. It's an exact
+ match, so edit distance and a trie are out too.
+
+ Prefix fingerprints: H[i+1] = H[i]*B + code, mod a 61-bit prime, with a
+ random base. A window's fingerprint is H[j] - H[i]*B^(j-i): two lookups.
+ Different fingerprints are a certain no; equal ones are only candidates,
+ so I confirm those with a real comparison.
+
+ O(n + m) when hits are rare. If every window truly matches, confirming
+ each costs O(m) again, so for an existence question I stop at the first
+ confirmed hit."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://cp-algorithms.com/string/string-hashing.html">cp-algorithms &mdash; String Hashing</a>:
+  the polynomial hash, the substring identity, the collision probability and the warning about
+  2<sup>64</sup>. Then <a href="https://cp-algorithms.com/string/rabin-karp.html">cp-algorithms &mdash;
+  Rabin-Karp</a> for the pattern-matching loop.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string/">LeetCode 28</a>,
+  <a href="https://leetcode.com/problems/repeated-dna-sequences/">LeetCode 187</a>, then
+  <a href="https://leetcode.com/problems/longest-duplicate-substring/">LeetCode 1044, Longest Duplicate
+  Substring</a>.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>rolling hash</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0004-the-prefix-pair.html">Lesson 0004</a> &mdash; the prefix-boundary idea, now over fingerprints.</li>
+    <li><a href="0006-choosing-the-search-space.html">Lesson 0006</a> &mdash; binary search on the length, for 1044.</li>
+    <li><a href="0019-one-node-per-prefix.html">Lesson 0019</a> &mdash; tries, the tool for many words sharing prefixes.</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: ask me to
+    work one window's fingerprint by hand with a tiny modulus, to explain why the Thue&ndash;Morse pair
+    collides mod 2<sup>64</sup>, or to show how KMP gets exact matching with no randomness at all.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0021-cheapest-first.html">&larr; Lesson 0021</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

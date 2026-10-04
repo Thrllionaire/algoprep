@@ -294,3 +294,9 @@ repeatedly settle the unsettled node with the smallest known distance, using a m
 vertex v becomes marked, the current distance to it d[v] is the shortest, and will no longer change"
 ([cp-algorithms](https://cp-algorithms.com/graph/dijkstra.html)). O(E log V). See
 [lesson 0021](./lessons/0021-cheapest-first.html).
+
+**Rolling hash** — a fingerprint of a string, computed as its characters read as digits in a base `B`
+modulo a large `M`, stored as a prefix array so any substring's fingerprint is `H[j] − H[i]·B^(j−i)`,
+two lookups. Equal strings always get equal fingerprints, so *different* fingerprints prove the strings
+differ; *equal* fingerprints only make them candidates, which is why a match is confirmed against the
+real characters. See [lesson 0022](./lessons/0022-fingerprint-then-check.html).

@@ -396,6 +396,14 @@ the shortest, and will no longer change" (<a
 href="https://cp-algorithms.com/graph/dijkstra.html">cp-algorithms</a>).
 O(E log V). See <a href="./lessons/0021-cheapest-first.html">lesson
 0021</a>.</p>
+<p><strong>Rolling hash</strong> — a fingerprint of a string, computed
+as its characters read as digits in a base <code>B</code> modulo a large
+<code>M</code>, stored as a prefix array so any substring's fingerprint
+is <code>H[j] − H[i]·B^(j−i)</code>, two lookups. Equal strings always
+get equal fingerprints, so <em>different</em> fingerprints prove the
+strings differ; <em>equal</em> fingerprints only make them candidates,
+which is why a match is confirmed against the real characters. See <a
+href="./lessons/0022-fingerprint-then-check.html">lesson 0022</a>.</p>
 </div>
 
 <footer>
