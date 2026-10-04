@@ -362,3 +362,9 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   20,000 random small cases wrong, 32.5%; tiny modulus without confirmation 5,078, 25.4%; the 61-bit
   version, and any version that confirms candidates, 0), plus the Thue–Morse pair colliding mod 2⁶⁴ for
   963 of 963 odd bases.
+- [cp-algorithms — Prefix function, Knuth–Morris–Pratt](https://cp-algorithms.com/string/prefix-function.html)
+  — the definition, the "increase by at most one" amortisation and the pattern + # + text search, quoted
+  in [lesson 0024](./lessons/0024-the-border-you-already-matched.html).
+- **Gap:** no source measures the KMP bugs; lesson 0024 measures them in place (no separator 3,234 of
+  20,000 random small cases wrong, 16.2%; `k -= 1` fallback 2,537, 12.7%; reset-to-zero on text 269, 1.3%;
+  the correct version 0), and the period test (n − π[−1] divides n) against brute force, 0 of 20,000.
