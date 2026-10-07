@@ -108,6 +108,9 @@ apply is far easier than naming the one that does — and it does most of the wo
     is wrong on 16.2% of random small cases.
 25. [Pick the Family, Cold](https://thrllionaire.github.io/algoprep/lessons/0025-pick-the-family-cold.html)
     — a review lesson: eight mixed problem statements across lessons 0001–0024, no new technique.
+26. [The Pointer That Laps](https://thrllionaire.github.io/algoprep/lessons/0026-the-pointer-that-laps.html)
+    — fast and slow pointers: a faster pointer laps a slower one inside a cycle, in O(1) extra space.
+    Comparing values instead of node identity falsely flags a cycle on 70.6% of random cases.
 
 ## Reference cards
 

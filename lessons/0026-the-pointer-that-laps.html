@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Pointer That Laps</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0026 &middot; algoprep</p>
+  <h1>The Pointer That Laps</h1>
+  <p class="standfirst">A singly linked list gives you one thing a plain array doesn't: you cannot
+  look backward, and you may not even know how long it is. &ldquo;Has it looped back on itself?&rdquo;
+  still needs an answer, and the trick is two pointers walking the <em>same</em> direction at
+  <em>different</em> speeds &mdash; so a faster one that is going in circles eventually runs into the
+  slower one from behind.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is a singly linked list, a question about a cycle or the middle node, and a
+  follow-up asking for O(1) extra space.</strong> <em>LeetCode 141, Linked List Cycle:</em> does the
+  list loop back on itself? <em>LeetCode 142, Linked List Cycle II:</em> if so, which node does the
+  loop start at? Close cousins: find the middle node in one pass; detect a cycle in a sequence defined
+  by repeatedly applying a function (Floyd's name for this trick is cycle detection, not just a
+  linked-list party piece).</p>
+</div>
+
+<h2 id="question">The visited set works &mdash; and costs what lesson 0015 already charged</h2>
+
+<p>You already own a tool for &ldquo;has this node been reached before&rdquo;: lesson
+<a href="0015-settle-each-node-once.html">0015</a>'s visited set, which a graph needs because more
+than one path can reach the same node. A singly linked list is a graph where every node has exactly
+one outgoing edge, so walking it and recording every node's identity in a set works identically &mdash;
+the moment you revisit something already in the set, there's a cycle.</p>
+
+<p>It also costs O(n) extra memory, one entry per node visited, and the follow-up on both LeetCode
+problems is explicit: solve it in O(1) extra space. That single constraint is what rules the visited
+set out and makes this lesson's trick worth having &mdash; not a faster asymptotic time, a cheaper
+<em>space</em> budget, for the specific case where the graph is a single thread rather than a tangle.</p>
+
+<h2 id="algorithm">Two speeds, one loop</h2>
+
+<p>Walk two pointers from the head: <code>slow</code> one step at a time, <code>fast</code> two steps
+at a time. If the list has no cycle, <code>fast</code> reaches the end first and the loop stops. If it
+does have a cycle, <code>fast</code> enters the cycle before <code>slow</code> does and then starts
+lapping it &mdash; every step inside the cycle, <code>fast</code> gains one position on
+<code>slow</code>, so within at most one full lap it must land on the exact node <code>slow</code> is
+standing on. <a href="https://cp-algorithms.com/others/tortoise_and_hare.html">cp-algorithms</a> states
+the setup plainly: &ldquo;slow will move one step at a time. fast will move two steps at a time&hellip;
+check if at any point they point to the same node before any one (or both) reach null.&rdquo;</p>
+
+<pre><code>def has_cycle(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+        if slow is fast:          # same node, not same value - see the caveat
+            return True
+    return False</code></pre>
+
+<p>Finding <em>where</em> the cycle starts is a second phase, run after the meeting point is found.
+Reset one pointer to the head, leave the other at the meeting point, then move both one step at a
+time; where they meet the second time is the cycle's entry node. The source states the move and its
+payoff together: &ldquo;Reset the slow pointer to the head of the linked list. Move both pointers one
+step at a time. The point they will meet at will be the starting point of the cycle&rdquo; &mdash; the
+distance from the head to the entry turns out to equal the distance from the meeting point back
+around to the entry, which is exactly what moving both at the same speed from those two starting
+points discovers.</p>
+
+<pre><code>def cycle_start(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+        if slow is fast:
+            slow = head                     # the reset - see the caveat
+            while slow is not fast:
+                slow = slow.next
+                fast = fast.next
+            return slow
+    return None</code></pre>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing fast and slow pointers</span>
+  <p>Can I only walk forward, one link at a time, with no index and maybe no known length &mdash; and
+  does the question ask about a cycle, a loop-back, or a middle position? If the problem allows O(n)
+  space, a visited set (lesson 0015's tool) answers the same question with less to prove. Fast/slow
+  earns its place only when O(1) space is required or explicitly rewarded.</p>
+</div>
+
+<div class="caveat">
+  <p><strong>Bug one: comparing values, not nodes.</strong> <code>slow is fast</code> checks identity;
+  swap it for <code>slow.val == fast.val</code> and the code still runs and still looks right, but on
+  lists with repeated values it declares a cycle that was never there &mdash; two different positions
+  can simply hold equal numbers. Measured on 20,000 random acyclic lists with values drawn from
+  0&ndash;4 (heavy repetition), the value-equality version falsely reported a cycle on
+  <strong>14,110</strong> &mdash; <strong>70.6%</strong>. On the same lists with values drawn from
+  0&ndash;999,999 (collisions now rare), it falsely reported <strong>0 of 20,000</strong> &mdash; the
+  bug is invisible exactly when test data happens to use distinct numbers.</p>
+  <p><strong>Bug two: skipping the reset.</strong> If the second phase moves both pointers one step at
+  a time from the meeting point <em>without</em> resetting one to the head first, the two pointers are
+  already standing on the same node, so the &ldquo;move until they meet&rdquo; loop exits immediately
+  and simply returns the meeting point &mdash; which is almost never the cycle's actual entry. Measured
+  on 20,000 random cyclic lists, the no-reset version returned the wrong node on
+  <strong>15,870</strong> &mdash; <strong>79.4%</strong> of the time.</p>
+</div>
+
+<h2>What O(1) space actually buys, measured</h2>
+
+<p>On a 100,000-node list (half tail, half cycle), the visited-set approach's peak traced memory was
+<strong>8,808,248 bytes</strong> for the set of node identities; <code>has_cycle</code>'s peak traced
+memory was effectively <strong>0 bytes</strong> &mdash; two pointer variables, however long the list.
+Both answer the same question; only one of them is paying rent per node.</p>
+
+<h2 id="tested">Checked against a slower, honest reference</h2>
+
+<p><code>has_cycle</code> and <code>cycle_start</code> were run against the visited-set reference on
+20,000 random lists, mixing acyclic lists and cyclic ones of random tail and cycle length.
+<strong>0 of 20,000</strong> disagreed on either question.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="floyd-quiz"></div>
+
+<script type="application/json" id="floyd-quiz-data">
+{
+  "title": "Retrieval practice — fast and slow pointers",
+  "commit": "Decide what each pointer is doing before you pick.",
+  "perfect": "Six from six. Now write has_cycle and cycle_start from scratch with no code in front of you, then solve LeetCode 141 (Linked List Cycle) and LeetCode 142 (Linked List Cycle II) for real.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "A problem hands you a singly linked list, asks whether it loops back on itself, and asks for O(1) extra space. Which fits?",
+      "given": "no index, maybe no known length, and a hard space limit",
+      "options": [
+        { "text": "Two pointers walking forward at two speeds", "correct": true },
+        { "text": "A visited set recording every node reached", "correct": false },
+        { "text": "A min-heap holding every node by rank", "correct": false },
+        { "text": "Binary search over every node by index", "correct": false }
+      ],
+      "why": "<p>A visited set answers the same question but costs O(n) space, which the follow-up rules out. A heap and binary search both need random access this structure doesn't offer.</p>"
+    },
+    {
+      "tag": "the mechanism",
+      "stem": "Why must fast eventually land on the exact same node as slow, if a cycle exists?",
+      "given": "fast moves two steps per turn, slow moves one",
+      "options": [
+        { "text": "Fast closes the gap toward slow each turn", "correct": true },
+        { "text": "Fast always moves along at the same speed", "correct": false },
+        { "text": "Both pointers reset to the head at once", "correct": false },
+        { "text": "The cycle length is always an even span", "correct": false }
+      ],
+      "why": "<p>Once both pointers are inside the cycle, the gap between them shrinks by exactly one node each turn, so within at most one full lap fast lands on the node slow occupies.</p>"
+    },
+    {
+      "tag": "the second phase",
+      "stem": "After slow and fast meet, why reset one pointer to the head rather than just keep walking both from the meeting point?",
+      "given": "the goal now is the cycle's entry node, not just proof a cycle exists",
+      "options": [
+        { "text": "Head to entry distance equals meeting to entry looped", "correct": true },
+        { "text": "Resetting makes the two pointers move at new speeds", "correct": false },
+        { "text": "Without resetting the whole list needs full rebuilding now", "correct": false },
+        { "text": "The meeting point always already is the entry node", "correct": false }
+      ],
+      "why": "<p>The distance from the head to the entry equals the distance from the meeting point forward to the entry, modulo the cycle length - which is exactly what walking both one step at a time from those two starting points discovers.</p>"
+    },
+    {
+      "tag": "the bug",
+      "stem": "Swapping slow is fast for slow.val == fast.val, tested on acyclic lists with values repeated from a small range, falsely reported a cycle how often?",
+      "given": "the list truly has no cycle in every one of these trials",
+      "options": [
+        { "text": "Roughly seven lists out of every ten total", "correct": true },
+        { "text": "Roughly one list out of every thousand total", "correct": false },
+        { "text": "Never since no cycle truly exists in any", "correct": false },
+        { "text": "Only on lists shorter than three nodes long", "correct": false }
+      ],
+      "why": "<p>With values drawn from a small range, two different positions frequently hold equal numbers; 14,110 of 20,000 (70.6%) acyclic lists were falsely flagged as cyclic.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0015",
+      "stem": "Lesson 0015's visited set works on any graph, cyclic or not. What does a linked list have that a general graph doesn't, which this lesson's trick relies on?",
+      "given": "every node here has exactly one outgoing edge",
+      "options": [
+        { "text": "Every node here points only to one next node", "correct": true },
+        { "text": "Every node here stores its own full list length", "correct": false },
+        { "text": "The list here is always fully free of cycles", "correct": false },
+        { "text": "Every node's value here is always unique across it", "correct": false }
+      ],
+      "why": "<p>A single outgoing edge per node means there is exactly one path forward, which is what lets two pointers at different speeds substitute for marking every node visited.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0005",
+      "stem": "Lesson 0005's two pointers walk inward from both ends of a sorted array. How does this lesson's pair differ?",
+      "given": "both are called two pointers, but they are not the same move",
+      "options": [
+        { "text": "Same direction different speeds no sorting required at all", "correct": true },
+        { "text": "Opposite direction same speed sorting required here as well", "correct": false },
+        { "text": "Both pointers start from opposite ends of list always", "correct": false },
+        { "text": "This lesson needs the list sorted by value too", "correct": false }
+      ],
+      "why": "<p>Lesson 0005 needs sortedness to let two ends close inward correctly. Here both pointers start at the head and move forward only, at different speeds, and sortedness never enters it.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('floyd-quiz', 'floyd-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"Singly linked list, question about a cycle, O(1) extra space -
+ a visited set would answer it but costs O(n), so that's out.
+
+ Two pointers from the head: slow moves one step, fast moves two.
+ If there's no cycle, fast hits null first. If there is one, fast
+ enters it first and then laps slow from behind - the gap closes
+ by one node every turn, so they land on the same node within one
+ lap. I compare node identity, not value, since values can repeat.
+
+ If I need the cycle's start, not just whether one exists: after
+ they meet, reset one pointer to the head, then move both one step
+ at a time. Where they meet the second time is the entry."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://cp-algorithms.com/others/tortoise_and_hare.html">cp-algorithms &mdash; Finding
+  a Cycle (Floyd's Algorithm)</a>: the two-phase setup and the proof for the entry-finding step,
+  quoted above.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/linked-list-cycle/">LeetCode 141, Linked List
+  Cycle</a>, then <a href="https://leetcode.com/problems/linked-list-cycle-ii/">LeetCode 142, Linked
+  List Cycle II</a>.</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>linked list</em>,
+      <em>fast and slow pointers (Floyd's cycle detection)</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0015-settle-each-node-once.html">Lesson 0015</a> &mdash; the visited set, the
+      heavier tool this trick replaces when the graph is a single thread.</li>
+    <li><a href="0005-the-inward-walk.html">Lesson 0005</a> &mdash; the other two-pointer shape,
+      opposite ends and sortedness instead of same direction and speed.</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: ask
+    me to trace both pointers by hand on a list with a 3-node tail and a 4-node cycle, or to show why
+    the same trick solves &ldquo;find the duplicate number&rdquo; when an array is read as a linked
+    list via its values.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0025-pick-the-family-cold.html">&larr; Lesson 0025</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

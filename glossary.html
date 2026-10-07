@@ -418,6 +418,21 @@ with k characters matched, KMP falls back to π[k−1] instead of
 restarting. See <a
 href="./lessons/0024-the-border-you-already-matched.html">lesson
 0024</a>.</p>
+<p><strong>Linked list</strong> — a sequence of nodes where each node
+holds a value and a pointer to the next node only; there is no index,
+and you cannot look backward. A singly linked list is a graph where
+every node has exactly one outgoing edge. See <a
+href="./lessons/0026-the-pointer-that-laps.html">lesson 0026</a>.</p>
+<p><strong>Fast and slow pointers (Floyd's cycle detection)</strong> —
+two pointers starting at the head of a linked list, one moving one step
+per turn and the other two; if a cycle exists the faster one laps the
+slower one from behind. "slow will move one step at a time. fast will
+move two steps at a time… check if at any point they point to the same
+node before any one (or both) reach null" (<a
+href="https://cp-algorithms.com/others/tortoise_and_hare.html">cp-algorithms</a>).
+A second phase — reset one pointer to the head, then move both one step
+at a time — finds the cycle's entry node. See <a
+href="./lessons/0026-the-pointer-that-laps.html">lesson 0026</a>.</p>
 </div>
 
 <footer>

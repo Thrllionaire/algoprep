@@ -368,3 +368,11 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
 - **Gap:** no source measures the KMP bugs; lesson 0024 measures them in place (no separator 3,234 of
   20,000 random small cases wrong, 16.2%; `k -= 1` fallback 2,537, 12.7%; reset-to-zero on text 269, 1.3%;
   the correct version 0), and the period test (n − π[−1] divides n) against brute force, 0 of 20,000.
+- [cp-algorithms — Finding a Cycle (Floyd's Algorithm)](https://cp-algorithms.com/others/tortoise_and_hare.html)
+  — the two-phase fast/slow setup and the entry-finding proof, quoted in
+  [lesson 0026](./lessons/0026-the-pointer-that-laps.html).
+- **Gap:** no source measures the value-equality or skip-the-reset bugs; lesson 0026 measures them in
+  place (value equality on small-range acyclic lists 14,110 of 20,000 wrong, 70.6%, 0 of 20,000 on
+  large-range values; skip-the-reset cycle-start 15,870 of 20,000 wrong, 79.4%), and the O(1)-versus-O(n)
+  space claim directly (visited-set peak traced memory 8,808,248 bytes vs Floyd's ~0 bytes on a
+  100,000-node list).

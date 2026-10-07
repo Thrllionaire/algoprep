@@ -307,3 +307,15 @@ string). `abca` is a border of `abcabca`. See [lesson 0024](./lessons/0024-the-b
 **Prefix function** — the array π where π[i] is the length of the longest border of `s[0..i]`. After a
 mismatch with k characters matched, KMP falls back to π[k−1] instead of restarting. See
 [lesson 0024](./lessons/0024-the-border-you-already-matched.html).
+
+**Linked list** — a sequence of nodes where each node holds a value and a pointer to the next node
+only; there is no index, and you cannot look backward. A singly linked list is a graph where every
+node has exactly one outgoing edge. See [lesson 0026](./lessons/0026-the-pointer-that-laps.html).
+
+**Fast and slow pointers (Floyd's cycle detection)** — two pointers starting at the head of a linked
+list, one moving one step per turn and the other two; if a cycle exists the faster one laps the
+slower one from behind. "slow will move one step at a time. fast will move two steps at a time…
+check if at any point they point to the same node before any one (or both) reach null"
+([cp-algorithms](https://cp-algorithms.com/others/tortoise_and_hare.html)). A second phase — reset
+one pointer to the head, then move both one step at a time — finds the cycle's entry node. See
+[lesson 0026](./lessons/0026-the-pointer-that-laps.html).
