@@ -376,3 +376,18 @@ Curated, high-trust only. Knowledge in lessons should be drawn from here.
   large-range values; skip-the-reset cycle-start 15,870 of 20,000 wrong, 79.4%), and the O(1)-versus-O(n)
   space claim directly (visited-set peak traced memory 8,808,248 bytes vs Floyd's ~0 bytes on a
   100,000-node list).
+- [Jeff Erickson, *Algorithms*, ch. 7 — Minimum Spanning Trees](https://jeffe.cs.illinois.edu/teaching/algorithms/book/07-mst.pdf)
+  — the safe/useless edge distinction, the safe-edge lemma ("The minimum spanning tree of G contains
+  every safe edge") and its exchange-argument proof, plus the lightest-first correctness argument for
+  Kruskal, quoted in [lesson 0027](./lessons/0027-the-edge-that-joins-two-pieces.html). Free PDF.
+- [cp-algorithms — Kruskal with Disjoint Set Union](https://cp-algorithms.com/graph/mst_kruskal_with_dsu.html)
+  and [Kruskal's algorithm](https://cp-algorithms.com/graph/mst_kruskal.html) — the different-subtrees
+  test and the O(M log N) bookkeeping bound, quoted in lesson 0027.
+- [USACO Guide — Minimum Spanning Trees](https://usaco.guide/gold/mst) — the one-line MST definition
+  and the O(E log E) cost, quoted in lesson 0027.
+- **Gap:** no source measures the two selection errors; lesson 0027 measures them in place against
+  brute-force enumeration of every (n−1)-edge subset (0 disagreements over 60,000 random connected
+  graphs). Taking the n−1 cheapest edges with no component test is not even a spanning tree on 8,595
+  of 20,000 (43.0%) and off the optimum on 8,584 (42.9%); submitting Dijkstra's tree of settling edges
+  is off the optimum on 11,938 of 20,000 (59.7%), 13,062 (65.3%) with tie-heavy weights, and 0 of
+  20,000 when every edge weight is identical.

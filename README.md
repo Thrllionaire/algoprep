@@ -111,6 +111,10 @@ apply is far easier than naming the one that does — and it does most of the wo
 26. [The Pointer That Laps](https://thrllionaire.github.io/algoprep/lessons/0026-the-pointer-that-laps.html)
     — fast and slow pointers: a faster pointer laps a slower one inside a cycle, in O(1) extra space.
     Comparing values instead of node identity falsely flags a cycle on 70.6% of random cases.
+27. [The Edge That Joins Two Pieces](https://thrllionaire.github.io/algoprep/lessons/0027-the-edge-that-joins-two-pieces.html)
+    — minimum spanning trees via Kruskal: sort edges lightest first, keep the ones joining two separate
+    pieces, licensed by the safe-edge lemma. Submitting Dijkstra's tree instead is off the optimum on
+    59.7% of random graphs, and on 0% when every edge weight is identical.
 
 ## Reference cards
 

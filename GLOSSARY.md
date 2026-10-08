@@ -319,3 +319,27 @@ check if at any point they point to the same node before any one (or both) reach
 ([cp-algorithms](https://cp-algorithms.com/others/tortoise_and_hare.html)). A second phase — reset
 one pointer to the head, then move both one step at a time — finds the cycle's entry node. See
 [lesson 0026](./lessons/0026-the-pointer-that-laps.html).
+
+**Spanning tree** — a subgraph of a connected undirected graph that touches every vertex, is
+connected, and has no cycle; it always has exactly *n* − 1 edges. "a subtree of this graph which
+connects all vertices" ([cp-algorithms](https://cp-algorithms.com/graph/mst_kruskal.html)). See
+[lesson 0027](./lessons/0027-the-edge-that-joins-two-pieces.html).
+
+**Minimum spanning tree (MST)** — "a spanning tree such that the sum of edge weights are minimized"
+([USACO Guide](https://usaco.guide/gold/mst)). Defined only for undirected graphs, and distinct from
+the tree Dijkstra finishes holding: that one minimises path cost from one named source, this one
+minimises the total weight of the edges kept. See
+[lesson 0027](./lessons/0027-the-edge-that-joins-two-pieces.html).
+
+**Safe edge** — relative to a partly-built spanning forest, "the minimum-weight edge with exactly one
+endpoint in some component"; an edge with both endpoints in the same component is *useless*
+([Erickson, *Algorithms*, ch. 7](https://jeffe.cs.illinois.edu/teaching/algorithms/book/07-mst.pdf)).
+The safe-edge lemma — "The minimum spanning tree of G contains every safe edge" — is the licence for
+being greedy about weight. See [lesson 0027](./lessons/0027-the-edge-that-joins-two-pieces.html).
+
+**Kruskal's algorithm** — build a minimum spanning tree by scanning edges lightest first and keeping
+each one whose endpoints are in different components: "if the ends of the currently picked edge belong
+to different subtrees, these subtrees are combined"
+([cp-algorithms](https://cp-algorithms.com/graph/mst_kruskal.html)). The component test is union-find,
+so sorting dominates: O(E log E). See
+[lesson 0027](./lessons/0027-the-edge-that-joins-two-pieces.html).

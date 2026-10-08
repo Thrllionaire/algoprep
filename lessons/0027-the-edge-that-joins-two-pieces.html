@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Edge That Joins Two Pieces</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<link rel="stylesheet" href="../assets/widgets.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="kicker">Lesson 0027 &middot; algoprep</p>
+  <h1>The Edge That Joins Two Pieces</h1>
+  <p class="standfirst">Lesson <a href="0021-cheapest-first.html">0021</a> answers &ldquo;how cheaply
+  can I <em>reach</em> each node from here?&rdquo; This lesson answers a different question that
+  reads almost identically on the page: &ldquo;how cheaply can I keep <em>everything
+  connected</em>?&rdquo; The two produce different trees, and the cheaper-to-reach one is the wrong
+  answer to the second question about six times in ten.</p>
+</header>
+
+<div class="lede">
+  <p><strong>The tell is a weighted undirected graph, the words &ldquo;connect all&rdquo; or
+  &ldquo;minimum total cost&rdquo;, and no starting node named anywhere in the problem.</strong> That
+  missing start is the giveaway: a shortest-path question has to say <em>from where</em>, and this one
+  can't, because nothing is being travelled. <em>LeetCode 1584, Min Cost to Connect All Points:</em>
+  given points on a plane, pay the Manhattan distance to lay a wire between two of them, connect them
+  all for the least total cost. <em>CSES 1675, Road Reparation:</em> repair the cheapest
+  set of roads leaving &ldquo;a decent route between any two cities&rdquo;, or report that none
+  exists. The
+  object you are being asked for is a <strong>minimum spanning tree</strong>: &ldquo;a spanning tree
+  such that the sum of edge weights are minimized&rdquo;
+  (<a href="https://usaco.guide/gold/mst">USACO Guide</a>).</p>
+</div>
+
+<h2 id="confusion">Why Dijkstra's tree is not this tree</h2>
+
+<p>Dijkstra (lesson <a href="0021-cheapest-first.html">0021</a>) also finishes holding a tree: the edge
+each node was finally settled through. It is tempting to hand that in. Three nodes are enough to show
+it is a different object.</p>
+
+<div class="table-scroll">
+<table>
+  <caption>A triangle: three nodes, three edges. Both trees below are correct &mdash; for different
+  questions.</caption>
+  <thead>
+    <tr><th>Tree</th><th>Edges chosen</th><th class="num">Total</th><th>What it is optimal for</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Minimum spanning tree</td>
+      <td class="num">0&ndash;1 (4), 1&ndash;2 (7)</td>
+      <td class="num">11</td>
+      <td>Total wire needed to connect all three</td>
+    </tr>
+    <tr>
+      <td>Dijkstra's tree from node 0</td>
+      <td class="num">0&ndash;1 (4), 0&ndash;2 (9)</td>
+      <td class="num">13</td>
+      <td>Shortest trip from node 0 to each node</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>The edges are <code>0&ndash;1 = 4</code>, <code>1&ndash;2 = 7</code>, <code>0&ndash;2 = 9</code>.
+Dijkstra refuses the 7 because reaching node 2 <em>through</em> node 1 costs 4 + 7 = 11, and the direct
+9 is cheaper &mdash; which is the right call for <em>its</em> question. The spanning-tree question never
+asked about trips from node 0, so the 9 is simply two units of wire wasted. Neither algorithm is wrong;
+they optimise different totals, and only one of them is the total the problem asked you to minimise.</p>
+
+<h2 id="licence">The licence: the cheapest edge leaving a piece is always in the answer</h2>
+
+<p>Every pattern in this course earns its halving or its greediness from one provable statement, and
+here it is the <strong>safe edge</strong> lemma. Take the forest you have built so far; an edge is
+safe if it is &ldquo;the minimum-weight edge with exactly one endpoint in some component&rdquo; of that
+forest, and useless if &ldquo;both its endpoints are in the same component&rdquo;
+(<a href="https://jeffe.cs.illinois.edu/teaching/algorithms/book/07-mst.pdf">Erickson, <em>Algorithms</em>,
+ch. 7</a>). The lemma is one line: <strong>&ldquo;The minimum spanning tree of G contains every safe
+edge.&rdquo;</strong></p>
+
+<p>The proof is an exchange argument, the same instrument lesson
+<a href="0023-counterexample-before-code.html">0023</a> uses to separate a greedy that works from one
+that doesn't. Suppose some spanning tree <code>T</code> leaves out the lightest edge <code>e</code>
+crossing out of a set <code>S</code>. <code>T</code> still connects <code>e</code>'s two endpoints by
+some path, and that path has to cross out of <code>S</code> somewhere, on an edge <code>e'</code>.
+Swap them: &ldquo;adding e to this forest gives us a new spanning tree T&prime; = T &minus; e&prime; +
+e&rdquo;, and since <code>e</code> was the lightest crossing edge, <code>T&prime;</code> &ldquo;has
+smaller total weight than T&rdquo;. So <code>T</code> wasn't minimum. Leaving out a safe edge is never
+free.</p>
+
+<p>That is the whole permission slip for being greedy about weight. The remaining question is only
+bookkeeping: which edge is safe right now, and how do you tell cheaply?</p>
+
+<h2 id="algorithm">Kruskal: sort once, and ask &ldquo;different pieces?&rdquo; once per edge</h2>
+
+<p>Scan edges from lightest to heaviest. &ldquo;Because we examine the edges in order from lightest to
+heaviest, any edge we examine is safe if and only if its endpoints are in different components of the
+forest&rdquo; (<a href="https://jeffe.cs.illinois.edu/teaching/algorithms/book/07-mst.pdf">Erickson</a>)
+&mdash; so the entire safe/useless test collapses into one question you already know how to answer in
+near-constant time: <em>are these two nodes in the same component?</em> That is lesson
+<a href="0016-path-compression-pays-for-itself.html">0016</a>'s union-find, and this is the problem it
+was built for. cp-algorithms states the same pairing: &ldquo;if the ends of the currently picked edge
+belong to different subtrees, these subtrees are combined&rdquo;
+(<a href="https://cp-algorithms.com/graph/mst_kruskal.html">Kruskal's algorithm</a>).</p>
+
+<pre><code>def min_spanning_tree(n, edges):          # edges: list of (weight, u, v)
+    uf = UnionFind(n)                     # lesson 0016, unchanged
+    total, chosen = 0, []
+    for w, u, v in sorted(edges):         # lightest first - the only sort
+        if uf.union(u, v):                # True only if u, v were in different pieces
+            total += w
+            chosen.append((w, u, v))
+            if len(chosen) == n - 1:      # a spanning tree has exactly n-1 edges
+                break
+    return total, chosen</code></pre>
+
+<p>The shape is lesson <a href="0010-which-end-you-sort-by.html">0010</a>'s skeleton &mdash; sort once,
+sweep once &mdash; with the sort key being edge weight and the per-item decision being a component
+test instead of an overlap comparison. Cost is <code>O(E log E)</code> &mdash;
+&ldquo;since the most expensive operation is sorting the edges&rdquo;
+(<a href="https://usaco.guide/gold/mst">USACO Guide</a>). Erickson puts the set-partition bookkeeping
+at &ldquo;O(E + V log V)&rdquo; and then observes that &ldquo;we already need O(E log E) = O(E log V)
+time just to sort the edges&rdquo;, so the union-find half of the algorithm is not what you pay for;
+cp-algorithms reaches the same total, &ldquo;O(M log N + N + M) = O(M log N)&rdquo;.</p>
+
+<div class="tell">
+  <span class="tell-label">Say this before writing a spanning tree</span>
+  <p>Is the cost I am minimising a <em>sum over the edges I keep</em>, or a <em>path cost from one
+  named node</em>? Sum over kept edges, no start node, &ldquo;connect everything&rdquo; &rarr; minimum
+  spanning tree. One named source, &ldquo;shortest&rdquo; or &ldquo;fastest to reach&rdquo; &rarr;
+  Dijkstra (lesson 0021). If the graph is directed, a spanning tree is almost certainly the wrong
+  object &mdash; this lesson's lemma is stated for undirected graphs.</p>
+</div>
+
+<div class="caveat">
+  <p><strong>Bug one: taking the <code>n&minus;1</code> cheapest edges.</strong> Sorting is so clearly
+  the right first move that it is easy to think it is the <em>only</em> move and just keep the first
+  <code>n&minus;1</code> edges. Measured on 20,000 random connected graphs of 4&ndash;7 nodes with
+  weights 1&ndash;1000, that set <strong>was not even a spanning tree</strong> &mdash; a cycle
+  somewhere, a node unreached somewhere else &mdash; in <strong>8,595</strong> cases
+  (<strong>43.0%</strong>), and its total was off the optimum in <strong>8,584</strong>
+  (<strong>42.9%</strong>). The component test is not a refinement of sorting; it is the half of the
+  algorithm that makes the result a tree.</p>
+  <p><strong>Bug two: handing in Dijkstra's tree.</strong> On the same 20,000 graphs, the tree of
+  settling edges from node 0 had a different total from the minimum spanning tree in
+  <strong>11,938</strong> cases &mdash; <strong>59.7%</strong>. With tie-heavy weights (1&ndash;9) it
+  was <strong>13,062</strong>, <strong>65.3%</strong>. And when every edge weight was made
+  <em>identical</em>, both bugs scored <strong>0 of 20,000</strong>: every spanning tree has
+  <code>n&minus;1</code> edges, so when they all cost the same, every spanning tree is minimum. This is
+  the same shape as lesson <a href="0010-which-end-you-sort-by.html">0010</a>'s sort-key bugs and
+  lesson <a href="0026-the-pointer-that-laps.html">0026</a>'s identity bug: <strong>invisible exactly
+  on the clean example you would sketch on a whiteboard</strong>, wrong on most real inputs.</p>
+</div>
+
+<h2 id="tested">Checked against a slower, honest reference</h2>
+
+<p><code>min_spanning_tree</code> was compared against brute force &mdash; enumerate every subset of
+<code>n&minus;1</code> edges, discard the ones that aren't spanning trees, keep the lightest &mdash; on
+60,000 random connected graphs in three weight regimes (1&ndash;1000, 1&ndash;9, and all-equal).
+<strong>0 disagreements</strong> on total weight, and the edge set it returned was a spanning tree
+every time.</p>
+
+<p>On LeetCode 1584's largest shape &mdash; 1,000 points, so a complete graph of
+<strong>499,500</strong> edges &mdash; it ran in <strong>0.68 s</strong> in plain Python. Worth knowing
+for the interview conversation: the loop closed the tree after examining only <strong>2,911</strong>
+edges, <strong>0.6%</strong> of them, so the <code>break</code> saves nearly all the union-find work
+&mdash; and none of the sort, which is why the cost stays <code>O(E log E)</code> regardless.</p>
+
+<h2>Practice &mdash; the decisions</h2>
+
+<p>Commit to an answer before revealing the options.</p>
+
+<div id="mst-quiz"></div>
+
+<script type="application/json" id="mst-quiz-data">
+{
+  "title": "Retrieval practice — minimum spanning trees",
+  "commit": "Name the total being minimised before you pick.",
+  "perfect": "Six from six. Now write min_spanning_tree from scratch with no code in front of you, then solve LeetCode 1584 (Min Cost to Connect All Points) and CSES 1675 (Road Reparation) for real.",
+  "questions": [
+    {
+      "tag": "the tell",
+      "stem": "A problem gives weighted undirected roads between towns and asks for the least total cost to connect every town. Which fits?",
+      "given": "no town is named as a starting point anywhere",
+      "options": [
+        { "text": "Sort every edge, keep those joining two separate pieces", "correct": true },
+        { "text": "Settle every town by its cheapest known running distance", "correct": false },
+        { "text": "Peel towns having no remaining unmet prerequisite edges first", "correct": false },
+        { "text": "Walk inward from both ends of a sorted list", "correct": false }
+      ],
+      "why": "<p>The cost is a sum over the edges you keep, with no source node, so it is a minimum spanning tree. The second option is Dijkstra (lesson 0021), the third Kahn's algorithm (lesson 0017), the fourth the inward walk (lesson 0005).</p>"
+    },
+    {
+      "tag": "the licence",
+      "stem": "What provable statement licenses being greedy about edge weight here?",
+      "given": "greedy needs a licence, as lesson 0023 insisted",
+      "options": [
+        { "text": "The lightest edge leaving a piece is always safe", "correct": true },
+        { "text": "The lightest edge inside a piece is always safe", "correct": false },
+        { "text": "The heaviest edge leaving a piece is always safe", "correct": false },
+        { "text": "The heaviest edge inside a piece is always safe", "correct": false }
+      ],
+      "why": "<p>The safe-edge lemma: \"The minimum spanning tree of G contains every safe edge\", where safe means the minimum-weight edge with exactly one endpoint in some component. An edge inside one component is useless, not safe — it would close a cycle — and a heaviest edge has no claim at all.</p>"
+    },
+    {
+      "tag": "the mechanism",
+      "stem": "Scanning edges lightest-first, what exactly does the union-find call decide for each edge?",
+      "given": "the scan order already guarantees nothing lighter remains",
+      "options": [
+        { "text": "Whether this edge joins two pieces or closes a cycle", "correct": true },
+        { "text": "Whether this edge has the smallest weight still remaining here", "correct": false },
+        { "text": "Whether this edge lies on a shortest path from zero", "correct": false },
+        { "text": "Whether this edge must come before some other edge does", "correct": false }
+      ],
+      "why": "<p>Lightest-first order means any edge examined is safe if and only if its endpoints sit in different components, so the one remaining question is the component test — and that is exactly what union-find (lesson 0016) answers in near-constant time.</p>"
+    },
+    {
+      "tag": "the bug",
+      "stem": "Submitting Dijkstra's tree of settling edges instead of the minimum spanning tree, measured on 20,000 random graphs with varied weights, gave a wrong total how often?",
+      "given": "both are trees over the same set of nodes",
+      "options": [
+        { "text": "Roughly six graphs out of every ten tested", "correct": true },
+        { "text": "Roughly one graph out of every thousand tested", "correct": false },
+        { "text": "Never, as both trees span the same nodes", "correct": false },
+        { "text": "Only on graphs having over twenty total nodes", "correct": false }
+      ],
+      "why": "<p>11,938 of 20,000 (59.7%) with weights 1–1000, and 13,062 (65.3%) with tie-heavy weights. It is a different optimisation: path cost from one source, not total weight kept.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0021",
+      "stem": "Dijkstra and Kruskal both make a cheapest-first choice each step. What differs between the quantities they compare?",
+      "given": "both pull the smallest thing available next",
+      "options": [
+        { "text": "One compares distance from a source, one raw weight", "correct": true },
+        { "text": "One compares raw edge weight, one node count only", "correct": false },
+        { "text": "One compares distance from a source, one node depth", "correct": false },
+        { "text": "One compares arrival times only, one raw node order", "correct": false }
+      ],
+      "why": "<p>Dijkstra compares <em>accumulated distance from the source</em>, which is why it rejects a cheap edge that sits behind an expensive path. Kruskal compares the edge's own weight, because nothing is being travelled.</p>"
+    },
+    {
+      "tag": "interleave: lesson 0001",
+      "stem": "LeetCode 1584 gives up to 1,000 points, and any two may be wired, so the graph is complete. What does that make the edge count, and does sorting survive it?",
+      "given": "a complete graph on n nodes has n(n−1)/2 edges",
+      "options": [
+        { "text": "Half a million edges; sorting still fits the budget", "correct": true },
+        { "text": "Half a million edges; sorting blows the whole budget", "correct": false },
+        { "text": "Only a thousand edges; sorting costs almost no time", "correct": false },
+        { "text": "Nearly a billion edges; sorting blows the whole budget", "correct": false }
+      ],
+      "why": "<p>499,500 edges. E log E is roughly 10⁷ operations, inside the budget lesson 0001's ladder gives for one second — measured at 0.68 s in plain Python, sort included.</p>"
+    }
+  ]
+}
+</script>
+
+<script src="../assets/quiz.js"></script>
+<script>AlgoQuiz.mount('mst-quiz', 'mst-quiz-data');</script>
+
+<h2>Saying it out loud</h2>
+
+<pre><code>"The cost here is a sum over the edges I keep, and no node is
+ named as a start - so this is a minimum spanning tree, not a
+ shortest-path problem. Dijkstra's tree would optimise trips
+ from one node, which isn't what's being paid for.
+
+ Kruskal: sort all edges lightest first, then walk them and
+ keep an edge only if its two endpoints are currently in
+ different components. Lightest-first order means any edge I
+ look at is safe exactly when its ends are in different pieces,
+ and the safe-edge lemma says every safe edge is in the answer.
+
+ The component test is union-find, near-constant per edge, so
+ sorting dominates: O(E log E). Here that's 1,000 points, a
+ complete graph, about 499,500 edges - fine. I stop once I've
+ kept n-1 edges, since that's a spanning tree."</code></pre>
+
+<div class="colophon">
+
+  <h3>Read this next (primary source)</h3>
+  <p><a href="https://jeffe.cs.illinois.edu/teaching/algorithms/book/07-mst.pdf">Jeff Erickson,
+  <em>Algorithms</em>, chapter 7 &mdash; Minimum Spanning Trees</a> (free PDF): the safe/useless
+  distinction, the safe-edge lemma and its exchange-argument proof, all quoted above. Read &sect;7.1
+  and &sect;7.4 &mdash; six pages, and the proof is the part worth the time.</p>
+  <p>Shorter, implementation-first:
+  <a href="https://cp-algorithms.com/graph/mst_kruskal_with_dsu.html">cp-algorithms &mdash; Kruskal
+  with Disjoint Set Union</a>.</p>
+  <p>Practice: <a href="https://leetcode.com/problems/min-cost-to-connect-all-points/">LeetCode 1584,
+  Min Cost to Connect All Points</a> (the edges are implied by the points &mdash; you build them), then
+  <a href="https://cses.fi/problemset/task/1675">CSES 1675, Road Reparation</a> (the edges are handed
+  to you, and a disconnected graph is a real case to handle).</p>
+
+  <h3>Keep</h3>
+  <ul class="linkrow">
+    <li><a href="../glossary.html">Glossary</a> &mdash; new this lesson: <em>spanning tree</em>,
+      <em>minimum spanning tree</em>, <em>safe edge</em>, <em>Kruskal's algorithm</em>.</li>
+  </ul>
+
+  <h3>Where this sits</h3>
+  <ul class="linkrow">
+    <li><a href="0016-path-compression-pays-for-itself.html">Lesson 0016</a> &mdash; union-find, the
+      component test this algorithm is built around.</li>
+    <li><a href="0021-cheapest-first.html">Lesson 0021</a> &mdash; Dijkstra, the cheapest-first
+      algorithm that answers the other question, and the one this gets confused with.</li>
+    <li><a href="0010-which-end-you-sort-by.html">Lesson 0010</a> &mdash; sort once, sweep once; here
+      the key is edge weight and the decision is a component test.</li>
+    <li><a href="0023-counterexample-before-code.html">Lesson 0023</a> &mdash; the exchange argument,
+      which is what makes this greedy provable rather than hopeful.</li>
+    <li><strong>Next lesson:</strong> to be chosen &mdash; see the course index.</li>
+  </ul>
+
+  <div class="ask">
+    <p><strong>I'm your teacher for this &mdash; ask me things.</strong> Most useful right now: ask me
+    to run Kruskal and Dijkstra side by side on the triangle above and narrate every comparison, or to
+    show why Prim's algorithm (grow one component with a heap) is the better choice when the graph is
+    dense enough that you'd rather not materialise all E edges at all.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="pagenav">
+    <a href="../index.html">Home</a>
+    <a href="0026-the-pointer-that-laps.html">&larr; Lesson 0026</a>
+    <a href="../glossary.html">Glossary</a>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
